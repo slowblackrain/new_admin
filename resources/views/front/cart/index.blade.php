@@ -45,32 +45,92 @@
                             @php
                                 $goods = $item->goods;
                                 $option = $item->options->first();
-                                // Price logic: usually from fm_goods_option not fm_goods
-                                $price = $goods->option->first()->price ?? 0;
-                                // If option has extra price logic, add here.
-                                $optionStr = $option->option1 ?? '';
-                                if ($option->option2)
-                                    $optionStr .= ' / ' . $option->option2;
+                                
+                                // Matches the correct option from Goods based on the saved strings
+                                // This ensures we get the real current price
+                                $price = 0;
+                                $matchedOption = null;
+                                
+                                if ($goods && $goods->option) {
+                                    $matchedOption = $goods->option->first(function($o) use ($option) {
+                                         return (string)$o->option1 == (string)$option->option1 &&
+                                                (string)$o->option2 == (string)$option->option2 &&
+                                                (string)$o->option3 == (string)$option->option3 &&
+                                                (string)$o->option4 == (string)$option->option4 &&
+                                                (string)$o->option5 == (string)$option->option5;
+                                    });
+                                }
+                                
+                                if ($matchedOption) {
+                                    $price = $matchedOption->price;
+                                } else {
+                                    // Fallback: If option not found (data changed), use first option price or 0
+                                    $price = $goods->option->first()->price ?? 0;
+                                }
+
+                                $optionParts = [];
+                                if ($option->option1) $optionParts[] = $option->option1;
+                                if ($option->option2) $optionParts[] = $option->option2;
+                                if ($option->option3) $optionParts[] = $option->option3;
+                                if ($option->option4) $optionParts[] = $option->option4;
+                                if ($option->option5) $optionParts[] = $option->option5;
+                                $optionStr = implode(' / ', $optionParts);
 
                                 $ea = $option->ea ?? 1;
                                 $itemPrice = $price * $ea;
                                 $totalPrice += $itemPrice;
 
-                                $mainImage = $goods->images->where('image_type', 'list1')->first();
-                                $imgSrc = $mainImage ? '/data/goods/' . $mainImage->image : '/images/no_image.gif';
+                                $mainImage = $goods->images->where('image_type', 'thumbCart')->first() 
+                                    ?? $goods->images->where('image_type', 'list1')->first()
+                                    ?? $goods->images->where('image_type', 'view')->first();
+                                
+                                $imagePath = $mainImage ? $mainImage->image : '';
+                                if ($imagePath && strpos($imagePath, '/data/goods/') === 0) {
+                                    $imgSrc = $imagePath;
+                                } elseif ($imagePath) {
+                                    $imgSrc = '/data/goods/' . $imagePath;
+                                } else {
+                                    $imgSrc = '/images/no_image.gif';
+                                }
                             @endphp
                             <tr data-cart-seq="{{ $item->cart_seq }}" data-price="{{ $price }}">
                                 <td><input type="checkbox" name="cart_seq[]" class="chk_item" value="{{ $item->cart_seq }}"
                                         checked></td>
                                 <td class="img_cell">
                                     <a href="{{ route('goods.view', ['no' => $goods->goods_seq]) }}">
-                                        <img src="{{ $imgSrc }}" alt="{{ $goods->goods_name }}" width="60">
+                                        <img src="{{ $imgSrc }}" alt="{{ $goods->goods_name }}" width="60" onerror="this.src='/images/no_image.gif'">
                                     </a>
                                 </td>
                                 <td class="info_cell">
                                     <div class="g_name">{{ $goods->goods_name }}</div>
                                     @if($optionStr && $optionStr != '기본')
                                         <div class="g_opt">옵션: {{ $optionStr }}</div>
+                                    @endif
+
+                                    {{-- Input Fields Display --}}
+                                    @if($item->inputs->count() > 0)
+                                        <div class="g_inputs display_inputs_area">
+                                            @foreach($item->inputs as $input)
+                                                <div class="input_row">
+                                                    <span class="input_badge">[입력]</span>
+                                                    <strong>{{ $input->input_title }}:</strong>
+                                                    @if($input->type == 'file')
+                                                        @php
+                                                            // Ensure path is relative to storage root for asset()
+                                                            // Laravel storeAs returns path relative to disk root.
+                                                            // asset('storage/...') maps to public/storage -> storage/app/public
+                                                            $fileUrl = asset('storage/' . $input->input_value);
+                                                            $fileName = basename($input->input_value);
+                                                        @endphp
+                                                        <a href="{{ $fileUrl }}" target="_blank" class="file_link">
+                                                            {{ $fileName }} (확인)
+                                                        </a>
+                                                    @else
+                                                        {{ $input->input_value }}
+                                                    @endif
+                                                </div>
+                                            @endforeach
+                                        </div>
                                     @endif
                                 </td>
                                 <td>
@@ -98,6 +158,8 @@
                         <span>총 상품금액 <strong id="total_goods_price">{{ number_format($totalPrice) }}원</strong></span>
                         <span class="plus">+</span>
                         <span>배송비 <strong id="total_delivery_price">0원</strong></span>
+                        <span class="plus">+</span>
+                        <span>포장비 <strong id="total_packaging_price">0원</strong></span>
                         <span class="plus">+</span>
                         <span>부가세 <strong
                                 id="total_tax_price">{{ number_format(floor($totalPrice * 0.1)) }}원</strong></span>
@@ -210,11 +272,29 @@
                     total += price * ea;
                 });
 
+                const shippingCost = {{ $shippingCost }};
+                const freeThreshold = {{ $freeShippingThreshold }};
+                const packagingCost = {{ $packagingCost }};
+
                 const tax = Math.floor(total * 0.1);
-                const final = total + tax; // Delivery is 0 for now
+                let delivery = 0;
+                
+                if (total > 0 && total < freeThreshold) {
+                    delivery = shippingCost;
+                }
+
+                // Packaging cost is always added if there are items
+                let finalPackaging = 0;
+                if (total > 0) {
+                    finalPackaging = packagingCost;
+                }
+
+                const final = total + delivery + tax + finalPackaging;
 
                 document.getElementById('total_goods_price').innerText = new Intl.NumberFormat().format(total) + '원';
+                document.getElementById('total_delivery_price').innerText = new Intl.NumberFormat().format(delivery) + '원';
                 document.getElementById('total_tax_price').innerText = new Intl.NumberFormat().format(tax) + '원';
+                document.getElementById('total_packaging_price').innerText = new Intl.NumberFormat().format(finalPackaging) + '원';
                 document.getElementById('total_settle_price').innerText = new Intl.NumberFormat().format(final) + '원';
             }
 
@@ -233,6 +313,9 @@
                 form.action = "{{ route('order.form') }}";
                 form.submit();
             });
+
+            // Run calculation on initial load
+            calcTotal();
         });
     </script>
 
@@ -324,6 +407,34 @@
         .no_data {
             padding: 50px 0;
             color: #888;
+        }
+
+        .g_inputs {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #666;
+            background: #f8f9fa;
+            padding: 5px;
+            border-radius: 4px;
+        }
+
+        .input_row {
+            margin-bottom: 2px;
+        }
+
+        .input_badge {
+            display: inline-block;
+            background: #eee;
+            padding: 1px 4px;
+            border-radius: 2px;
+            font-size: 11px;
+            margin-right: 4px;
+            color: #555;
+        }
+
+        .file_link {
+            color: #007bff;
+            text-decoration: underline;
         }
 
         .btn_qty_mod {

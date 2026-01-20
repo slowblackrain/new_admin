@@ -16,11 +16,20 @@ class CartController extends Controller
     public function index()
     {
         $cartItems = Cart::currentUser()
-            ->with(['goods.images', 'goods.option', 'options'])
+            ->with(['goods.images', 'goods.option', 'options', 'inputs'])
             ->orderBy('regist_date', 'desc')
             ->get();
+            
+        // Valid Cart Seqs (placeholder if needed for logic, currently all)
+        $validCartSeqs = $cartItems->pluck('cart_seq')->toArray();
 
-        return view('front.cart.index', compact('cartItems'));
+        // Based on fm_provider_shipping (provider_seq 1, 3, etc.)
+        // Default policy: 3000 won, free over 50,000 won
+        $shippingCost = 3000;
+        $freeShippingThreshold = 50000;
+        $packagingCost = 300; // Mandatory Box Fee
+
+        return view('front.cart.index', compact('cartItems', 'validCartSeqs', 'shippingCost', 'freeShippingThreshold', 'packagingCost'));
     }
 
     public function store(Request $request)
@@ -91,7 +100,9 @@ class CartController extends Controller
                 // Create Cart
                 $cart = new Cart();
                 $cart->goods_seq = $goods_seq;
-                $cart->member_seq = Auth::check() ? Auth::id() : 0;
+                    $cart->member_seq = Auth::check() ? Auth::id() : 0;
+                // Force 0 if Auth::id() returns null unexpectedly
+                if (is_null($cart->member_seq)) $cart->member_seq = 0;
                 $cart->session_id = Session::getId();
                 $cart->distribution = 'cart';
                 $cart->regist_date = now();
@@ -182,10 +193,22 @@ class CartController extends Controller
         ]);
 
         try {
-            Cart::currentUser()->whereIn('cart_seq', $request->cart_seq)->delete();
-            // Options cascade delete? Usually need to manually delete if no foreign key cascade
-            // Assuming DB level cascade or we should delete options too.
-            CartOption::whereIn('cart_seq', $request->cart_seq)->delete();
+            // Security: Only delete carts belonging to current user
+            $validCarts = Cart::currentUser()->whereIn('cart_seq', $request->cart_seq)->get();
+            $validSeq = $validCarts->pluck('cart_seq')->toArray();
+
+            if (empty($validSeq)) {
+                return response()->json(['status' => 'error', 'message' => '삭제할 상품이 없습니다.']);
+            }
+
+            // Delete Inputs
+            \App\Models\CartInput::whereIn('cart_seq', $validSeq)->delete();
+
+            // Delete Options
+            CartOption::whereIn('cart_seq', $validSeq)->delete();
+
+            // Delete Cart
+            Cart::whereIn('cart_seq', $validSeq)->delete();
 
             return response()->json(['status' => 'success', 'message' => '삭제되었습니다.']);
         } catch (\Exception $e) {

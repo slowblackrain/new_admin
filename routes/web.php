@@ -61,6 +61,7 @@ Route::prefix('order')->name('order.')->group(function () {
 });
 
 Route::middleware(['auth'])->prefix('mypage')->name('mypage.')->group(function () {
+    Route::get('/delivery-address', [App\Http\Controllers\Front\DeliveryAddressController::class, 'index'])->name('delivery_address.index');
     Route::get('/', [MypageController::class, 'index'])->name('index');
     Route::get('/order/list', [MypageController::class, 'orderList'])->name('order.list');
 

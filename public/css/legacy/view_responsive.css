@@ -305,13 +305,15 @@
         margin-bottom: 10px !important;
     }
 
-    /* Text Wrapping */
-    #doto_footer p,
-    #doto_footer span,
     #doto_footer h4,
     #doto_footer h6 {
         white-space: normal !important;
         word-break: break-all;
+    }
+
+    /* Hide Floating Quick View on Mobile */
+    #view_quick_container {
+        display: none !important;
     }
 
 }

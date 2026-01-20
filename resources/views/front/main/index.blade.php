@@ -261,6 +261,40 @@
             clear: both;
             display: table;
         }
+
+        /* Mobile Responsive Main Grid */
+        @media (max-width: 768px) {
+            .goodsDisplayItemWrap {
+                width: 50% !important;
+                height: auto !important;
+                float: left !important;
+                clear: none !important; /* Reset nth-child clears if any */
+            }
+            .goodsDisplayItemWrap:nth-child(2n+1) {
+                clear: both !important;
+            }
+            .goodsDisplayItemWrap:nth-child(2n) {
+                clear: none !important;
+            }
+            
+            /* Hide Quick Menu on Mobile */
+            .goodsDisplayQuickMenu {
+                display: none !important;
+            }
+
+            /* Adjust Image Container */
+            .goodsDisplayItemWrap dt.goods-thumb {
+                width: 100% !important;
+                height: auto !important;
+            }
+            .goodsDisplayItemWrap dt.goods-thumb .goodsDisplayImageWrap {
+                height: auto !important;
+            }
+            .goodsDisplayImageWrap > a > img {
+                width: 100% !important;
+                height: auto !important;
+            }
+        }
     </style>
     @endpush
     <div id="main-wrap" class="clearbox mb70">
@@ -632,7 +666,7 @@
                 </div>
 
                 <!-- 판촉물, 해외직구 -->
-                <div class="mdswrap">
+                <div class="mdswrap clearfix">
                     <div class="section_mds right" id="category_nav03">
                         <div class="mdsbnr"><a href="/goods/catalog?code=0139"><img
                                     src="{{ asset('images/legacy/main/bnr_free_eve.jpg') }}" alt="프리세일 상품관"
@@ -647,7 +681,7 @@
                 </div>
 
                 <!-- 초저가 상품 ~ 땡처리 -->
-                <div id="section_gtbnr">
+                <div id="section_gtbnr" class="clearfix">
                     <div class="marin-tit"><b>다多다多 할인</b>&nbsp;
                         <p>직수입 특가, 땡처리 상품은 한정 기간에만 판매되는 할인 상품입니다.</p>
                     </div>
@@ -664,7 +698,7 @@
                 </div>
 
                 <!-- 새로 만나는 신상품 -->
-                <div class="goodsroll best" id="category_nav04" style="margin-top: 450px;"> <!-- gtbnr height adjustment -->
+                <div class="goodsroll best" id="category_nav04" style="margin-top: 50px;"> <!-- Standard spacing -->
                     <div class="marin-tit">새로 만나는 <b>신상품</b>
                         <p><a href="/goods/search?sort=news">신상품 더 보기</a><img loading="lazy"
                                 src="{{ asset('images/legacy/icon/view_icon_info.gif') }}"

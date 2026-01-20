@@ -110,5 +110,11 @@
             text-align: center;
             margin-top: 30px;
         }
+
+        @media (max-width: 768px) {
+            .goods_list_ul li {
+                width: 50%;
+            }
+        }
     </style>
 @endsection

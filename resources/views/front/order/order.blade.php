@@ -129,7 +129,8 @@
                                 <td>
                                     <input type="text" name="recipient_zipcode" id="recipient_zipcode" class="input_text"
                                         style="width: 80px;" placeholder="우편번호" readonly>
-                                    <button type="button" class="btn_base" onclick="openDaumPostcode()">우편번호 찾기</button><br>
+                                    <button type="button" class="btn_base" onclick="openDaumPostcode()">우편번호 찾기</button>
+                                    <button type="button" class="btn_base btn_addr_list" onclick="openAddressModal()">배송지 목록</button><br>
 
                                     {{-- Visible Address Input (Display Only) --}}
                                     <input type="text" id="recipient_address_display" class="input_text"
@@ -208,6 +209,20 @@
         </div>
     </div>
 
+    <div id="addressModal" class="modal_overlay" style="display:none;">
+        <div class="modal_content">
+            <div class="modal_header">
+                <h3>나의 배송지 목록</h3>
+                <button type="button" class="btn_close_modal" onclick="closeAddressModal()">X</button>
+            </div>
+            <div class="modal_body">
+                <ul id="addressList" class="address_list">
+                    <!-- Loaded via AJAX -->
+                </ul>
+            </div>
+        </div>
+    </div>
+
     {{-- Daum Address API --}}
     <script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
     <script>
@@ -235,6 +250,61 @@
                 }
             });
         });
+
+        // Address Modal Functions
+        function openAddressModal() {
+            const listEl = document.getElementById('addressList');
+            listEl.innerHTML = '<li>로딩중...</li>';
+            document.getElementById('addressModal').style.display = 'block';
+
+            fetch("{{ route('mypage.delivery_address.index') }}")
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        listEl.innerHTML = '';
+                        if (data.data.length === 0) {
+                            listEl.innerHTML = '<li>등록된 배송지가 없습니다.</li>';
+                            return;
+                        }
+                        data.data.forEach(addr => {
+                            const li = document.createElement('li');
+                            li.innerHTML = `
+                                <div class="addr_item" onclick='selectAddress(${JSON.stringify(addr)})'>
+                                    <strong>${addr.recipient_user_name}</strong>
+                                    <span>[${addr.address_group || '기본'}]</span>
+                                    <p>${addr.recipient_address} ${addr.recipient_address_detail || ''}</p>
+                                    <p>${addr.recipient_cellphone}</p>
+                                </div>
+                            `;
+                            listEl.appendChild(li);
+                        });
+                    } else {
+                        alert(data.message);
+                        closeAddressModal();
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    listEl.innerHTML = '<li>불러오기 실패</li>';
+                });
+        }
+
+        function closeAddressModal() {
+            document.getElementById('addressModal').style.display = 'none';
+        }
+
+        function selectAddress(addr) {
+            document.getElementById('recipient_user_name').value = addr.recipient_user_name;
+            document.getElementById('recipient_cellphone').value = addr.recipient_cellphone;
+            document.getElementById('recipient_zipcode').value = addr.recipient_zipcode;
+            document.getElementById('recipient_address').value = addr.recipient_address;
+            document.getElementById('recipient_address_display').value = addr.recipient_address;
+            document.getElementById('recipient_address_detail').value = addr.recipient_address_detail;
+            document.getElementById('recipient_address_street').value = addr.recipient_address_street || '';
+            document.getElementById('recipient_address_type').value = addr.recipient_address_type || 'zibun';
+            
+            closeAddressModal();
+        }
 
         function openDaumPostcode() {
             new daum.Postcode({
@@ -360,5 +430,54 @@
             border: none;
             cursor: pointer;
         }
+
+        .btn_addr_list {
+            background: #007bff;
+            margin-left: 5px;
+        }
+
+        /* Modal Styles */
+        .modal_overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 9999;
+        }
+        .modal_content {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 400px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        .modal_header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .btn_close_modal {
+            background: none; border: none; font-size: 20px; cursor: pointer;
+        }
+        .address_list {
+            list-style: none; padding: 0; margin: 0;
+            max-height: 300px; overflow-y: auto;
+        }
+        .address_list li {
+            border-bottom: 1px solid #eee;
+            padding: 10px;
+            cursor: pointer;
+        }
+        .address_list li:hover {
+            background: #f9f9f9;
+        }
+        .addr_item strong { font-size: 14px; color: #333; }
+        .addr_item span { font-size: 12px; color: #888; margin-left: 5px; }
+        .addr_item p { margin: 5px 0 0; font-size: 13px; color: #666; }
     </style>
 @endsection

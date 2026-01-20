@@ -54,11 +54,13 @@ class OrderController extends Controller
         // 1. Validate
         $request->validate([
             'cart_seq' => 'required|array',
+            'order_user_name' => 'required',
+            'order_cellphone' => 'required',
+            'order_email' => 'required|email',
             'recipient_user_name' => 'required',
             'recipient_cellphone' => 'required',
             'recipient_zipcode' => 'required',
             'recipient_address' => 'required',
-            'recipient_address_detail' => 'nullable',
             'payment' => 'required',
         ]);
 
@@ -67,7 +69,7 @@ class OrderController extends Controller
         // 2. Fetch Cart Items
         $cartItems = Cart::currentUser()
             ->whereIn('cart_seq', $cart_seqs)
-            ->with(['goods.images', 'goods.option', 'options'])
+            ->with(['goods.images', 'goods.option', 'options', 'inputs'])
             ->get();
 
         if ($cartItems->isEmpty()) {
@@ -85,8 +87,26 @@ class OrderController extends Controller
             // Calculate Total
             foreach ($cartItems as $cItem) {
                 $option = $cItem->options->first();
-                $price = $cItem->goods->option->first()->price ?? 0;
                 $ea = $option->ea ?? 1;
+                
+                // Logic to find price (same as cart)
+                $price = 0;
+                $goods = $cItem->goods;
+                if ($goods && $goods->option) {
+                    $matchedOption = $goods->option->first(function($o) use ($option) {
+                         return (string)$o->option1 == (string)$option->option1 &&
+                                (string)$o->option2 == (string)$option->option2 &&
+                                (string)$o->option3 == (string)$option->option3 &&
+                                (string)$o->option4 == (string)$option->option4 &&
+                                (string)$o->option5 == (string)$option->option5;
+                    });
+                    if ($matchedOption) {
+                        $price = $matchedOption->price;
+                    } else {
+                         $price = $goods->option->first()->price ?? 0;
+                    }
+                }
+                
                 $totalPrice += ($price * $ea);
                 $totalEa += $ea;
                 $kinds++;
@@ -97,39 +117,55 @@ class OrderController extends Controller
             $order->order_seq = $this->generateOrderSeq();
             $order->order_user_name = $request->order_user_name;
             $order->order_cellphone = $request->order_cellphone;
+            $order->order_phone = $request->order_cellphone; // Map cellphone to phone if phone empty
             $order->order_email = $request->order_email;
             $order->recipient_user_name = $request->recipient_user_name;
-            $order->recipient_cellphone = $request->recipient_cellphone;
-            $order->recipient_zipcode = $request->recipient_zipcode;
+            $order->recipient_cellphone = $request->recipient_cellphone; // Fix field name mismatch
+            $order->recipient_phone = $request->recipient_cellphone; 
+            $order->recipient_zipcode = substr($request->recipient_zipcode, 0, 7); // Ensure length
             $order->recipient_address_type = $request->recipient_address_type ?? 'zibun';
-            $order->recipient_address = $request->recipient_address; // This should be Jibun address
-            $order->recipient_address_street = $request->recipient_address_street; // This should be Road address
+            $order->recipient_address = $request->recipient_address;
+            $order->recipient_address_street = $request->recipient_address_street;
             $order->recipient_address_detail = $request->recipient_address_detail;
             $order->memo = $request->memo;
 
-            $order->settleprice = $totalPrice;
-            $order->original_settleprice = $totalPrice;
-            $order->step = \App\Models\Order::STEP_ORDER_RECEIVED;
+            $shippingCost = 3000;
+            $freeShippingThreshold = 50000;
+            $packagingCost = 300;
+
+            $shipping = 0;
+            if ($totalPrice > 0 && $totalPrice < $freeShippingThreshold) {
+                $shipping = $shippingCost;
+            }
+
+            $tax = floor($totalPrice * 0.1);
+            $finalSettlePrice = $totalPrice + $shipping + $tax + $packagingCost;
+
+            $order->settleprice = $finalSettlePrice;
+            $order->original_settleprice = $finalSettlePrice;
             $order->payment = $request->payment;
             $order->regist_date = now();
             $order->session_id = Session::getId();
 
             // Default/Required Legacy Fields
             $order->enuri = 0;
-            $order->tax = 0;
-            $order->shipping_cost = 0;
+            $order->tax = $tax;
+            $order->shipping_cost = $shipping;
+            // $order->delivery_cost = $packagingCost; // Optional: store packaging here if needed? Leaving 0 for safety.
+
             $order->international = 'domestic';
             $order->international_cost = 0;
             $order->total_ea = $totalEa;
             $order->total_type = $kinds;
-            $order->mode = 'order'; // specific to legacy, assumed 'order'
-            $order->sitetype = 'P'; // PC
+            $order->mode = 'order'; 
+            $order->sitetype = 'P'; 
             $order->skintype = 'P';
             $order->important = '0';
             $order->hidden = 'N';
             $order->admin_order = '';
             $order->cash_receipts_no = '';
-            $order->virtual_date = '0000-00-00 00:00:00'; // Or valid date if strict mode
+            $order->virtual_date = '0000-00-00 00:00:00'; 
+            $order->ip = $request->ip();
 
             if ($request->payment == 'bank') {
                 $order->bank_account = $request->bank_account;
@@ -138,20 +174,24 @@ class OrderController extends Controller
                 $order->deposit_yn = 'n';
                 $order->bundle_yn = 'n';
             } else {
+                // Card payment placeholder
                 $order->step = \App\Models\Order::STEP_PAYMENT_CONFIRMED;
-                $order->deposit_yn = 'y'; // Assumed paid
+                $order->deposit_yn = 'y'; 
                 $order->bundle_yn = 'n';
             }
 
             if ($user) {
                 $order->member_seq = $user->member_seq;
+            } else {
+                $order->member_seq = 0; // Guest
             }
 
-            // Handle strict mode for 0000-00-00
-            try {
+            // Handle strict mode date issue by using raw query if eloquent fails?
+            // Or just try specific format.
+            // For now, let's try standard save, but catch strict date errors
+             try {
                 $order->save();
             } catch (\Exception $e) {
-                // Check if date error, retry with now() if strict mode
                 if (strpos($e->getMessage(), 'virtual_date') !== false) {
                     $order->virtual_date = now();
                     $order->save();
@@ -164,14 +204,34 @@ class OrderController extends Controller
             foreach ($cartItems as $cItem) {
                 $goods = $cItem->goods;
                 $option = $cItem->options->first();
-                $price = $goods->option->first()->price ?? 0;
                 $ea = $option->ea ?? 1;
+
+                 // Price Logic Again
+                $price = 0;
+                $matchedOption = null;
+                if ($goods && $goods->option) {
+                    $matchedOption = $goods->option->first(function($o) use ($option) {
+                         return (string)$o->option1 == (string)$option->option1 &&
+                                (string)$o->option2 == (string)$option->option2 &&
+                                (string)$o->option3 == (string)$option->option3 &&
+                                (string)$o->option4 == (string)$option->option4 &&
+                                (string)$o->option5 == (string)$option->option5;
+                    });
+                     if ($matchedOption) {
+                        $price = $matchedOption->price;
+                    } else {
+                         $price = $goods->option->first()->price ?? 0;
+                    }
+                }
 
                 $orderItem = new \App\Models\OrderItem();
                 $orderItem->order_seq = $order->order_seq;
                 $orderItem->goods_seq = $goods->goods_seq;
                 $orderItem->goods_name = $goods->goods_name;
                 $orderItem->goods_shipping_cost = 0;
+                $orderItem->basic_shipping_cost = 0;
+                $orderItem->goods_code = $goods->goods_code; // Populate goods_code
+                $orderItem->image = $goods->images->where('image_type', 'list1')->first()->image ?? '';
                 $orderItem->save();
 
                 $itemOption = new \App\Models\OrderItemOption();
@@ -180,12 +240,16 @@ class OrderController extends Controller
                 $itemOption->price = $price;
                 $itemOption->ea = $ea;
                 $itemOption->step = $order->step;
-                $itemOption->option1 = $option->option1 ?? '기본';
+                $itemOption->option1 = $option->option1 ?? '';
+                $itemOption->option2 = $option->option2 ?? '';
+                $itemOption->title1 = $option->title1 ?? '옵션';
                 $itemOption->save();
             }
 
             // Delete from Cart
             Cart::currentUser()->whereIn('cart_seq', $cart_seqs)->delete();
+            \App\Models\CartOption::whereIn('cart_seq', $cart_seqs)->delete();
+            \App\Models\CartInput::whereIn('cart_seq', $cart_seqs)->delete();
 
             DB::commit();
 
@@ -193,7 +257,7 @@ class OrderController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->withErrors(['msg' => '주문 처리 중 오류 발생: ' . $e->getMessage()]);
+            return back()->withErrors(['msg' => '주문 처리 중 오류 발생: ' . $e->getMessage() . ' line:' . $e->getLine()]);
         }
     }
 
