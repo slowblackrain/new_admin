@@ -1,0 +1,14 @@
+@charset "utf-8";
+
+.marin-top_tit{
+	width:100%;
+	height:100%;
+}
+
+/* 기본 구조 */
+.wrap22 {max-width:500px; margin:50px auto; background:#f8f8f8;}
+
+/* 가로 스크롤 적용 */
+.scroll__wrap {overflow-x:auto; white-space:nowrap; font-size:0}
+.scroll--element {display:inline-block; width:150px; height:150px; border:2px solid #222; background:#fff; font-size:16px; line-height:150px; text-align:center;}
+.scroll--element + .scroll--element {margin-left:15px;}

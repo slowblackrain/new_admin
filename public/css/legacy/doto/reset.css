@@ -1,0 +1,97 @@
+@import url(https://fonts.googleapis.com/earlyaccess/notosanskr.css);
+*, *:before, *:after{box-sizing:inherit;-webkit-box-sizing: inherit;}
+html {
+	overflow-y:scroll; box-sizing:border-box;
+}
+body{
+	padding:0px;
+	margin:0px;
+}
+/* body, div, table, th, td, pre, blockquote, thead, tfoot
+input, button, textarea, ol, li, ul, dl, dt, dd {
+	font-family:'Noto Sans KR','맑은고딕','Malgun Gothic','gulim','arial','Dotum','AppleGothic', sans-serif;
+	font-weight:400;
+	letter-spacing:-0.3px;
+	word-spacing:-0.7px;
+} 기본 글꼴 설정 일부 수정_190104_yong*/
+body, html {
+	font-family:'Noto Sans KR','맑은고딕','Malgun Gothic','Dotum','arial','AppleGothic', sans-serif;
+	font-weight:400;
+	letter-spacing:-0.03333em;
+	word-spacing:-0.075em;
+}
+body, div, table, th, td, pre, blockquote, em {
+	font-weight:normal;
+	font-style:normal;
+	color:#333;
+}
+/* body, div, table, th, td, pre, blockquote {
+	font-size:12px;
+} */
+h1, h2, h3, h4, h5, h6 {
+    font-weight:500;
+    margin: 0;
+    padding: 0;
+}
+article, aside, details, figcaption, figure, footer, header, hgroup, menu, nav, section {
+	display:block;
+}
+img, table, thead, tfoot, fieldset, legend, iframe {
+	border:none;
+}
+label, input, button, textarea, select, img {
+	vertical-align:middle;
+}
+ol, dl, dt, dd {
+	padding:0;
+	margin:0;
+    list-style-type: none;
+    list-style: none;
+    text-align: left;
+    position: static;
+    overflow: hidden;
+}
+li, ul{
+	padding:0;
+	margin:0;
+    list-style-type: none;
+    list-style: none;
+    text-align: left;
+    position: static;
+}
+a:link, a:visited, a:active{
+    color: inherit;
+	text-decoration: none;
+}
+a {
+	text-decoration: none;
+}
+p{
+	padding:0;
+    margin:0;
+}
+table {
+	border-collapse: collapse;
+	border-spacing: 0;
+}
+
+input, textarea {
+    -webkit-box-sizing:border-box;
+       -moz-box-sizing:border-box;
+            box-sizing:border-box;
+          /*-webkit-appearance:none; 체크박스 라디오 안보여서 주석함..  */
+	      -webkit-border-radius:0;
+	              border-radius:0;
+				  background:none;
+}
+button, input[type="button"] {
+	background-color:transparent;
+	cursor:pointer;
+	border:0;
+}
+
+.clfix:after {content: ""; display: block; height:0px; clear: both;}
+.clfix {display:inline-block;}
+.clfix {display:block;}
+* html .clfix {height:1%;} /* Hides from IE-mac */
+.clfix {zoom:1;} /*for IE 5.5-7*/

@@ -1,0 +1,297 @@
+@media screen and (max-width: 1210px) {
+
+    /* Main Containers - Fluid width */
+    .wraper,
+    #dometopia_header .header-top-wrap,
+    #doto_scrollmenu .scrollmenu-inner,
+    #doto_footer .container,
+    #main-wrap,
+    .bnr_slide1,
+    .goodsroll,
+    .product-grid,
+    .mt13 {
+        width: 100% !important;
+        max-width: 1200px;
+        padding: 0 10px;
+        box-sizing: border-box;
+    }
+
+    /* Ensure images scale */
+    img {
+        max-width: 100%;
+        height: auto;
+    }
+
+    /* Fix Search Button Alignment */
+    #dometopia_header .header-search-wrap button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        top: 2px !important;
+        /* Adjust vertical position */
+        right: 2px !important;
+        height: 50px !important;
+    }
+
+    #dometopia_header .header-search-wrap button i {
+        top: 0 !important;
+        /* Reset relative top */
+        line-height: normal;
+    }
+
+    /* ------- Header adjustments using Flexbox ------- */
+    #dometopia_header .header-top-wrap {
+        height: auto !important;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding-bottom: 20px;
+    }
+
+    #dometopia_header .logo {
+        float: none !important;
+        width: auto !important;
+        height: auto !important;
+        margin: 10px 0 !important;
+        padding: 0 !important;
+    }
+
+    #dometopia_header .header-search-wrap {
+        float: none !important;
+        margin: 10px 0 !important;
+        width: 100%;
+        max-width: 450px;
+        /* Keep search box reasonable size */
+    }
+
+    /* Center the search box and ensure it doesn't overflow */
+    .header-search-wrap .header-search-box {
+        margin: 0 auto;
+    }
+
+    /* Top Menu moving below search */
+    #dometopia_header .topmenu {
+        position: static !important;
+        width: 100%;
+        text-align: center;
+        margin-top: 10px;
+    }
+
+    #dometopia_header .topmenu ul {
+        display: inline-block;
+    }
+
+    #dometopia_header .topmenu li {
+        float: none;
+        display: inline-block;
+        margin: 0 5px;
+        list-style: none;
+    }
+
+    /* ------- Navigation Bar (Scroll Menu) ------- */
+    #doto_scrollmenu {
+        height: auto !important;
+    }
+
+    #doto_scrollmenu .scrollmenu-inner {
+        height: auto !important;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+    }
+
+    #doto_scrollmenu .allcate {
+        float: none !important;
+        margin: 0 auto;
+        width: 180px !important;
+    }
+
+    #doto_scrollmenu .menu_box {
+        float: none !important;
+        margin: 10px 0 !important;
+        width: 100%;
+        text-align: center;
+        height: auto !important;
+    }
+
+    #doto_scrollmenu .menu_box ul {
+        height: auto !important;
+    }
+
+    #doto_scrollmenu .menu_box li {
+        float: none;
+        display: inline-block;
+        margin: 5px 10px;
+    }
+
+    #doto_scrollmenu .hidden_sch,
+    #doto_scrollmenu .menu_box_r {
+        display: none !important;
+        /* Hide extra search and login on mobile for simplicity */
+    }
+
+    /* ------- Main Banner Section ------- */
+    .main_header {
+        height: auto !important;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 20px !important;
+        border-bottom: none !important;
+        width: 100% !important;
+        /* Force fluid width */
+        max-width: 1200px;
+        /* Cap at max design width */
+        padding: 0 10px;
+        /* Add side padding */
+    }
+
+    .main_header>div {
+        float: none !important;
+        margin: 0 0 20px 0 !important;
+    }
+
+    /* Left Banner - Hide on mobile (<1200) as per common practice for side banners */
+    .main_header>div:first-child {
+        display: none !important;
+    }
+
+    /* Main Center Banner: Full width */
+    .section_main {
+        width: 100% !important;
+        margin-right: 0 !important;
+        float: none !important;
+        /* Disable float to allow centering/full width */
+    }
+
+    .section_main .mslide,
+    .section_main .bx-viewport {
+        width: 100% !important;
+        height: auto !important;
+    }
+
+    .section_main .mslide img {
+        width: 100% !important;
+        height: auto !important;
+    }
+
+    /* Right Banner Area */
+    .notice {
+        width: 100% !important;
+        height: auto !important;
+        display: flex;
+        justify-content: space-between;
+        margin: 0 !important;
+        background: none !important;
+    }
+
+    /* Responsive Split for Right Banners */
+    .notice_list,
+    .mds_recommand_roll {
+        width: 48% !important;
+        height: 200px !important;
+        /* Fixed approximate height */
+        margin: 0 !important;
+        background-size: cover;
+        background-position: center;
+    }
+
+    /* Middle Banners (Usually 4 items) */
+    .mt13 {
+        display: flex;
+        flex-wrap: wrap;
+        width: 100% !important;
+        justify-content: space-between;
+        margin-top: 20px;
+    }
+
+    .mt13 a {
+        float: none !important;
+        width: 48% !important;
+        /* 2 per row */
+        margin-bottom: 10px;
+    }
+
+    .mt13 a img {
+        width: 100% !important;
+    }
+
+    /* Company Info Banners (.bnr_slide1) */
+    .bnr_slide1 {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        height: auto !important;
+    }
+
+    .bnr_slide1 a {
+        width: 48% !important;
+        margin-bottom: 10px;
+        float: none !important;
+    }
+
+    .bnr_slide1 img {
+        width: 100% !important;
+    }
+
+    /* Clear Floats override */
+    .clearbox:after {
+        display: none;
+    }
+
+    /* ------- Product Lists ------- */
+    /* Container for lists */
+    .best_goods,
+    .new_goods {
+        width: 100% !important;
+    }
+
+    .best_goodsdl,
+    .new_goodsdl {
+        width: 100% !important;
+        float: none !important;
+    }
+
+    /* Grid for product items */
+    /* Using Flexbox for product grid if container supports it, otherwise float overrides */
+    .goodsDisplayItemWrap {
+        width: 31% !important;
+        /* 3 columns for tablet */
+        margin: 1% !important;
+        height: auto !important;
+        float: left !important;
+        box-sizing: border-box !important;
+    }
+
+    .goodsDisplayItemWrap img {
+        width: 100% !important;
+        height: auto !important;
+    }
+}
+
+@media screen and (max-width: 600px) {
+    /* ------- Mobile Specific (<600px) ------- */
+
+    /* Stack Right Banners */
+    .notice {
+        flex-direction: column;
+    }
+
+    .notice_list,
+    .mds_recommand_roll {
+        width: 100% !important;
+        margin-bottom: 15px !important;
+    }
+
+    /* Product Items: 2 Columns on mobile (or 1 if very small) */
+    .goodsDisplayItemWrap {
+        width: 48% !important;
+        margin: 1% !important;
+    }
+
+    /* Middle Banners: 1 Column */
+    .mt13 a {
+        width: 100% !important;
+    }
+}

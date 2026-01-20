@@ -1,0 +1,821 @@
+@charset "utf-8";
+
+#header {
+    position: relative;
+    z-index: 5;
+    /*그림자가 가려져서 넣은 임시 코드입니다.*/
+}
+
+/*1200px 가운데 정렬 기본 컨테이너*/
+/*.container {
+    width: 1200px;
+    margin: 0 auto;
+    font-size: 16px;
+    color: #333;    
+}*/
+
+/*기본 스타일 설정*/
+.container,
+.container a,
+.container p,
+.container span,
+.container div,
+.container button,
+.container label,
+.container li,
+.container dd,
+.container dt,
+.container td,
+.container th,
+.container h1,
+.container h2,
+.container h3,
+.container h4,
+.container h5,
+.container h6 {
+    letter-spacing: 0.0233em;
+    word-spacing: 0.075em;
+}
+
+.clear:after {
+    display: block;
+    content: '';
+    clear: both;
+}
+
+input[type=text]::-ms-clear {
+    /*익스플로러 인풋박스 X버튼 삭제*/
+    display: none;
+}
+
+/**************shopon************/
+
+
+/***********/
+/*기본스타일*/
+
+/*Edge 배경픽스 버그 해결*/
+@supports (-ms-accelerator:true) {
+    html {
+        overflow: hidden;
+        height: 100%;
+    }
+
+    body {
+        overflow: auto;
+        height: 100%;
+    }
+}
+
+
+
+.wrap {
+    width: 100%;
+}
+
+.container.inner {
+    margin: 0 auto;
+    width: 1200px;
+    text-align: center;
+}
+
+.clear:after {
+    content: '';
+    clear: both;
+    display: block;
+    visibility: hidden;
+}
+
+.fl-l {
+    float: left;
+    width: 560px;
+}
+
+.fl-r {
+    float: right;
+    width: 560px;
+}
+
+/*기본스타일 End*/
+/***********/
+.go-top-wrap {
+    position: fixed;
+    bottom: 60px;
+    right: 40px;
+}
+
+.go-top {
+    display: block;
+    color: rgba(60, 60, 60, .5) !important;
+    background-color: rgba(0, 0, 0, 0.05);
+    text-align: center;
+    font-size: 20px;
+    padding: 1em 1.2em;
+    border-radius: 10px;
+    transition: .5s;
+    transition-property: background, color;
+}
+
+.go-top:hover {
+    color: rgba(255, 255, 255, .8) !important;
+    background-color: rgba(0, 0, 0, .2);
+    transition: .5s;
+    transition-property: background, color;
+}
+
+a.blog {
+    display: block;
+    width: 65px;
+    height: 64px;
+    font-size: 13px;
+    line-height: 64px;
+    text-align: center;
+    color: white;
+    margin-top: 5px;
+}
+
+/*****HeroArea*****/
+.top {
+    padding: 1px 0;
+}
+
+.about_visual {
+    /* background-image: url(/data/skin/beauty/images/service/about_doto.jpg); */
+    background-image: url(https://dometopia.com/data/skin/beauty/images/service/about_doto.jpg);
+    /* Use absolute path or copy image */
+    background-repeat: no-repeat;
+    color: white;
+    background-color: #071524;
+    background-position: bottom center;
+    position: relative;
+    height: 870px;
+    z-index: 3;
+}
+
+.about_visual .page-title {
+    position: absolute;
+    text-align: left;
+    top: 85px;
+    white-space: nowrap;
+}
+
+.about_visual .page-title p {
+    font-size: 50px;
+    font-weight: 300;
+    color: #333;
+    display: inline-block;
+    line-height: 1.2;
+    letter-spacing: -0.04em;
+    font-weight: 400;
+}
+
+.page-title span {
+    font-size: 136px;
+    font-weight: bold;
+    color: #333;
+    display: inline-block;
+    margin-left: 10px;
+    letter-spacing: -0.02em;
+
+}
+
+/*****visual Area :: End*****/
+
+/*****섹션공통*****/
+.top-down-130 {
+    padding: 130px 0;
+}
+
+.overview {
+    margin-bottom: 100px;
+}
+
+.keyvisual {
+    margin-top: -15px;
+}
+
+.titles {
+    text-align: left;
+    font-size: 0;
+    overflow: hidden;
+}
+
+.title {
+    font-size: 0;
+    overflow: hidden;
+    display: inline-block;
+}
+
+/*.titles .number, .titles .title{
+    float: left;
+}*/
+
+.titles .number {
+    display: inline-block;
+    text-align: left;
+}
+
+.title h2 {
+    font-size: 60px;
+    font-weight: 600;
+    position: relative;
+    display: inline-block;
+}
+
+.title h2:after {
+    content: "";
+    position: absolute;
+    width: 36px;
+    height: 4px;
+    background: #2979ff;
+    left: 10px;
+    top: -12px;
+}
+
+.titles h3 {
+    /*clear: both;*/
+    font-size: 30px;
+    font-weight: 400;
+    margin-bottom: 25px;
+    color: #333;
+    margin-top: 65px;
+    text-align: left;
+}
+
+.titles p {
+    font-size: 20px;
+    line-height: 32px;
+    font-weight: 300;
+    color: #63656a;
+    word-break: keep-all;
+}
+
+/*가운데정렬*/
+.titles.center {
+    margin: 0 auto;
+    text-align: center;
+}
+
+.titles.center .box {
+    display: inline-block;
+
+}
+
+/*****섹션공통 :: End*****/
+
+/*섹션네비게이션*/
+.navigation {
+    box-shadow: 0px 1px 5px 3px #d9dce0;
+    display: inline-block;
+    width: 100%;
+}
+
+.navigation ul {
+    background-color: white;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.navigation li {
+    display: inline-block;
+    padding: 50px 0;
+}
+
+.navigation li a {
+    font-size: 22px;
+    font-weight: 400;
+    line-height: 0.8;
+}
+
+.navigation li:first-child~li:before {
+    content: '';
+    display: inline-block;
+    width: 1px;
+    height: 15px;
+    background-color: #e9ecef;
+    margin: 0 25px;
+}
+
+/*****섹션공통 :: End*****/
+
+/*섹션네비게이션*/
+.navigation {
+    box-shadow: 0px 1px 5px 3px #d9dce0;
+    display: inline-block;
+    width: 100%;
+}
+
+.navigation ul {
+    background-color: white;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.navigation li {
+    display: inline-block;
+    padding: 50px 0;
+}
+
+.navigation li a {
+    font-size: 22px;
+    font-weight: 400;
+    line-height: 0.8;
+}
+
+.navigation li:first-child~li:before {
+    content: '';
+    display: inline-block;
+    width: 1px;
+    height: 15px;
+    background-color: #e9ecef;
+    margin: 0 25px;
+}
+
+/*섹션네비게이션::End*/
+
+
+/**************************/
+/*********section1*********/
+#section1 {
+    background-color: #FFF;
+}
+
+#section1 .container {
+    background-color: #FFF;
+    position: relative;
+    margin-top: -15px;
+}
+
+#section1 .greet {
+    border: 30px solid #ebeff5;
+    height: 940px;
+    width: 100%;
+    background-repeat: no-repeat;
+    padding: 55px;
+    overflow: inherit;
+
+}
+
+/*#section1 .greet:after{
+    position:absolute;
+    content:'';
+    background: url(/data/skin/beauty/images/service/sect1.jpg)no-repeat;
+    width:560px;
+    height:520px;
+    top:-100px;
+    right:0;
+}*/
+
+
+#section1 .titles .number {
+    /* background: url(/data/skin/beauty/images/service/title_num01.png)no-repeat; */
+    background: url(https://dometopia.com/data/skin/beauty/images/service/title_num01.png)no-repeat;
+    margin-right: 45px;
+    margin-bottom: -9px;
+    width: 106px;
+    height: 146px;
+}
+
+#section1 .titles p+p {
+    margin-top: 20px
+}
+
+#section1 .titles .ceo {
+    position: relative;
+}
+
+#section1 .titles .ceo h4 {
+    font-size: 20px;
+    font-weight: 400;
+    text-align: right;
+    margin-top: 25px;
+    margin-right: 134px;
+}
+
+#section1 .titles .ceo h4 img {
+    position: absolute;
+    top: -140px;
+    z-index: 123456789
+}
+
+#section1 .titles .ceo h4:before {
+    width: 205px;
+    height: 238px;
+    display: inline-block;
+    /* background: url(/data/skin/beauty/images/service/ceo_img.png)no-repeat; */
+    background: url(https://dometopia.com/data/skin/beauty/images/service/ceo_img.png)no-repeat;
+    content: "";
+    position: absolute;
+    right: -70px;
+    bottom: -47px;
+}
+
+#section1 .titles .ceo h4 span {
+    width: 141px;
+    height: 48px;
+    display: inline-block;
+    /* background: url(/data/skin/beauty/images/service/name.png); */
+    background: url(https://dometopia.com/data/skin/beauty/images/service/name.png);
+    margin-left: 8px;
+}
+
+/*********section1 end*********/
+/******************************/
+
+
+/**************************/
+/*********section2*********/
+#section2 {
+    background-color: #ccd8e7;
+
+}
+
+#section2 .keyvisual {
+    height: 560px;
+    width: 560px;
+    /* background: url(/data/skin/beauty/images/service/sect2.jpg)no-repeat; */
+    background: url(https://dometopia.com/data/skin/beauty/images/service/sect2.jpg)no-repeat;
+    margin-right: 40px;
+}
+
+#section2 .titles .number {
+    /* background: url(/data/skin/beauty/images/service/title_num02.png)no-repeat; */
+    background: url(https://dometopia.com/data/skin/beauty/images/service/title_num02.png)no-repeat;
+    margin-bottom: -1px;
+    width: 139px;
+    height: 146px;
+    margin-right: 15px;
+}
+
+
+#section2 .contents ul {
+    display: -webkit-box;
+    display: -moz-box;
+    display: -ms-flexbox;
+    display: -webkit-flex;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    padding: 0 77px;
+
+}
+
+#section2 .contents li {
+    width: 190px;
+    height: 90px;
+    text-align: left;
+    margin-bottom: 95px;
+    text-align: center;
+}
+
+#section2 .contents li:nth-child(3n+1) {
+    margin-left: 0;
+}
+
+#section2 .contents li:nth-child(n+13):nth-child(-n+15) {
+    margin-bottom: 0;
+}
+
+#section2 .contents li+li {
+    margin-left: 237px;
+}
+
+#section2 .contents li>div {
+    margin-bottom: 10px;
+    height: 50px;
+}
+
+#section2 .contents i.far,
+#section2 .contents i.fab,
+#section2 .contents i.fas {
+    margin-left: 2px;
+    font-size: 50px;
+    color: #aac0db;
+}
+
+#section2 .contents li p {
+    font-size: 20px;
+    color: #333;
+    font-weight: 500;
+    width: 225px;
+    margin-left: -17px;
+
+}
+
+
+/*********section2 end*********/
+/******************************/
+
+#section3 {
+    clear: both;
+    background-color: #fff;
+}
+
+#section3 .org_z.titles .title {
+    margin-bottom: 85px;
+}
+
+#section3 .titles .number {
+    /* background: url(/data/skin/beauty/images/service/title_num03.png)no-repeat; */
+    background: url(https://dometopia.com/data/skin/beauty/images/service/title_num03.png)no-repeat;
+    margin-bottom: -1px;
+    width: 137px;
+    height: 146px;
+    margin-right: 15px;
+}
+
+#section3 .org_z {
+    padding: 0 77px;
+    text-align: left;
+}
+
+#section3 .titles>p {
+    color: #5d6a7a;
+}
+
+#section3 .ipad {
+    width: 768px;
+    height: 1088px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+}
+
+#section3 .ipad::after {
+    content: '';
+    display: block;
+    width: 1088px;
+    height: 1328px;
+    /* background-image: url(/data/skin/beauty/images/service/ipad_shadow.png); */
+    background-image: url(https://dometopia.com/data/skin/beauty/images/service/ipad_shadow.png);
+    background-repeat: no-repeat;
+    position: absolute;
+    z-index: -1;
+    top: -52px;
+    right: -21px;
+}
+
+/*********section3 end*********/
+/******************************/
+
+
+#section4 {
+    clear: both;
+    background-color: #2877fc;
+    /* background-image: url(/data/skin/beauty/images/service/sect4_bg.jpg); */
+    background-image: url(https://dometopia.com/data/skin/beauty/images/service/sect4_bg.jpg);
+    background-repeat: repeat;
+}
+
+#section4 .contents,
+#section4 .history {
+    padding: 0 77px;
+}
+
+#section4 .titles .number {
+    /* background: url(/data/skin/beauty/images/service/title_num03.png)no-repeat; */
+    background: url(https://dometopia.com/data/skin/beauty/images/service/title_num03.png)no-repeat;
+    margin-bottom: -1px;
+    width: 137px;
+    height: 146px;
+    margin-right: 15px;
+}
+
+#section4 .title h2:after {
+    background: #7cadff;
+}
+
+#section4 h2,
+.section4 h3 {
+    color: white;
+
+}
+
+#section4 .contents {
+    margin-top: 100px;
+}
+
+#section4 .contents .year {
+    padding: 0 95px;
+    overflow: unset;
+    margin-bottom: 57px;
+}
+
+#section4 .contents .year li {
+    display: inline-block;
+    background: #FFF;
+    height: 40px;
+    padding: 0 30px;
+    line-height: 40px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 18px;
+    position: relative;
+    overflow: unset;
+}
+
+#section4 .contents .year li:after {
+    position: absolute;
+    content: "";
+    width: 8px;
+    height: 34px;
+    display: inline-block;
+    /* background: url(/data/skin/beauty/images/service/sect_4_tail.png)no-repeat; */
+    background: url(https://dometopia.com/data/skin/beauty/images/service/sect_4_tail.png)no-repeat;
+    bottom: -35px;
+    left: 50%;
+    transform: translate(-50%);
+}
+
+#section4 .contents .year li+li {
+    margin-left: 190px;
+}
+
+#section4 .contents .achieve {
+    width: 1035px;
+    /* background: #FFF url(/data/skin/beauty/images/service/sect4_con_bg.png)no-repeat; */
+    background: #FFF url(https://dometopia.com/data/skin/beauty/images/service/sect4_con_bg.png)no-repeat;
+    display: inline-block;
+    padding: 80px 0;
+    display: flex;
+}
+
+#section4 .contents .achieve ul {
+    min-height: 630px;
+    width: 345px;
+    float: left;
+    border-right: 1px solid #e9e8e8;
+
+}
+
+#section4 .contents .achieve ul li {
+    padding-left: 35px;
+}
+
+#section4 .contents .achieve ul li+li {
+    margin-top: 48px;
+}
+
+#section4 .contents .achieve dl dt {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+#section4 .contents .achieve dl dd {
+    font-size: 18px;
+    font-weight: 300;
+}
+
+/*********section4 end*********/
+/******************************/
+#section5 {
+    background: #e9ecef;
+}
+
+#section5 .container {
+    padding: 0 77px;
+}
+
+#section5 .titles {
+    text-align: center;
+    margin-bottom: 48px;
+}
+
+#section5 .title h2 {
+    margin-bottom: 48px;
+}
+
+#section5 .title p {
+    font-size: 30px;
+    font-weight: 400;
+}
+
+#section5 .titles .number {
+    /* background: url(/data/skin/beauty/images/service/title_num04.png)no-repeat; */
+    background: url(https://dometopia.com/data/skin/beauty/images/service/title_num04.png)no-repeat;
+    margin-bottom: -1px;
+    width: 144px;
+    height: 146px;
+    margin-right: 15px;
+
+}
+
+#section5 .contents {
+    width: 1035px;
+    background: #FFF;
+    padding: 95px 63px;
+}
+
+#section5 .contents .num {
+    margin-bottom: 22px;
+}
+
+#section5 .contents .num:last-child {
+    margin-bottom: 0px;
+}
+
+#section5 .contents .num p {
+    font-size: 20px;
+    text-align: left;
+    margin-bottom: 20px;
+    font-weight: 300;
+}
+
+#section5 .contents .num p:last-child {
+    margin-bottom: 0px;
+}
+
+#section5 .contents table {
+    text-align: left;
+}
+
+#section5 .contents .num p strong {
+    font-size: 20px;
+    font-weight: 600;
+}
+
+#section5 .contents .hire,
+#section5 .contents .work_con {
+    margin: 0 auto;
+    width: 855px;
+}
+
+#section5 .contents .hire thead tr th {
+    height: 40px;
+    background: #e9ecef;
+    border: 1px solid #d6dadd;
+    font-size: 20px;
+    text-align: center;
+}
+
+#section5 .contents .hire thead tr th:first-child {
+    width: 207px;
+}
+
+#section5 .contents .hire thead tr th:nth-child(2) {
+    width: 270px;
+}
+
+#section5 .contents .hire thead tr th:nth-child(3) {
+    width: 200px;
+}
+
+#section5 .contents .hire thead tr th:nth-child(4) {
+    width: 80px;
+}
+
+#section5 .contents .hire tbody tr td {
+    height: 90px;
+    font-size: 19px;
+    font-weight: 300;
+    border: 1px solid #d6dadd;
+    text-align: center;
+}
+
+#section5 .contents .num .in20 {
+    text-indent: 20px;
+    margin-bottom: 10px;
+}
+
+.work_con {
+    width: 855px;
+    margin: 0 auto;
+}
+
+.work_con tr {
+    height: 40px;
+
+}
+
+.work_con th {
+    width: 30%;
+    text-align: left;
+    background: #e9ecef;
+    padding-left: 30px;
+    font-size: 20px;
+    border: 1px solid #d6dadd;
+}
+
+.work_con td {
+    width: 70%;
+    text-align: left;
+    padding-left: 30px;
+    font-size: 20px;
+    font-weight: 300;
+    border: 1px solid #d6dadd;
+}
+
+.work_con td:last-child {
+    padding: 10px 30px;
+}
+
+
+/*푸터와 위 섹션간 기본 공백:공통*/
+.footer-top-space {
+    width: 100%;
+    height: 80px;
+    text-align: center;
+    overflow: hidden;
+    clear: both;
+}

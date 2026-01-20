@@ -1,0 +1,382 @@
+@charset "utf-8";
+
+/* ==========================================================================
+   Product View Responsive Styles
+   Target: /goods/view
+   ========================================================================== */
+
+/* Desktop Default (Max 1200px) */
+#goods_view_wrap {
+    margin-top: 20px;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    box-sizing: border-box;
+    padding: 0 10px;
+}
+
+#info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    box-sizing: border-box;
+}
+
+#goods_thumbs {
+    width: 580px;
+    max-width: 100%;
+    flex: 0 0 auto;
+}
+
+.goods_info {
+    flex: 1;
+    min-width: 300px;
+    max-width: 100%;
+}
+
+/* Common Table Resets */
+.goods_spec_table table {
+    width: 100%;
+    table-layout: fixed;
+}
+
+.goods_spec_table th {
+    background-color: #f7f8f9 !important;
+    padding: 10px;
+    font-weight: normal;
+    border-bottom: 1px solid #eee;
+    text-align: left;
+    word-break: keep-all;
+}
+
+.goods_spec_table td {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+/* Title & Wishlist */
+.pl_name {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+.pl_name h2 {
+    font-size: 24px;
+    margin: 0;
+    padding-right: 10px;
+    line-height: 1.3;
+    flex: 1;
+}
+
+.pl_icon {
+    text-align: center;
+    cursor: pointer;
+    min-width: 60px;
+}
+
+.btn-wish {
+    font-size: 24px;
+    color: #ccc;
+    transition: color 0.2s;
+}
+
+.btn-wish.active,
+.btn-wish:hover {
+    color: #ff4757;
+}
+
+/* ==========================================================================
+   Mobile Responsive (Max 768px)
+   ========================================================================== */
+@media (max-width: 768px) {
+
+    /* 1. Global Resets */
+    html,
+    body {
+        overflow-x: hidden;
+        width: 100%;
+        min-width: 320px;
+        /* Minimum mobile width */
+    }
+
+    * {
+        max-width: 100vw;
+        /* Prevent any element from exceeding viewport */
+        box-sizing: border-box;
+    }
+
+    #main-container {
+        width: 100% !important;
+        overflow-x: hidden;
+        padding: 0;
+    }
+
+    .container {
+        width: 100% !important;
+        padding: 0 10px !important;
+    }
+
+    /* 2. Header Resets (Aggressive) */
+    #dometopia_header {
+        height: auto !important;
+        width: 100% !important;
+    }
+
+    #dometopia_header .header-top-wrap {
+        width: 100% !important;
+        padding: 10px !important;
+        height: auto !important;
+    }
+
+    /* Fix Search Box Width */
+    #dometopia_header .header-search-wrap,
+    #dometopia_header .header-search-box {
+        width: 100% !important;
+        max-width: 100% !important;
+        float: none !important;
+        margin: 5px 0 !important;
+    }
+
+    #dometopia_header .inner_search {
+        width: 100% !important;
+        display: flex;
+    }
+
+    #dometopia_header .inner_search input {
+        width: 100% !important;
+        flex: 1;
+    }
+
+    /* Fix Menu Overflow */
+    #dometopia_header .topmenu {
+        width: 100% !important;
+        text-align: center;
+    }
+
+    #dometopia_header .topmenu ul {
+        display: flex;
+        flex-wrap: wrap;
+        /* Context: Allow wrapping so it doesn't force width */
+        justify-content: center;
+        width: 100% !important;
+        padding: 0;
+    }
+
+    #dometopia_header .topmenu li {
+        width: auto !important;
+        display: inline-block;
+        margin: 5px !important;
+    }
+
+    /* Hide Desktop Scroll Menu */
+    #doto_scrollmenu {
+        display: none !important;
+    }
+
+    /* 3. Product View Resets */
+    #goods_view_wrap {
+        width: 100% !important;
+        margin-top: 0;
+    }
+
+    /* Info Section Stack */
+    #info {
+        flex-direction: column;
+        width: 100% !important;
+        padding: 0 !important;
+        gap: 0;
+    }
+
+    #goods_thumbs {
+        width: 100% !important;
+        float: none !important;
+        margin-bottom: 10px;
+    }
+
+    .goods_info {
+        width: 100% !important;
+        float: none !important;
+    }
+
+    /* Fix: Nested .container inside .goods_info needs to be fluid */
+    #info .goods_info .container {
+        width: 100% !important;
+        min-width: 0 !important;
+        padding: 0 !important;
+        /* Remove legacy padding if needed */
+        margin: 0 !important;
+    }
+
+    /* Detail Tabs - Horizontal Scroll */
+    #detail .detail.tab-nav {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        white-space: nowrap;
+        width: 100% !important;
+    }
+
+    #detail .detail.tab-nav .item {
+        flex: 0 0 auto;
+        padding: 10px 15px !important;
+        width: auto !important;
+    }
+
+    /* Buttons (Buy Now / Cart) */
+    /* Assuming class .total.price or similar controls buttons */
+    #info .total.price .button,
+    .goods_info .btn_area a,
+    .goods_info .btn_area img {
+        width: 100% !important;
+        box-sizing: border-box;
+        margin: 5px 0 !important;
+        display: block;
+        height: auto !important;
+    }
+
+    /* Detail Content Images */
+    #detail .detail-img img,
+    #detail img {
+        max-width: 100% !important;
+        height: auto !important;
+    }
+
+    /* 4. Footer Resets (Aggressive) */
+    #doto_footer {
+        width: 100% !important;
+        min-width: 0 !important;
+        /* Override legacy min-width */
+        overflow-x: hidden;
+    }
+
+    #doto_footer .container {
+        padding: 0 10px !important;
+    }
+
+    #doto_footer .f_nav .menu {
+        width: 100% !important;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    #doto_footer .f_nav .menu li {
+        float: none !important;
+        display: inline-block;
+        margin: 5px;
+    }
+
+    /* Footer Contents */
+    #doto_footer .footer-contents {
+        width: 100% !important;
+    }
+
+    /* Force Block/Stack on all Footer Divs */
+    #doto_footer .foot_left,
+    #doto_footer .foot-middle,
+    #doto_footer .print_left,
+    #doto_footer .print_right,
+    #doto_footer .foot-bottom,
+    #doto_footer .company_info {
+        width: 100% !important;
+        float: none !important;
+        display: block !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        box-sizing: border-box;
+    }
+
+    /* Remove Fixed Heights/Widths */
+    #doto_footer .foot-middle {
+        margin: 20px 0 !important;
+        height: auto !important;
+    }
+
+    #doto_footer .print_left,
+    #doto_footer .print_right {
+        padding: 15px !important;
+        text-align: center;
+        border: 1px solid #eee;
+        margin-bottom: 10px !important;
+    }
+
+    /* Text Wrapping */
+    #doto_footer p,
+    #doto_footer span,
+    #doto_footer h4,
+    #doto_footer h6 {
+        white-space: normal !important;
+        word-break: break-all;
+    }
+
+}
+
+/* ==========================================================================
+   Global Fixes (Desktop & Mobile)
+   ========================================================================== */
+
+/* Fix Wishlist Button Text Overflow (Global) */
+#info .goods_info .container .pl_name .pl_icon {
+    height: auto !important;
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: auto !important;
+    min-width: 80px;
+    padding: 5px 10px !important;
+    float: none !important;
+}
+
+#info .goods_info .container .pl_name .pl_icon p {
+    float: none !important;
+    margin: 0 !important;
+    font-size: 13px;
+    line-height: normal;
+    white-space: nowrap;
+}
+
+#info .goods_info .container .pl_name .pl_icon .btn-wish {
+    position: static !important;
+    margin: 0 0 0 5px !important;
+    width: auto !important;
+    height: auto !important;
+    background: none !important;
+    display: inline-block;
+}
+
+/* Ensure title takes remaining space */
+#info .goods_info .pl_name h2 {
+    width: auto !important;
+    flex: 1;
+    padding-right: 10px;
+}
+
+/* Responsive adjustment for pl_name container to be flex */
+#info .goods_info .pl_name {
+    display: flex !important;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+/* Fix Empty Box in Sticky Menu (Desktop) */
+#doto_scrollmenu .menu_box_r .icon_login {
+    display: none !important;
+}
+
+/* Fix Sticky Menu Search Button Alignment */
+#doto_scrollmenu .sch_submit {
+    position: absolute !important;
+    top: 5px !important;
+    /* Align with input field */
+    right: 0px !important;
+    /* Ensure it stays on the right */
+    margin: 0 !important;
+    height: 32px !important;
+    line-height: 32px !important;
+}
