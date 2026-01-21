@@ -12,6 +12,8 @@ use App\Http\Controllers\Front\MypageController;
 use App\Http\Controllers\Front\BoardController;
 use Illuminate\Support\Facades\DB;
 use App\Models\Goods;
+require __DIR__.'/seller.php';
+require __DIR__.'/admin.php';
 
 /*
 |--------------------------------------------------------------------------

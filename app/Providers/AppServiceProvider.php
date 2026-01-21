@@ -25,6 +25,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        \Illuminate\Support\Facades\Auth::provider('seller_driver', function ($app, array $config) {
+            return new \App\Providers\SellerUserProvider($app['hash'], $config['model']);
+        });
+
         \Illuminate\Support\Facades\View::composer('*', function ($view) {
             $globalCategories = \App\Models\Category::where('level', 2)
                 ->where('hide_in_navigation', '0')

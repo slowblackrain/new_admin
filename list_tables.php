@@ -1,15 +1,14 @@
 <?php
-require __DIR__ . '/vendor/autoload.php';
-$app = require_once __DIR__ . '/bootstrap/app.php';
+require 'C:/dometopia/new_admin/vendor/autoload.php';
+$app = require_once 'C:/dometopia/new_admin/bootstrap/app.php';
 $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
 $kernel->bootstrap();
 
-try {
-    $tables = \Illuminate\Support\Facades\DB::select('SHOW TABLES LIKE "fm_%"');
-    foreach ($tables as $table) {
-        foreach ($table as $key => $value)
-            echo $value . PHP_EOL;
+$tables = Illuminate\Support\Facades\DB::select('SHOW TABLES');
+foreach ($tables as $table) {
+    foreach ($table as $key => $value) {
+        if (strpos($value, 'fm_config') !== false || strpos($value, 'fm_setting') !== false || strpos($value, 'fm_shop') !== false) {
+            echo $value . "\n";
+        }
     }
-} catch (\Exception $e) {
-    echo "Error: " . $e->getMessage();
 }
