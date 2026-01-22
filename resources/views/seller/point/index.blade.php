@@ -64,7 +64,7 @@
                                                 {{ number_format($log->{$type}) }}
                                             </span>
                                         </td>
-                                        <td>{{ $log->contents ?? $log->memo }}</td>
+                                        <td>{{ $log->memo }}</td>
                                         <td>{{ $log->ordno ?? '-' }}</td>
                                     </tr>
                                 @empty

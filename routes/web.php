@@ -96,7 +96,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
 // Seller Admin Routes
 Route::prefix('selleradmin')->name('seller.')->group(function () {
     Route::get('/', [SellerController::class, 'index'])->name('index');
-    // Add more seller routes here
+    
+    // Order Management (Reseller Mode)
+    Route::get('/order/catalog', [\App\Http\Controllers\Seller\SellerOrderController::class, 'index'])->name('order.catalog');
+    Route::get('/order/view/{id}', [\App\Http\Controllers\Seller\SellerOrderController::class, 'show'])->name('order.view');
 });
 // Magic Login for Testing
 Route::get('/test/login', function () {

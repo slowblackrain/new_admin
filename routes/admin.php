@@ -48,7 +48,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
     // Order Routes
     Route::prefix('order')->name('order.')->group(function () {
         Route::get('catalog', [\App\Http\Controllers\Admin\OrderController::class, 'catalog'])->name('catalog');
-        Route::get('bank_check', [\App\Http\Controllers\Admin\OrderController::class, 'bank_check'])->name('bank_check');
+        
+        // Bank Check Routes
+        Route::get('bank_check', [\App\Http\Controllers\Admin\Order\BankCheckController::class, 'index'])->name('bank_check');
+        Route::get('bank_check/match', [\App\Http\Controllers\Admin\Order\BankCheckController::class, 'matchCandidates'])->name('bank_check.match');
+        Route::post('bank_check/process', [\App\Http\Controllers\Admin\Order\BankCheckController::class, 'processMatch'])->name('bank_check.process');
+
         Route::post('update_status', [\App\Http\Controllers\Admin\OrderController::class, 'updateStatus'])->name('update_status');
         Route::get('view/{order_seq}', [\App\Http\Controllers\Admin\OrderController::class, 'view'])->name('view');
     });

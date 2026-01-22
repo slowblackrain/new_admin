@@ -26,65 +26,87 @@
                 <div class="card-body">
                     <div class="alert alert-info">
                         <h5><i class="icon fas fa-info"></i> 안내</h5>
-                        정산 데이터는 매월 말일 기준으로 익월 초에 업데이트됩니다. (레거시 데이터 기반)
+                        정산 데이터는 매월 말일 기준으로 익월 초에 업데이트됩니다. 아래 데이터는 실시간 집계이므로 최종 정산금액과 다를 수 있습니다.
                     </div>
 
-                    @if($atsData)
-                        <div class="row">
-                            <div class="col-md-3 col-sm-6 col-12">
-                                <div class="info-box">
-                                    <span class="info-box-icon bg-info"><i class="fas fa-won-sign"></i></span>
-                                    <div class="info-box-content">
-                                        <span class="info-box-text">총 매출액</span>
-                                        <span class="info-box-number">{{ number_format($atsData->sell_price ?? 0) }}원</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3 col-sm-6 col-12">
-                                <div class="info-box">
-                                    <span class="info-box-icon bg-danger"><i class="fas fa-undo"></i></span>
-                                    <div class="info-box-content">
-                                        <span class="info-box-text">환불 금액</span>
-                                        <span class="info-box-number">{{ number_format($atsData->refund_price ?? 0) }}원</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3 col-sm-6 col-12">
-                                <div class="info-box">
-                                    <span class="info-box-icon bg-success"><i class="fas fa-hand-holding-usd"></i></span>
-                                    <div class="info-box-content">
-                                        <span class="info-box-text">최종 정산금액</span>
-                                        <span class="info-box-number">{{ number_format(($atsData->sell_price ?? 0) - ($atsData->refund_price ?? 0)) }}원</span>
-                                    </div>
+                    <div class="row">
+                        <div class="col-md-3 col-sm-6 col-12">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-info"><i class="fas fa-won-sign"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">총 매출액</span>
+                                    <span class="info-box-number">{{ number_format($totals['sell']) }}원</span>
                                 </div>
                             </div>
                         </div>
+                        <div class="col-md-3 col-sm-6 col-12">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-danger"><i class="fas fa-undo"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">환불 금액</span>
+                                    <span class="info-box-number">{{ number_format($totals['refund']) }}원</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6 col-12">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-warning"><i class="fas fa-coins"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">발주(투자) 금액</span>
+                                    <span class="info-box-number">{{ number_format($totals['offer']) }}원</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6 col-12">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-success"><i class="fas fa-hand-holding-usd"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">정산 예상금액</span>
+                                    <span class="info-box-number">{{ number_format($totals['sell'] - $totals['refund']) }}원</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-                        {{-- Detailed Table Placeholder --}}
-                        <div class="table-responsive mt-3">
-                            <table class="table table-bordered">
-                                <thead>
+                    {{-- Detailed Table --}}
+                    <div class="table-responsive mt-3">
+                        <table class="table table-bordered text-center table-hover">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>일자</th>
+                                    <th>매출액</th>
+                                    <th>환불액</th>
+                                    <th>발주(투자)액</th>
+                                    <th>캐시적립</th>
+                                    <th>비고</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($statsData as $day => $data)
                                     <tr>
-                                        <th>일자</th>
-                                        <th>매출액</th>
-                                        <th>환불액</th>
-                                        <th>정산금액</th>
+                                        <td>{{ $data['day'] }}일</td>
+                                        <td class="text-right">{{ number_format($data['settleprice_sum']) }}</td>
+                                        <td class="text-right text-danger">{{ number_format($data['refund_price_sum']) }}</td>
+                                        <td class="text-right">{{ number_format($data['offer_price']) }}</td>
+                                        <td class="text-right">{{ number_format($data['day_cash']) }}</td>
+                                        <td></td>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    {{-- Daily breakdown logic is complex in legacy; showing simplified view or "See Detail" --}}
+                                @empty
                                     <tr>
-                                        <td colspan="4" class="text-center text-muted">일별 상세 내역은 준비중입니다.</td>
+                                        <td colspan="6" class="text-center py-4">해당 월의 데이터가 없습니다.</td>
                                     </tr>
-                                </tbody>
-                            </table>
-                        </div>
-
-                    @else
-                        <div class="p-5 text-center text-muted">
-                            <h4>해당 월의 정산 데이터가 없습니다.</h4>
-                        </div>
-                    @endif
+                                @endforelse
+                                <tr class="bg-light font-weight-bold">
+                                    <td>합계</td>
+                                    <td class="text-right">{{ number_format($totals['sell']) }}</td>
+                                    <td class="text-right text-danger">{{ number_format($totals['refund']) }}</td>
+                                    <td class="text-right">{{ number_format($totals['offer']) }}</td>
+                                    <td class="text-right">{{ number_format($totals['cash']) }}</td>
+                                    <td></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>

@@ -16,9 +16,11 @@ class SellerController extends Controller
         // FOR DEVELOPMENT: if no seller logged in, use 'parksh73' as verified in previous tasks
         if (!$seller) {
             // Retrieve via model to simulate login for dev
-             $seller = \App\Models\Seller::where('provider_id', 'parksh73')->first();
-             // In production, we should redirect to login here
-             // return redirect()->route('seller.login');
+             $seller = \App\Models\Seller::where('provider_id', 'dometopia001')->first();
+             // Manually login for development so @auth works in layout
+             if ($seller) {
+                 \Illuminate\Support\Facades\Auth::guard('seller')->login($seller);
+             }
         }
 
         if (!$seller) {

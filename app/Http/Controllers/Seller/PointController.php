@@ -17,11 +17,27 @@ class PointController extends Controller
     public function emoney(Request $request)
     {
         $seller = Auth::guard('seller')->user();
-        
-        // Emoney Logic (fm_emoney)
-        // Legacy: membermodel->emoney_list
+
+        // Fallback for development
+        if (!$seller) {
+             $seller = \App\Models\Seller::where('provider_id', 'dometopia001')->first();
+             if ($seller) {
+                 Auth::guard('seller')->login($seller);
+             }
+        }
+
+        if (!$seller) {
+            return redirect()->route('seller.login');
+        }
+
+        // Resolve member_seq from provider's userid
+        $member = DB::table('fm_member')->where('userid', $seller->provider_id)->first();
+        if (!$member) {
+            return back()->with('error', 'Linked member account not found.');
+        }
+
         $query = DB::table('fm_emoney')
-            ->where('member_seq', $seller->provider_member_seq) // Assuming relationship exists or we find it
+            ->where('member_seq', $member->member_seq)
             ->orderBy('emoney_seq', 'desc');
 
         if ($request->filled('start_date') && $request->filled('end_date')) {
@@ -43,10 +59,27 @@ class PointController extends Controller
     public function cash(Request $request)
     {
         $seller = Auth::guard('seller')->user();
-        
-        // Cash Logic (fm_cash)
+
+        // Fallback for development
+        if (!$seller) {
+             $seller = \App\Models\Seller::where('provider_id', 'dometopia001')->first();
+             if ($seller) {
+                 Auth::guard('seller')->login($seller);
+             }
+        }
+
+        if (!$seller) {
+            return redirect()->route('seller.login');
+        }
+
+        // Resolve member_seq from provider's userid
+        $member = DB::table('fm_member')->where('userid', $seller->provider_id)->first();
+        if (!$member) {
+            return back()->with('error', 'Linked member account not found.');
+        }
+
         $query = DB::table('fm_cash')
-            ->where('member_seq', $seller->provider_member_seq)
+            ->where('member_seq', $member->member_seq)
             ->orderBy('cash_seq', 'desc');
 
         if ($request->filled('start_date') && $request->filled('end_date')) {

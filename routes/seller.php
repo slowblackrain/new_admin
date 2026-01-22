@@ -68,6 +68,9 @@ Route::prefix('selleradmin')->name('seller.')->group(function () {
 
         // Board Routes
         Route::prefix('board')->name('board.')->group(function () {
+            Route::get('{id}/write', [\App\Http\Controllers\Seller\BoardController::class, 'create'])->name('create');
+            Route::post('{id}/store', [\App\Http\Controllers\Seller\BoardController::class, 'store'])->name('store');
+            Route::get('{id}/view/{seq}', [\App\Http\Controllers\Seller\BoardController::class, 'show'])->name('show');
             Route::get('{id}', [\App\Http\Controllers\Seller\BoardController::class, 'index'])->name('index');
         });
     });

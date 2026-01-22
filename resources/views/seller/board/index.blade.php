@@ -54,7 +54,7 @@
                                         @endif
                                     </td>
                                     <td>
-                                        <a href="#" class="text-dark">
+                                        <a href="{{ route('seller.board.show', ['id' => $boardId, 'seq' => $post->seq]) }}" class="text-dark">
                                             {{ $post->subject }}
                                             @if($post->comment > 0)
                                                 <small class="text-primary">({{ $post->comment }})</small>
@@ -88,7 +88,7 @@
                 </div>
                 @if($boardId === 'mbqna')
                 <div class="card-footer">
-                    <button type="button" class="btn btn-primary float-right" onclick="alert('문의하기 글쓰기는 준비중입니다.')">문의하기</button>
+                    <a href="{{ route('seller.board.create', $boardId) }}" class="btn btn-primary float-right">문의하기</a>
                 </div>
                 @endif
             </div>

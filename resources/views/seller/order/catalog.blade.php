@@ -70,6 +70,7 @@
                             <th>상품정보</th>
                             <th>결제금액</th>
                             <th>상태</th>
+                            <th>관리</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -85,9 +86,10 @@
                                 </td>
                                 <td>
                                     @php
-                                        // Get the first item for this provider to display summary
-                                        $firstItem = $order->items->where('provider_seq', auth('seller')->user()->provider_seq)->first();
-                                        $itemCount = $order->items->where('provider_seq', auth('seller')->user()->provider_seq)->count();
+                                        // As a Reseller (Buyer), they see ALL items they bought.
+                                        $firstItem = $order->items->first();
+                                        $itemCount = $order->items->count();
+                                        $firstOption = $firstItem ? $firstItem->options->first() : null;
                                     @endphp
                                     @if($firstItem)
                                         {{ $firstItem->goods_name }}
@@ -96,7 +98,9 @@
                                         @endif
                                         <br>
                                         <small class="text-muted">
-                                            {{ $firstItem->option1 }}{{ $firstItem->option2 ? ' / '.$firstItem->option2 : '' }}
+                                            @if($firstOption)
+                                                {{ $firstOption->option1 }}{{ $firstOption->option2 ? ' / '.$firstOption->option2 : '' }}
+                                            @endif
                                         </small>
                                     @else
                                         <span class="text-danger">표시할 상품 없음</span>
@@ -108,10 +112,13 @@
                                         Step {{ $order->step }}
                                     </span>
                                 </td>
+                                <td>
+                                    <a href="{{ route('seller.order.view', $order->order_seq) }}" class="btn btn-sm btn-info">상세보기</a>
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="text-center py-5 text-muted">검색된 주문이 없습니다.</td>
+                                <td colspan="7" class="text-center py-5 text-muted">검색된 주문이 없습니다.</td>
                             </tr>
                         @endforelse
                         </tbody>

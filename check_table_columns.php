@@ -6,5 +6,7 @@ $kernel->handle(Illuminate\Http\Request::capture());
 
 use Illuminate\Support\Facades\DB;
 
-$provider = DB::table('fm_provider')->where('provider_id', 'newjjang3')->first();
-print_r($provider);
+$columns = DB::select('SHOW COLUMNS FROM fm_marketing_advertising');
+foreach ($columns as $col) {
+    echo $col->Field . "\n";
+}
