@@ -106,6 +106,7 @@ Route::get('/test/login', function () {
         return redirect()->route('home');
     }
     return "No User Found";
+    return "No User Found";
 })->name('test.login');
 
 // Debug Route for Icons
