@@ -84,30 +84,7 @@
                                 <td class="price_bold">{{ number_format($order->settleprice) }}원</td>
                                 <td>
                                     @php
-                                        $stepName = '접수대기';
-                                        switch ($order->step) {
-                                            case 15:
-                                                $stepName = '주문접수';
-                                                break;
-                                            case 25:
-                                                $stepName = '결제확인';
-                                                break;
-                                            case 35:
-                                                $stepName = '송장출력';
-                                                break;
-                                            case 45:
-                                                $stepName = '상품준비';
-                                                break;
-                                            case 55:
-                                                $stepName = '출고완료';
-                                                break;
-                                            case 65:
-                                                $stepName = '배송중';
-                                                break;
-                                            case 75:
-                                                $stepName = '배송완료';
-                                                break;
-                                        }
+                                        $stepName = \App\Models\Order::getStepName($order->step);
                                         if ($order->step == 15 && $order->payment == 'bank') {
                                             $stepName .= '(입금대기)';
                                         }
@@ -136,36 +113,13 @@
                                 <a href="{{ route('mypage.order.view', $order->order_seq) }}" class="btn_detail_arrow">상세 ></a>
                             </div>
                             <div class="m_order_status">
-                                <span class="status_badge">
                                     @php
-                                        $stepName = '접수대기';
-                                        switch ($order->step) {
-                                            case 15:
-                                                $stepName = '주문접수';
-                                                break;
-                                            case 25:
-                                                $stepName = '결제확인';
-                                                break;
-                                            case 35:
-                                                $stepName = '송장출력';
-                                                break;
-                                            case 45:
-                                                $stepName = '상품준비';
-                                                break;
-                                            case 55:
-                                                $stepName = '출고완료';
-                                                break;
-                                            case 65:
-                                                $stepName = '배송중';
-                                                break;
-                                            case 75:
-                                                $stepName = '배송완료';
-                                                break;
-                                        }
+                                        $stepName = \App\Models\Order::getStepName($order->step);
                                     @endphp
-                                    {{ $stepName }}
-                                </span>
-                            </div>
+                                    <span class="status_badge" style="color: {{ \App\Models\Order::getStepColor($order->step) }};">
+                                        {{ $stepName }}
+                                    </span>
+                                </div>
                             <div class="m_order_goods"
                                 onclick="location.href='{{ route('mypage.order.view', $order->order_seq) }}'">
                                 @foreach($order->items as $item)

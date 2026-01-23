@@ -108,8 +108,8 @@
                                 </td>
                                 <td>{{ number_format($order->settleprice) }}원</td>
                                 <td>
-                                    <span class="badge badge-{{ $order->step >= 25 ? 'success' : 'warning' }}">
-                                        Step {{ $order->step }}
+                                    <span class="badge" style="background-color: {{ \App\Models\Order::getStepColor($order->step) }}; color: #fff;">
+                                        {{ \App\Models\Order::getStepName($order->step) }}
                                     </span>
                                 </td>
                                 <td>

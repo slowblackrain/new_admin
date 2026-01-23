@@ -8,35 +8,27 @@
             </a>
         </li>
 
-        <li class="nav-header">주문관리</li>
-        <li class="nav-item">
-            <a href="{{ route('admin.order.catalog') }}" class="nav-link {{ request()->routeIs('admin.order.catalog') ? 'active' : '' }}">
-                <i class="nav-icon fas fa-shopping-cart"></i>
-                <p>전체 주문리스트</p>
+        @foreach(config('admin_menu') as $key => $section)
+        <li class="nav-item has-treeview {{ request()->is('admin/'. $key .'*') ? 'menu-open' : '' }}">
+            <a href="#" class="nav-link {{ request()->is('admin/'. $key .'*') ? 'active' : '' }}">
+                <i class="nav-icon fas fa-folder"></i>
+                <p>
+                    {{ $section['name'] }}
+                    <i class="right fas fa-angle-left"></i>
+                </p>
             </a>
+            <ul class="nav nav-treeview">
+                @foreach($section['items'] as $item)
+                <li class="nav-item">
+                    <a href="{{ url($item['url']) }}" class="nav-link {{ request()->getRequestUri() == $item['url'] ? 'active' : '' }}">
+                        <i class="far fa-circle nav-icon"></i>
+                        <p>{{ $item['name'] }}</p>
+                    </a>
+                </li>
+                @endforeach
+            </ul>
         </li>
-        <li class="nav-item">
-            <a href="{{ route('admin.order.bank_check') }}" class="nav-link {{ request()->routeIs('admin.order.bank_check') ? 'active' : '' }}">
-                <i class="nav-icon fas fa-money-check-alt"></i>
-                <p>무통장 입금확인</p>
-            </a>
-        </li>
-
-        <li class="nav-header">회원관리</li>
-        <li class="nav-item">
-            <a href="{{ route('admin.member.catalog') }}" class="nav-link {{ request()->routeIs('admin.member.catalog') ? 'active' : '' }}">
-                <i class="nav-icon fas fa-users"></i>
-                <p>회원리스트</p>
-            </a>
-        </li>
-
-        <li class="nav-header">입점사관리</li>
-        <li class="nav-item">
-            <a href="{{ route('admin.provider.catalog') }}" class="nav-link {{ request()->routeIs('admin.provider.catalog') ? 'active' : '' }}">
-                <i class="nav-icon fas fa-store"></i>
-                <p>입점사리스트</p>
-            </a>
-        </li>
+        @endforeach
 
     </ul>
 </nav>

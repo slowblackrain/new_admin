@@ -37,7 +37,7 @@
                                 <p><strong>Date:</strong> {{ \Carbon\Carbon::parse($order->regist_date)->format('Y-m-d H:i:s') }}</p>
                             </div>
                             <div class="col-12 col-md-4">
-                                <p><strong>Status:</strong> <span class="badge badge-info">{{ config('step')[$order->step] ?? $order->step }}</span></p>
+                                <p><strong>Status:</strong> <span class="badge" style="background-color: {{ \App\Models\Order::getStepColor($order->step) }}; color: #fff;">{{ \App\Models\Order::getStepName($order->step) }}</span></p>
                                 <p><strong>Payment:</strong> {{ number_format($order->settleprice) }} KRW</p>
                             </div>
                             <div class="col-12 col-md-4">
@@ -111,8 +111,8 @@
                                         <td>
                                             @foreach($item->options as $opt)
                                                 <div style="margin-bottom: 5px;">
-                                                    <span class="badge badge-{{ $opt->step >= 75 ? 'success' : ($opt->step == 15 ? 'danger' : 'secondary') }}">
-                                                        {{ config('step')[$opt->step] ?? $opt->step }}
+                                                    <span class="badge" style="background-color: {{ \App\Models\Order::getStepColor($opt->step) }}; color: #fff;">
+                                                        {{ \App\Models\Order::getStepName($opt->step) }}
                                                     </span>
                                                 </div>
                                             @endforeach

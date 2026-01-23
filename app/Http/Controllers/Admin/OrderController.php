@@ -12,12 +12,35 @@ class OrderController extends Controller
     {
         $query = Order::query();
 
-        // Status Filter
+        // 1. Step Counts Calculation
+        // We need counts for all tabs regardless of current filter
+        $stepCounts = [
+            'total' => Order::count(),
+            '15' => Order::where('step', 15)->count(), // 주문접수
+            '25' => Order::where('step', 25)->count(), // 결제확인
+            '35_45' => Order::whereBetween('step', [35, 45])->count(), // 상품준비
+            '50_55' => Order::whereBetween('step', [50, 55])->count(), // 출고
+            '60_65' => Order::whereBetween('step', [60, 65])->count(), // 배송중
+            '70' => Order::where('step', 70)->count(), // 배송완료
+            '75' => Order::where('step', 75)->count(), // 구매확정
+            '85' => Order::where('step', 85)->count(), // 거래완료
+            '95' => Order::where('step', 95)->count(), // 주문취소
+        ];
+
+        // 2. Status Filter
         if ($request->filled('step')) {
-            $query->where('step', $request->step);
+            $step = $request->step;
+            if (strpos($step, '_') !== false) {
+                // Range filter (e.g., 35_45)
+                [$min, $max] = explode('_', $step);
+                $query->whereBetween('step', [$min, $max]);
+            } else {
+                // Single step filter
+                $query->where('step', $step);
+            }
         }
 
-        // Keyword Filter
+        // 3. Keyword Filter
         if ($request->filled('keyword')) {
             $keyword = $request->keyword;
             $query->where(function ($q) use ($keyword) {
@@ -27,8 +50,9 @@ class OrderController extends Controller
         }
 
         $orders = $query->orderBy('regist_date', 'desc')->paginate(20);
+        $currentStep = $request->step;
 
-        return view('admin.order.catalog', compact('orders'));
+        return view('admin.order.catalog', compact('orders', 'stepCounts', 'currentStep'));
     }
 
     public function bank_check()
@@ -60,7 +84,12 @@ class OrderController extends Controller
 
     public function view($order_seq)
     {
-        $order = Order::with('items')->where('order_seq', $order_seq)->firstOrFail();
+        $order = Order::with([
+            'items.options', 
+            'items.goods.images', 
+            'member'
+        ])->where('order_seq', $order_seq)->firstOrFail();
+        
         return view('admin.order.view', compact('order'));
     }
 }

@@ -31,7 +31,11 @@
                             <span class="badge badge-danger">불일치</span>
                         @endif
                     </td>
-                    <td>{{ $order->step }} (주문접수)</td>
+                    <td>
+                        <span class="badge" style="background-color: {{ \App\Models\Order::getStepColor($order->step) }}; color: #fff;">
+                            {{ \App\Models\Order::getStepName($order->step) }}
+                        </span>
+                    </td>
                     <td>{{ $order->regist_date }}</td>
                     <td>
                         <button class="btn btn-sm btn-primary" onclick="processMatch({{ $sms->idx }}, {{ $order->order_seq }})">매칭</button>

@@ -54,8 +54,16 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('bank_check/match', [\App\Http\Controllers\Admin\Order\BankCheckController::class, 'matchCandidates'])->name('bank_check.match');
         Route::post('bank_check/process', [\App\Http\Controllers\Admin\Order\BankCheckController::class, 'processMatch'])->name('bank_check.process');
 
-        Route::post('update_status', [\App\Http\Controllers\Admin\OrderController::class, 'updateStatus'])->name('update_status');
-        Route::get('view/{order_seq}', [\App\Http\Controllers\Admin\OrderController::class, 'view'])->name('view');
+        Route::get('view/{order_seq}', [\App\Http\Controllers\Admin\Order\OrderDetailController::class, 'index'])->name('view');
+        
+        // Product Search & Options (For Replacement Modal)
+        Route::get('search_goods', [\App\Http\Controllers\Admin\Order\OrderDetailController::class, 'searchGoods'])->name('search_goods');
+        Route::get('get_options', [\App\Http\Controllers\Admin\Order\OrderDetailController::class, 'getOptions'])->name('get_options');
+        
+        // Process Actions
+        Route::post('process', [\App\Http\Controllers\Admin\Order\OrderProcessController::class, 'updateStatus'])->name('process');
+        Route::post('replace_item', [\App\Http\Controllers\Admin\Order\OrderProcessController::class, 'replaceItem'])->name('replace_item');
+        Route::post('update_price', [\App\Http\Controllers\Admin\Order\OrderProcessController::class, 'updatePrice'])->name('update_price');
     });
 
     // Member Routes

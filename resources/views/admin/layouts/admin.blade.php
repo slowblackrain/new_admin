@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>도매토피아 슈퍼관리자</title>
 
     <!-- Google Font: Source Sans Pro -->
@@ -12,6 +13,40 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <!-- Theme style -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
+    <style>
+        /* Custom Top Menu Styling for Readability */
+        .main-header.navbar {
+            border-bottom: 2px solid #dee2e6;
+        }
+        .navbar-nav .nav-link {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: #343a40 !important;
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+        .navbar-nav .nav-link:hover, .navbar-nav .nav-link.active {
+            color: #007bff !important;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+        .dropdown-menu {
+            margin-top: 0;
+            border-top: 3px solid #007bff;
+        }
+        .dropdown-item {
+            padding: 8px 20px;
+            font-size: 0.95rem;
+        }
+        .dropdown-item:hover {
+            background-color: #e9ecef;
+            color: #007bff;
+        }
+        /* Make content width fluid but padded */
+        .content-wrapper > .content {
+            padding: 20px;
+        }
+    </style>
 </head>
 <body class="hold-transition layout-top-nav">
 <div class="wrapper">
@@ -30,29 +65,31 @@
             <div class="collapse navbar-collapse order-3" id="navbarCollapse">
                 <!-- Left navbar links -->
                 <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <a href="{{ route('admin.dashboard') }}" class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">대시보드</a>
-                    </li>
+                    
+                    @foreach(config('admin_menu') as $key => $section)
                     <li class="nav-item dropdown">
-                        <a id="dropdownSubMenu1" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" class="nav-link dropdown-toggle">주문관리</a>
-                        <ul aria-labelledby="dropdownSubMenu1" class="dropdown-menu border-0 shadow">
-                            <li><a href="{{ route('admin.order.catalog') }}" class="dropdown-item">전체 주문리스트</a></li>
-                            <li><a href="{{ route('admin.order.bank_check') }}" class="dropdown-item">무통장 입금확인</a></li>
+                        <a id="dropdownSubMenu{{ $key }}" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" class="nav-link dropdown-toggle {{ request()->is('admin/'. $key .'*') ? 'active' : '' }}">
+                            {{ $section['name'] }}
+                        </a>
+                        <ul aria-labelledby="dropdownSubMenu{{ $key }}" class="dropdown-menu border-0 shadow">
+                            @foreach($section['items'] as $item)
+                            <li><a href="{{ url($item['url']) }}" class="dropdown-item">{{ $item['name'] }}</a></li>
+                            @endforeach
                         </ul>
                     </li>
-                    <li class="nav-item">
-                        <a href="{{ route('admin.member.catalog') }}" class="nav-link {{ request()->routeIs('admin.member.catalog') ? 'active' : '' }}">회원관리</a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ route('admin.provider.catalog') }}" class="nav-link {{ request()->routeIs('admin.provider.catalog') ? 'active' : '' }}">입점사관리</a>
-                    </li>
+                    @endforeach
+
                 </ul>
             </div>
 
             <!-- Right navbar links -->
             <ul class="order-1 order-md-3 navbar-nav navbar-no-expand ml-auto">
                 <li class="nav-item">
-                    <span class="nav-link">{{ Auth::guard('admin')->user()->mname }} ({{ Auth::guard('admin')->user()->manager_id }})</span>
+                    @if(Auth::guard('admin')->check())
+                        <span class="nav-link">{{ Auth::guard('admin')->user()->mname }} ({{ Auth::guard('admin')->user()->manager_id }})</span>
+                    @else
+                        <a href="{{ route('admin.login') }}" class="nav-link">로그인</a>
+                    @endif
                 </li>
                 <li class="nav-item">
                     <form action="{{ route('admin.logout') }}" method="POST">
@@ -64,6 +101,12 @@
         </div>
     </nav>
     <!-- /.navbar -->
+    
+    <!-- Main Sidebar Container (Hidden/Removed per request) -->
+    <!--
+    <aside class="main-sidebar sidebar-dark-primary elevation-4" style="display:none;">
+    </aside>
+    -->
 
     <!-- Content Wrapper. Contains page content -->
     <div class="content-wrapper">
@@ -91,5 +134,6 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
 <!-- AdminLTE App -->
 <script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
+@yield('custom_js')
 </body>
 </html>
