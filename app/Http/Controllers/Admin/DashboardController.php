@@ -53,7 +53,37 @@ class DashboardController extends Controller
             }
         }
 
-        return view('admin.dashboard', compact('data', 'searchDate', 'show30Days', 'compareYear'));
+        // SCM Stats
+        $scmStats = [
+            'order_today' => 0,
+            'shipping_prep' => 0,
+            'offer_waiting' => 0,
+            'stocked_today' => 0
+        ];
+
+        // Today's Orders (Step 25~75, Mode!=XMAS)
+        $scmStats['order_today'] = DB::table('fm_order')
+            ->where('regist_date', '>=', date('Y-m-d 00:00:00'))
+            ->where('mode', '!=', 'XMAS')
+            ->count();
+
+        // Shipping Prep (Step 25, 35, 45?) - Assuming 25 is 'Payment Confirmed' or 'Preparing'
+        $scmStats['shipping_prep'] = DB::table('fm_order')
+            ->whereIn('step', ['25', '35']) // Adjust steps based on legacy logic
+            ->count();
+
+        // Offer Waiting (Step < 11) using SCM tables
+        $scmStats['offer_waiting'] = DB::table('fm_offer')
+            ->where('step', '<', 11)
+            ->count();
+        
+        // Stocked Today (Step 11, Stock Date Today)
+        $scmStats['stocked_today'] = DB::table('fm_offer')
+            ->where('step', 11)
+            ->where('stock_date', 'like', date('Y-m-d').'%')
+            ->count();
+
+        return view('admin.dashboard', compact('data', 'searchDate', 'show30Days', 'compareYear', 'scmStats'));
     }
 
     private function getDashboardData($startDate, $endDate)

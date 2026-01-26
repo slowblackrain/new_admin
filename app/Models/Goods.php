@@ -50,6 +50,36 @@ class Goods extends Model
         return $this->hasMany(GoodsInput::class, 'goods_seq', 'goods_seq');
     }
 
+    public function defaultOption()
+    {
+        return $this->hasOne(GoodsOption::class, 'goods_seq', 'goods_seq')
+            ->where('default_option', 'y');
+    }
+
+    public function brands()
+    {
+        return $this->belongsToMany(
+            Brand::class,
+            'fm_brand_link',
+            'goods_seq',
+            'category_code',
+            'goods_seq',
+            'category_code'
+        );
+    }
+
+    public function locations()
+    {
+        return $this->belongsToMany(
+            Location::class,
+            'fm_location_link',
+            'goods_seq',
+            'location_code',
+            'goods_seq',
+            'location_code'
+        );
+    }
+
     public function activeIcons()
     {
         return $this->hasMany(GoodsIcon::class, 'goods_seq', 'goods_seq')

@@ -14,9 +14,16 @@ class MemberController extends Controller
         $key = 'FirstMall';
         $query = Member::query()
             ->addSelect('fm_member.*')
-            ->addSelect(DB::raw("AES_DECRYPT(UNHEX(email), '{$key}') as email"))
-            ->addSelect(DB::raw("AES_DECRYPT(UNHEX(phone), '{$key}') as phone"))
-            ->addSelect(DB::raw("AES_DECRYPT(UNHEX(cellphone), '{$key}') as cellphone"));
+            ->leftJoin('fm_member_group', 'fm_member.group_seq', '=', 'fm_member_group.group_seq')
+            ->addSelect([
+                'fm_member.*',
+                'fm_member_group.group_name',
+                DB::raw("AES_DECRYPT(UNHEX(email), '{$key}') as email"),
+                DB::raw("AES_DECRYPT(UNHEX(phone), '{$key}') as phone"),
+                DB::raw("AES_DECRYPT(UNHEX(cellphone), '{$key}') as cellphone")
+            ]);
+            // Columns like cash, order_cash, referer, business_seq are already in fm_member.* 
+
 
         if ($request->filled('keyword')) {
             $keyword = $request->keyword;
@@ -26,9 +33,40 @@ class MemberController extends Controller
             });
         }
 
-        $members = $query->orderBy('regist_date', 'desc')->paginate(20);
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $query->whereBetween('regist_date', [
+                $request->start_date,
+                $request->end_date
+            ]);
+        }
 
-        return view('admin.member.catalog', compact('members'));
+        if ($request->filled('lastlogin_start') && $request->filled('lastlogin_end')) {
+            $query->whereBetween('lastlogin_date', [
+                $request->lastlogin_start,
+                $request->lastlogin_end
+            ]);
+        }
+
+        if ($request->filled('group_seq')) {
+            $query->where('fm_member.group_seq', $request->group_seq);
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('sms')) {
+            $query->where('sms', $request->sms);
+        }
+
+        if ($request->filled('mailing')) {
+            $query->where('mailing', $request->mailing);
+        }
+
+        $members = $query->orderBy('regist_date', 'desc')->paginate(20);
+        $groups = DB::table('fm_member_group')->select('group_seq', 'group_name')->get();
+
+        return view('admin.member.catalog', compact('members', 'groups'));
     }
 
     public function view($member_seq)

@@ -64,12 +64,25 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('process', [\App\Http\Controllers\Admin\Order\OrderProcessController::class, 'updateStatus'])->name('process');
         Route::post('replace_item', [\App\Http\Controllers\Admin\Order\OrderProcessController::class, 'replaceItem'])->name('replace_item');
         Route::post('update_price', [\App\Http\Controllers\Admin\Order\OrderProcessController::class, 'updatePrice'])->name('update_price');
+        Route::post('update_recipient', [\App\Http\Controllers\Admin\Order\OrderDetailController::class, 'updateRecipient'])->name('update_recipient');
     });
 
     // Member Routes
     Route::prefix('member')->name('member.')->group(function () {
         Route::get('catalog', [\App\Http\Controllers\Admin\MemberController::class, 'catalog'])->name('catalog');
         Route::get('view/{member_seq}', [\App\Http\Controllers\Admin\MemberController::class, 'view'])->name('view');
+    });
+
+    // Category Routes
+    Route::prefix('category')->name('category.')->group(function () {
+        Route::get('catalog', [\App\Http\Controllers\Admin\CategoryController::class, 'catalog'])->name('catalog');
+        Route::get('tree', [\App\Http\Controllers\Admin\CategoryController::class, 'getTree'])->name('tree');
+        Route::get('detail/{id}', [\App\Http\Controllers\Admin\CategoryController::class, 'getDetail'])->name('detail');
+        Route::get('goods/{id}', [\App\Http\Controllers\Admin\CategoryController::class, 'getGoods'])->name('goods');
+        Route::post('store', [\App\Http\Controllers\Admin\CategoryController::class, 'store'])->name('store');
+        Route::post('update/{id}', [\App\Http\Controllers\Admin\CategoryController::class, 'update'])->name('update');
+        Route::post('move', [\App\Http\Controllers\Admin\CategoryController::class, 'move'])->name('move');
+        Route::post('destroy/{id}', [\App\Http\Controllers\Admin\CategoryController::class, 'destroy'])->name('destroy');
     });
 
     // Provider Routes

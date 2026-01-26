@@ -36,6 +36,11 @@ class Order extends Model
         return $this->belongsTo(Member::class, 'member_seq', 'member_seq');
     }
 
+    public function logs()
+    {
+        return $this->hasMany(OrderLog::class, 'order_seq', 'order_seq')->orderBy('regist_date', 'desc');
+    }
+
     public static function getStepName($step)
     {
         $steps = [

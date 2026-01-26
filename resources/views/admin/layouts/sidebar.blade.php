@@ -9,8 +9,18 @@
         </li>
 
         @foreach(config('admin_menu') as $key => $section)
-        <li class="nav-item has-treeview {{ request()->is('admin/'. $key .'*') ? 'menu-open' : '' }}">
-            <a href="#" class="nav-link {{ request()->is('admin/'. $key .'*') ? 'active' : '' }}">
+        @php
+            // Check if any child item is active
+            $isActive = false;
+            foreach($section['items'] as $item) {
+                if (request()->getRequestUri() == $item['url'] || \Illuminate\Support\Str::startsWith(request()->getRequestUri(), $item['url'])) {
+                    $isActive = true;
+                    break;
+                }
+            }
+        @endphp
+        <li class="nav-item has-treeview {{ $isActive ? 'menu-open' : '' }}">
+            <a href="#" class="nav-link {{ $isActive ? 'active' : '' }}">
                 <i class="nav-icon fas fa-folder"></i>
                 <p>
                     {{ $section['name'] }}

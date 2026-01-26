@@ -81,6 +81,12 @@
                         @if($currentStep)
                             <input type="hidden" name="step" value="{{ $currentStep }}">
                         @endif
+                        
+                        <!-- Date Range -->
+                        <input type="date" name="start_date" class="form-control mr-2" value="{{ request('start_date') }}">
+                        <span class="mr-2">~</span>
+                        <input type="date" name="end_date" class="form-control mr-2" value="{{ request('end_date') }}">
+                        
                         <input type="text" name="keyword" class="form-control mr-2" placeholder="주문번호/주문자명" value="{{ request('keyword') }}">
                         <button type="submit" class="btn btn-primary">검색</button>
                     </form>

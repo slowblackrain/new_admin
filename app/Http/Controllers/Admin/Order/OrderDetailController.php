@@ -14,10 +14,56 @@ class OrderDetailController extends Controller
         $order = Order::with([
             'items.options', 
             'items.goods.images', 
-            'member'
+            'member',
+            'logs'
         ])->where('order_seq', $order_seq)->firstOrFail();
         
         return view('admin.order.view', compact('order'));
+    }
+
+    public function updateRecipient(Request $request) {
+        $request->validate([
+            'order_seq' => 'required',
+            'recipient_user_name' => 'required',
+            'recipient_phone' => 'required',
+            'recipient_zipcode' => 'required',
+            'recipient_address' => 'required',
+            'recipient_address_detail' => 'required'
+        ]);
+
+        $order = Order::where('order_seq', $request->order_seq)->firstOrFail();
+        
+        // Log changes
+        $old_data = sprintf(
+            "이름:%s / 연락처:%s / 주소:(%s) %s %s", 
+            $order->recipient_user_name, 
+            $order->recipient_phone,
+            $order->recipient_zipcode,
+            $order->recipient_address,
+            $order->recipient_address_detail
+        );
+
+        $order->update([
+            'recipient_user_name' => $request->recipient_user_name,
+            'recipient_phone' => $request->recipient_phone,
+            'recipient_zipcode' => $request->recipient_zipcode,
+            'recipient_address' => $request->recipient_address,
+            'recipient_address_detail' => $request->recipient_address_detail
+        ]);
+
+        // Create Log
+        \App\Models\OrderLog::create([
+            'order_seq' => $order->order_seq,
+            'type' => 'process',
+            'actor' => '관리자', // Ideally auth()->user()->name
+            'title' => '배송정보수정',
+            'detail' => "이전정보: {$old_data}",
+            'regist_date' => now(),
+            'mtype' => 'm', // Manager
+            'mseq' => 1 // Temporary until Auth implemented properly
+        ]);
+
+        return response()->json(['success' => true]);
     }
 
     public function searchGoods(Request $request)

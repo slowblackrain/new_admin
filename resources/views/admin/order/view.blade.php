@@ -121,22 +121,37 @@
         <div class="row">
             <div class="col-md-6">
                 <div class="card">
-                    <div class="card-header"><h3 class="card-title">배송 정보</h3></div>
+                    <div class="card-header">
+                        <h3 class="card-title">배송 정보</h3>
+                        <div class="card-tools">
+                             <button type="button" class="btn btn-tool" onclick="updateRecipientInfo()">
+                                <i class="fas fa-save"></i> 저장
+                            </button>
+                        </div>
+                    </div>
                     <div class="card-body">
-                         <div class="form-group row">
-                            <label class="col-sm-3 col-form-label">받는사람</label>
-                            <div class="col-sm-9">
-                                <input type="text" class="form-control" value="{{ $order->recipient_user_name }}">
+                         <form id="recipientForm">
+                             <div class="form-group row">
+                                <label class="col-sm-3 col-form-label">받는사람</label>
+                                <div class="col-sm-9">
+                                    <input type="text" class="form-control" name="recipient_user_name" value="{{ $order->recipient_user_name }}">
+                                </div>
                             </div>
-                        </div>
-                        <div class="form-group row">
-                            <label class="col-sm-3 col-form-label">주소</label>
-                            <div class="col-sm-9">
-                                <input type="text" class="form-control mb-1" value="{{ $order->recipient_zipcode }}">
-                                <input type="text" class="form-control" value="{{ $order->recipient_address }}">
-                                <input type="text" class="form-control mt-1" value="{{ $order->recipient_address_detail }}">
+                            <div class="form-group row">
+                                <label class="col-sm-3 col-form-label">연락처</label>
+                                <div class="col-sm-9">
+                                    <input type="text" class="form-control" name="recipient_phone" value="{{ $order->recipient_phone }}">
+                                </div>
                             </div>
-                        </div>
+                            <div class="form-group row">
+                                <label class="col-sm-3 col-form-label">주소</label>
+                                <div class="col-sm-9">
+                                    <input type="text" class="form-control mb-1" name="recipient_zipcode" value="{{ $order->recipient_zipcode }}">
+                                    <input type="text" class="form-control" name="recipient_address" value="{{ $order->recipient_address }}">
+                                    <input type="text" class="form-control mt-1" name="recipient_address_detail" value="{{ $order->recipient_address_detail }}">
+                                </div>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -175,7 +190,43 @@
     </div>
 </div>
 
-{{-- MODALS --}}
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">처리 이력 (Order Log)</h3>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-sm table-striped">
+                    <thead>
+                        <tr>
+                            <th>일시</th>
+                            <th>구분</th>
+                            <th>작업자</th>
+                            <th>제목</th>
+                            <th>상세내용</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($order->logs as $log)
+                        <tr>
+                            <td>{{ $log->regist_date->format('Y-m-d H:i:s') }}</td>
+                            <td>{{ $log->type }}</td>
+                            <td>{{ $log->actor }}</td>
+                            <td>{{ $log->title }}</td>
+                            <td>{{ $log->detail }}</td>
+                        </tr>
+                        @endforeach
+                        @if($order->logs->isEmpty())
+                        <tr><td colspan="5" class="text-center">이력이 없습니다.</td></tr>
+                        @endif
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
 @include('admin.order.partials.replace_modal')
 @include('admin.order.partials.price_modal')
 
@@ -183,11 +234,6 @@
 
 @section('custom_js')
 <script>
-    function openReplaceModal(itemSeq) {
-        $('#replaceModal').modal('show');
-        $('#replace_original_item_seq').val(itemSeq);
-    }
-
     function openProductSearch() {
         alert('상품 검색 기능은 준비중입니다.');
     }
@@ -234,31 +280,18 @@
         updateStatus('cancel_order');
     }
 
-    // --- Price Edit Modal Functions ---
-    function openPriceModal() {
-        $('#priceModal').modal('show');
-    }
 
-    function savePrice() {
-        if(!confirm('가격을 수정하시겠습니까?')) return;
-
-        const formData = {
-            order_seq: '{{ $order->order_seq }}',
-            change_type: 'price_info',
-            settleprice: $('#modal_settleprice').val(),
-            emoney: $('#modal_emoney').val(),
-            shipping_cost: $('#modal_shipping_cost').val(),
-            coupon_sale: $('#modal_coupon_sale').val(),
-            admin_memo: $('#modal_admin_memo').val()
-        };
-
+    function updateRecipientInfo() {
+        if(!confirm('배송 정보를 수정하시겠습니까?')) return;
+        
+        const data = $('#recipientForm').serializeArray();
+        data.push({name: 'order_seq', value: '{{ $order->order_seq }}'});
+        
         $.ajax({
-            url: "{{ route('admin.order.update_price') }}",
+            url: "{{ route('admin.order.update_recipient') }}",
             type: "POST",
-            data: formData,
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            },
+            data: data,
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
             success: function(res) {
                 if(res.success) {
                     alert('수정되었습니다.');
@@ -268,103 +301,10 @@
                 }
             },
             error: function(err) {
-                alert('서버 오류가 발생했습니다: ' + err.statusText);
-            }
-        });
-    }
-</script>
-@endsection
-
-{{-- Price Edit Modal --}}
-<div class="modal fade" id="priceModal" tabindex="-1" role="dialog" aria-labelledby="priceModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="priceModalLabel">주문 금액 수정</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="priceForm">
-                    <div class="form-group">
-                        <label>결제금액 (실제 PG승인금액)</label>
-                        <input type="number" class="form-control" id="modal_settleprice" value="{{ $order->settleprice }}">
-                    </div>
-                    <div class="form-group">
-                        <label>적립금 사용</label>
-                        <input type="number" class="form-control" id="modal_emoney" value="{{ $order->emoney }}">
-                    </div>
-                    <div class="form-group">
-                        <label>배송비</label>
-                        <input type="number" class="form-control" id="modal_shipping_cost" value="{{ $order->shipping_cost }}">
-                    </div>
-                    <div class="form-group">
-                        <label>쿠폰 할인</label>
-                        <input type="number" class="form-control" id="modal_coupon_sale" value="{{ $order->coupon_sale }}">
-                    </div>
-                    <div class="form-group">
-                        <label>관리자 메모 (수정 사유)</label>
-                        <textarea class="form-control" id="modal_admin_memo" rows="2"></textarea>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">닫기</button>
-                <button type="button" class="btn btn-primary" onclick="savePrice()">저장</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-@include('admin.order.partials.replace_modal')
-
-@section('custom_js')
-<script>
-    function openReplaceModal(itemSeq) {
-        $('#replaceModal').modal('show');
-        $('#replace_original_item_seq').val(itemSeq);
-    }
-
-    function openPriceModal(itemSeq, price, emoney, coupon, memo) {
-        $('#modal_order_seq').val('{{ $order->order_seq }}');
-        $('#modal_settle_price').val(price);
-        $('#modal_emoney').val(emoney);
-        $('#modal_coupon_sale').val(coupon);
-        $('#modal_admin_memo').val(memo);
-        $('#priceModal').modal('show');
-    }
-
-    function savePrice() {
-        var orderSeq = $('#modal_order_seq').val();
-        var price = $('#modal_settle_price').val();
-        var emoney = $('#modal_emoney').val();
-        var coupon = $('#modal_coupon_sale').val();
-        var memo = $('#modal_admin_memo').val();
-        
-        $.ajax({
-            url: '{{ route("admin.order.update_price") }}',
-            type: 'POST',
-            data: {
-                _token: '{{ csrf_token() }}',
-                order_seq: orderSeq,
-                settle_price: price,
-                emoney: emoney,
-                coupon_sale: coupon,
-                admin_memo: memo
-            },
-            success: function(response) {
-                if (response.success) {
-                    alert('가격 정보가 수정되었습니다.');
-                    location.reload();
-                } else {
-                    alert('오류가 발생했습니다: ' + response.message);
-                }
-            },
-            error: function() {
                 alert('서버 오류가 발생했습니다.');
             }
         });
     }
 </script>
 @endsection
+

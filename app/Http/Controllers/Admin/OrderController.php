@@ -40,13 +40,20 @@ class OrderController extends Controller
             }
         }
 
-        // 3. Keyword Filter
         if ($request->filled('keyword')) {
             $keyword = $request->keyword;
             $query->where(function ($q) use ($keyword) {
                 $q->where('order_seq', 'like', "%{$keyword}%")
                   ->orWhere('order_user_name', 'like', "%{$keyword}%");
             });
+        }
+
+        // 4. Date Range Filter
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $query->whereBetween('regist_date', [
+                $request->start_date . ' 00:00:00',
+                $request->end_date . ' 23:59:59'
+            ]);
         }
 
         $orders = $query->orderBy('regist_date', 'desc')->paginate(20);

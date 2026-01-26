@@ -27,10 +27,12 @@ require __DIR__.'/admin.php';
 */
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+
 Route::get('/login', function () {
     return redirect()->route('member.login');
 })->name('login');
 
+// Front & Member Routes
 Route::prefix('goods')->name('goods.')->group(function () {
     Route::get('/view', [GoodsController::class, 'view'])->name('view');
     Route::get('/catalog', [GoodsController::class, 'catalog'])->name('catalog');
@@ -47,7 +49,6 @@ Route::prefix('member')->name('member.')->group(function () {
     Route::post('/check_id', [MemberController::class, 'check_id'])->name('check_id');
 });
 
-// Cart Routes: Changed prefix to match legacy /order/cart URL structure
 Route::prefix('order/cart')->name('cart.')->group(function () {
     Route::get('/', [CartController::class, 'index'])->name('index');
     Route::post('/add', [CartController::class, 'store'])->name('store');
@@ -56,8 +57,8 @@ Route::prefix('order/cart')->name('cart.')->group(function () {
 });
 
 Route::prefix('order')->name('order.')->group(function () {
-    Route::post('/order', [OrderController::class, 'index'])->name('form'); // Form submit from Cart
-    Route::get('/order', [OrderController::class, 'index'])->name('form_get'); // Optional: if need to support GET with params but POST is better for array
+    Route::post('/order', [OrderController::class, 'index'])->name('form');
+    Route::get('/order', [OrderController::class, 'index'])->name('form_get');
     Route::post('/order/complete', [OrderController::class, 'store'])->name('store');
     Route::get('/order/complete/{id}', [OrderController::class, 'complete'])->name('complete');
 });
@@ -66,10 +67,9 @@ Route::middleware(['auth'])->prefix('mypage')->name('mypage.')->group(function (
     Route::get('/delivery-address', [App\Http\Controllers\Front\DeliveryAddressController::class, 'index'])->name('delivery_address.index');
     Route::get('/', [MypageController::class, 'index'])->name('index');
     Route::get('/order/list', [MypageController::class, 'orderList'])->name('order.list');
-
-    // Legacy mapping (optional, but good for redirecting legacy links if needed)
+    
+    Route::post('/order/add-item', [\App\Http\Controllers\Admin\Order\OrderProcessController::class, 'addItem'])->name('order.addItem');
     Route::get('/order_catalog', [MypageController::class, 'orderList'])->name('order.catalog');
-
     Route::get('/order/view/{id}', [MypageController::class, 'orderView'])->name('order.view');
 });
 
@@ -90,18 +90,96 @@ Route::prefix('service')->name('service.')->group(function () {
 // Admin Routes
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [AdminController::class, 'index'])->name('index');
-    // Add more admin routes here
+    
+    // Goods Routes
+    Route::prefix('goods')->name('goods.')->group(function () {
+        Route::post('search', [App\Http\Controllers\Admin\GoodsController::class, 'search'])->name('search');
+        Route::post('options', [App\Http\Controllers\Admin\GoodsController::class, 'getOptions'])->name('options');
+        
+        // Management
+        Route::get('regist', [App\Http\Controllers\Admin\GoodsController::class, 'create'])->name('regist');
+        Route::post('regist', [App\Http\Controllers\Admin\GoodsController::class, 'store'])->name('store');
+        Route::get('catalog', [App\Http\Controllers\Admin\GoodsController::class, 'catalog'])->name('catalog');
+        Route::get('edit/{id}', [App\Http\Controllers\Admin\GoodsController::class, 'edit'])->name('edit');
+        Route::post('update_options', [App\Http\Controllers\Admin\GoodsController::class, 'updateOptions'])->name('update_options');
+        Route::post('calculate_price', [App\Http\Controllers\Admin\GoodsController::class, 'calculatePrice'])->name('calculate_price');
+        Route::post('category_children', [App\Http\Controllers\Admin\GoodsController::class, 'getCategoryChildren'])->name('category_children');
+
+        // Bulk Operations
+        Route::get('batch_modify', [App\Http\Controllers\Admin\Goods\GoodsBatchController::class, 'batch_modify'])->name('batch_modify');
+        Route::post('batch_save', [App\Http\Controllers\Admin\Goods\GoodsBatchController::class, 'save_batch'])->name('batch_save');
+    });
+
+    // SCM Basic
+    Route::prefix('scm_basic')->name('scm_basic.')->group(function () {
+        Route::get('config', [App\Http\Controllers\Admin\Scm\ScmBasicController::class, 'config'])->name('config');
+        Route::post('config', [App\Http\Controllers\Admin\Scm\ScmBasicController::class, 'save_config'])->name('save_config');
+
+        Route::get('goods_int_set', [App\Http\Controllers\Admin\Scm\ScmBasicController::class, 'goods_int_set'])->name('goods_int_set');
+        Route::post('goods_int_set', [App\Http\Controllers\Admin\Scm\ScmBasicController::class, 'save_goods_int_set'])->name('save_goods_int_set');
+
+        Route::get('warehouse', [App\Http\Controllers\Admin\Scm\ScmBasicController::class, 'warehouse_list'])->name('warehouse');
+        Route::get('warehouse/regist', [App\Http\Controllers\Admin\Scm\ScmBasicController::class, 'warehouse_form'])->name('warehouse.form');
+        Route::post('warehouse/save', [App\Http\Controllers\Admin\Scm\ScmBasicController::class, 'warehouse_save'])->name('warehouse.save');
+
+        Route::get('store', [App\Http\Controllers\Admin\Scm\ScmBasicController::class, 'store_list'])->name('store');
+        Route::get('store/regist', [App\Http\Controllers\Admin\Scm\ScmBasicController::class, 'store_form'])->name('store.form');
+        Route::post('store/save', [App\Http\Controllers\Admin\Scm\ScmBasicController::class, 'store_save'])->name('store.save');
+
+        Route::get('trader', [App\Http\Controllers\Admin\Scm\ScmBasicController::class, 'trader_list'])->name('trader');
+        Route::get('trader/regist', [App\Http\Controllers\Admin\Scm\ScmBasicController::class, 'trader_form'])->name('trader.form');
+        Route::post('trader/save', [App\Http\Controllers\Admin\Scm\ScmBasicController::class, 'trader_save'])->name('trader.save');
+    });
+
+    // SCM Order (Balju)
+    Route::prefix('scm_order')->name('scm_order.')->group(function () {
+        Route::get('auto', [App\Http\Controllers\Admin\Scm\ScmOrderController::class, 'auto_order'])->name('auto');
+        Route::post('create', [App\Http\Controllers\Admin\Scm\ScmOrderController::class, 'create_auto_order'])->name('create');
+        Route::get('list', [App\Http\Controllers\Admin\Scm\ScmOfferController::class, 'index'])->name('list');
+        Route::post('update_status', [App\Http\Controllers\Admin\Scm\ScmOfferController::class, 'update_status'])->name('update_status');
+    });
+
+    // SCM Manage
+    Route::prefix('scm_manage')->name('scm_manage.')->group(function () {
+        Route::get('revision', [App\Http\Controllers\Admin\Scm\ScmManageController::class, 'revision'])->name('revision');
+        Route::post('save_revision', [App\Http\Controllers\Admin\Scm\ScmManageController::class, 'save_revision'])->name('save_revision');
+        Route::get('ledger', [App\Http\Controllers\Admin\Scm\ScmManageController::class, 'ledger'])->name('ledger');
+
+        // Stock Move
+        Route::get('stockmove', [App\Http\Controllers\Admin\Scm\ScmManageController::class, 'stockmove'])->name('stockmove');
+        Route::get('stockmove/regist', [App\Http\Controllers\Admin\Scm\ScmManageController::class, 'stockmove_regist'])->name('stockmove.regist');
+        Route::post('stockmove/save', [App\Http\Controllers\Admin\Scm\ScmManageController::class, 'stockmove_save'])->name('stockmove.save');
+    });
+
+    // SCM Settlement
+    // Returns (반품)
+    Route::prefix('returns')->name('returns.')->group(function () {
+        Route::get('catalog', [App\Http\Controllers\Admin\ReturnsController::class, 'catalog'])->name('catalog');
+    });
+
+    // Refund (환불)
+    Route::prefix('refund')->name('refund.')->group(function () {
+        Route::get('catalog', [App\Http\Controllers\Admin\RefundController::class, 'catalog'])->name('catalog');
+    });
+
+    // [설정] setting
+    Route::prefix('setting')->name('setting.')->group(function () {
+        Route::get('index', [App\Http\Controllers\Admin\SettingController::class, 'index'])->name('index');
+        Route::get('basic', [App\Http\Controllers\Admin\SettingController::class, 'basic'])->name('basic');
+        Route::post('basic', [App\Http\Controllers\Admin\SettingController::class, 'save_basic'])->name('basic.save');
+        Route::get('operating', [App\Http\Controllers\Admin\SettingController::class, 'operating'])->name('operating');
+        Route::get('pg', [App\Http\Controllers\Admin\SettingController::class, 'pg'])->name('pg');
+        Route::get('member', [App\Http\Controllers\Admin\SettingController::class, 'member'])->name('member');
+        Route::get('protect', [App\Http\Controllers\Admin\SettingController::class, 'protect'])->name('protect');
+    });
+
+    // [통계] statistic
+    Route::get('statistic_summary', [App\Http\Controllers\Admin\StatisticSummaryController::class, 'index'])->name('statistic_summary.index');
+    Route::get('statistic_visitor', [App\Http\Controllers\Admin\StatisticSummaryController::class, 'visitor'])->name('statistic_visitor.index');
 });
 
-// Seller Admin Routes
-Route::prefix('selleradmin')->name('seller.')->group(function () {
-    Route::get('/', [SellerController::class, 'index'])->name('index');
-    
-    // Order Management (Reseller Mode)
-    Route::get('/order/catalog', [\App\Http\Controllers\Seller\SellerOrderController::class, 'index'])->name('order.catalog');
-    Route::get('/order/view/{id}', [\App\Http\Controllers\Seller\SellerOrderController::class, 'show'])->name('order.view');
-});
-// Magic Login for Testing
+/*
+// Legacy Debug Routes
 Route::get('/test/login', function () {
     $user = App\Models\Member::first();
     if ($user) {
@@ -109,8 +187,8 @@ Route::get('/test/login', function () {
         return redirect()->route('home');
     }
     return "No User Found";
-    return "No User Found";
 })->name('test.login');
+*/
 
 // Debug Route for Icons
 Route::get('/test-icons', function () {

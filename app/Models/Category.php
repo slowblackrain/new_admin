@@ -11,29 +11,22 @@ class Category extends Model
 
     protected $table = 'fm_category';
     protected $primaryKey = 'id';
-    public $timestamps = false;
-
+    public $timestamps = false; // fm_category has regist_date/update_date but not standard created_at/updated_at?
+    // inspect results showed regist_date, update_date.
+    
     protected $guarded = [];
 
+    const CREATED_AT = 'regist_date';
+    const UPDATED_AT = 'update_date';
+
+    // Relationships
     public function parent()
     {
-        return $this->belongsTo(Category::class, 'parent_id');
+        return $this->belongsTo(Category::class, 'parent_id', 'id');
     }
 
     public function children()
     {
-        return $this->hasMany(Category::class, 'parent_id');
-    }
-
-    public function goods()
-    {
-        return $this->belongsToMany(
-            Goods::class,
-            'fm_category_link',
-            'category_code', // FK on pivot for Category
-            'goods_seq',     // FK on pivot for Goods
-            'category_code', // Local key on Category
-            'goods_seq'      // Local key on Goods
-        );
+        return $this->hasMany(Category::class, 'parent_id', 'id')->orderBy('position', 'asc');
     }
 }

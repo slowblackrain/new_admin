@@ -55,7 +55,7 @@
     <nav class="main-header navbar navbar-expand-md navbar-light navbar-white">
         <div class="container-fluid">
             <a href="{{ route('admin.dashboard') }}" class="navbar-brand">
-                <span class="brand-text font-weight-light">도매토피아 관리자</span>
+                <img src="{{ asset('images/logo.jpg') }}" alt="Dometopia" class="brand-image" style="height: 40px; width: auto;">
             </a>
 
             <button class="navbar-toggler order-1" type="button" data-toggle="collapse" data-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">

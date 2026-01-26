@@ -40,6 +40,63 @@
         </div>
     </div>
 
+    <!-- SCM/Order Widgets -->
+    <div class="row">
+        <!-- New Orders -->
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-info">
+                <div class="inner">
+                    <h3>{{ number_format($scmStats['order_today']) }}</h3>
+                    <p>금일 신규 주문</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-shopping-cart"></i>
+                </div>
+                <a href="{{ route('admin.order.catalog') }}" class="small-box-footer">더 보기 <i class="fas fa-arrow-circle-right"></i></a>
+            </div>
+        </div>
+        <!-- Shipping Prep -->
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-success">
+                <div class="inner">
+                    <h3>{{ number_format($scmStats['shipping_prep']) }}</h3>
+                    <p>배송 준비 중</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-box-open"></i>
+                </div>
+                <a href="#" class="small-box-footer">더 보기 <i class="fas fa-arrow-circle-right"></i></a>
+            </div>
+        </div>
+        <!-- Offer Waiting -->
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-warning">
+                <div class="inner">
+                    <h3>{{ number_format($scmStats['offer_waiting']) }}</h3>
+                    <p>발주/입고 대기</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-warehouse"></i>
+                </div>
+                <!-- Link to SCM Order List -->
+                <a href="{{ route('admin.scm_order.list') }}" class="small-box-footer">더 보기 <i class="fas fa-arrow-circle-right"></i></a>
+            </div>
+        </div>
+        <!-- Stocked Today -->
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-danger">
+                <div class="inner">
+                    <h3>{{ number_format($scmStats['stocked_today']) }}</h3>
+                    <p>금일 입고 완료</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <a href="{{ route('admin.scm_manage.ledger') }}" class="small-box-footer">더 보기 <i class="fas fa-arrow-circle-right"></i></a>
+            </div>
+        </div>
+    </div>
+
     <div class="row">
         <div class="col-12">
             <div class="card">
