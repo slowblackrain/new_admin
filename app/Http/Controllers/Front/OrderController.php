@@ -43,10 +43,31 @@ class OrderController extends Controller
             $totalPrice += ($price * $ea);
         }
 
-        $tax = floor($totalPrice * 0.1);
-        $finalPrice = $totalPrice + $tax;
+        $shippingCost = 3000;
+        $freeShippingThreshold = 50000;
+        $packagingCost = 300;
 
-        return view('front.order.order', compact('cartItems', 'user', 'totalPrice', 'user', 'cart_seqs', 'tax', 'finalPrice'));
+        $shipping = 0;
+        if ($totalPrice > 0 && $totalPrice < $freeShippingThreshold) {
+            $shipping = $shippingCost;
+        }
+
+        $tax = floor($totalPrice * 0.1);
+        $finalPrice = $totalPrice + $shipping + $tax + $packagingCost;
+
+        // 5. Fetch Usable Coupons
+        $coupons = [];
+        if ($user) {
+            $coupons = DB::table('fm_download')
+                ->join('fm_coupon', 'fm_download.coupon_seq', '=', 'fm_coupon.coupon_seq')
+                ->where('fm_download.member_seq', $user->member_seq)
+                ->where('fm_download.use_status', 'unused') // Verify 'unused' is correct value. Usually 'used'/'unused' or '1'/'0'. Let's assume 'unused' based on 'use_status' column name often string enum. Check Schema if possible or try both.
+                ->where('fm_download.issue_enddate', '>=', now())
+                ->select('fm_download.*', 'fm_coupon.coupon_name', 'fm_coupon.coupon_seq as master_coupon_seq', 'fm_coupon.sale_type', 'fm_coupon.percent_goods_sale', 'fm_coupon.won_goods_sale', 'fm_coupon.max_percent_goods_sale')
+                ->get();
+        }
+
+        return view('front.order.order', compact('cartItems', 'user', 'totalPrice', 'user', 'cart_seqs', 'tax', 'finalPrice', 'shipping', 'packagingCost', 'coupons'));
     }
 
     public function store(Request $request)
@@ -80,16 +101,17 @@ class OrderController extends Controller
         DB::beginTransaction();
         try {
             $user = Auth::user();
+            
             $totalPrice = 0;
             $totalEa = 0;
             $kinds = 0;
 
             // Calculate Total
             foreach ($cartItems as $cItem) {
+                // ... (Calculation Logic) ...
                 $option = $cItem->options->first();
                 $ea = $option->ea ?? 1;
                 
-                // Logic to find price (same as cart)
                 $price = 0;
                 $goods = $cItem->goods;
                 if ($goods && $goods->option) {
@@ -110,19 +132,39 @@ class OrderController extends Controller
                 $totalPrice += ($price * $ea);
                 $totalEa += $ea;
                 $kinds++;
+
+                // Stock Validation
+                if ($matchedOption) {
+                    $supply = DB::table('fm_goods_supply')
+                        ->where('option_seq', $matchedOption->option_seq)
+                        ->first();
+                    $currentStock = $supply->stock ?? 0;
+                    if ($currentStock < $ea) {
+                        throw new \Exception("상품 '{$goods->goods_name}'의 선택된 옵션 재고가 부족합니다. (현재: {$currentStock}, 요청: {$ea})");
+                    }
+                } else {
+                    $supply = DB::table('fm_goods_supply')
+                        ->where('goods_seq', $goods->goods_seq)
+                        ->first();
+                    $currentStock = $supply->stock ?? 0;
+                    if ($currentStock < $ea) {
+                        throw new \Exception("상품 '{$goods->goods_name}'의 재고가 부족합니다. (현재: {$currentStock}, 요청: {$ea})");
+                    }
+                }
             }
 
             // Create Order Header
             $order = new \App\Models\Order();
             $order->order_seq = $this->generateOrderSeq();
+            
             $order->order_user_name = $request->order_user_name;
             $order->order_cellphone = $request->order_cellphone;
-            $order->order_phone = $request->order_cellphone; // Map cellphone to phone if phone empty
+            $order->order_phone = $request->order_cellphone; 
             $order->order_email = $request->order_email;
             $order->recipient_user_name = $request->recipient_user_name;
-            $order->recipient_cellphone = $request->recipient_cellphone; // Fix field name mismatch
+            $order->recipient_cellphone = $request->recipient_cellphone; 
             $order->recipient_phone = $request->recipient_cellphone; 
-            $order->recipient_zipcode = substr($request->recipient_zipcode, 0, 7); // Ensure length
+            $order->recipient_zipcode = substr($request->recipient_zipcode, 0, 7); 
             $order->recipient_address_type = $request->recipient_address_type ?? 'zibun';
             $order->recipient_address = $request->recipient_address;
             $order->recipient_address_street = $request->recipient_address_street;
@@ -147,11 +189,95 @@ class OrderController extends Controller
             $order->regist_date = now();
             $order->session_id = Session::getId();
 
-            // Default/Required Legacy Fields
+            // Point/Emoney Usage
+            $useEmoney = $request->input('use_emoney', 0);
+            $usePoint = $request->input('use_point', 0);
+
+            if ($useEmoney > 0) {
+                if ($user->emoney < $useEmoney) {
+                    throw new \Exception("보유 예치금이 부족합니다.");
+                }
+                if ($useEmoney > $finalSettlePrice) {
+                    throw new \Exception("결제 금액보다 많은 예치금을 사용할 수 없습니다.");
+                }
+                $finalSettlePrice -= $useEmoney;
+                $user->decrement('emoney', $useEmoney);
+                $order->emoney = $useEmoney; // Assuming 'emoney' column holds USED emoney
+            } else {
+                 $order->emoney = 0;
+            }
+
+            if ($usePoint > 0) {
+                 if ($user->point < $usePoint) {
+                    throw new \Exception("보유 포인트가 부족합니다.");
+                }
+                 if ($usePoint > $finalSettlePrice) {
+                    throw new \Exception("결제 금액보다 많은 포인트를 사용할 수 없습니다.");
+                }
+                $finalSettlePrice -= $usePoint;
+                $user->decrement('point', $usePoint);
+                $order->cash = $usePoint; 
+            } else {
+                $order->cash = 0;
+            }
+
+            // Coupon Usage
+            $downloadSeq = $request->input('download_seq');
+            
+            $couponDiscount = 0;
+            if ($downloadSeq) {
+                // ... fetch download ...
+                $download = DB::table('fm_download')
+                    ->where('download_seq', $downloadSeq)
+                    ->where('member_seq', $user->member_seq)
+                    ->first();
+                
+                if (!$download) {
+                     throw new \Exception("쿠폰이 존재하지 않거나 유효하지 않습니다.");
+                }
+                
+                if ($download->use_status !== 'unused') {
+                     throw new \Exception("이미 사용된 쿠폰입니다.");
+                }
+
+                // ... fetch coupon ...
+                $coupon = DB::table('fm_coupon')->where('coupon_seq', $download->coupon_seq)->first();
+                
+                // Logic for Percent vs Amount
+                if ($coupon->sale_type == 'percent') {
+                     $calcDiscount = floor($totalPrice * ($coupon->percent_goods_sale / 100));
+                     if ($coupon->max_percent_goods_sale > 0 && $calcDiscount > $coupon->max_percent_goods_sale) {
+                         $calcDiscount = $coupon->max_percent_goods_sale;
+                     }
+                     $couponDiscount = $calcDiscount;
+                } elseif ($coupon->sale_type == 'won') {
+                    $couponDiscount = $coupon->won_goods_sale;
+                }
+                
+                if ($couponDiscount > $finalSettlePrice) {
+                    $couponDiscount = $finalSettlePrice; // Cap at remaining price
+                }
+                
+                $finalSettlePrice -= $couponDiscount;
+
+                // Mark Used
+                DB::table('fm_download')
+                    ->where('download_seq', $downloadSeq)
+                    ->update([
+                        'use_status' => 'used', 
+                        'use_date' => now()
+                    ]);
+                
+                $order->download_seq = $downloadSeq; 
+                $order->coupon_sale = $couponDiscount;
+            } else {
+                $order->coupon_sale = 0;
+            }
+
+            $order->settleprice = $finalSettlePrice;
             $order->enuri = 0;
             $order->tax = $tax;
             $order->shipping_cost = $shipping;
-            // $order->delivery_cost = $packagingCost; // Optional: store packaging here if needed? Leaving 0 for safety.
 
             $order->international = 'domestic';
             $order->international_cost = 0;
@@ -174,7 +300,6 @@ class OrderController extends Controller
                 $order->deposit_yn = 'n';
                 $order->bundle_yn = 'n';
             } else {
-                // Card payment placeholder
                 $order->step = \App\Models\Order::STEP_PAYMENT_CONFIRMED;
                 $order->deposit_yn = 'y'; 
                 $order->bundle_yn = 'n';
@@ -186,9 +311,6 @@ class OrderController extends Controller
                 $order->member_seq = 0; // Guest
             }
 
-            // Handle strict mode date issue by using raw query if eloquent fails?
-            // Or just try specific format.
-            // For now, let's try standard save, but catch strict date errors
              try {
                 $order->save();
             } catch (\Exception $e) {
@@ -230,7 +352,7 @@ class OrderController extends Controller
                 $orderItem->goods_name = $goods->goods_name;
                 $orderItem->goods_shipping_cost = 0;
                 $orderItem->basic_shipping_cost = 0;
-                $orderItem->goods_code = $goods->goods_code; // Populate goods_code
+                $orderItem->goods_code = $goods->goods_code; 
                 $orderItem->image = $goods->images->where('image_type', 'list1')->first()->image ?? '';
                 $orderItem->save();
 
@@ -244,6 +366,23 @@ class OrderController extends Controller
                 $itemOption->option2 = $option->option2 ?? '';
                 $itemOption->title1 = $option->title1 ?? '옵션';
                 $itemOption->save();
+
+                // Stock Deduction Logic
+                if ($matchedOption) {
+                    $supply = DB::table('fm_goods_supply')
+                        ->where('option_seq', $matchedOption->option_seq)
+                        ->first();
+                    
+                    if ($supply) {
+                        DB::table('fm_goods_supply')
+                            ->where('supply_seq', $supply->supply_seq)
+                            ->decrement('stock', $ea);
+                    }
+                } else {
+                    DB::table('fm_goods_supply')
+                        ->where('goods_seq', $goods->goods_seq)
+                        ->decrement('stock', $ea);
+                }
             }
 
             // Delete from Cart

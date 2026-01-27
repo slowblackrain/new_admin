@@ -135,120 +135,135 @@
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">목록 (총 {{ number_format($goods->total()) }}개)</h3>
+                    <div class="card-tools">
+                        <a href="{{ route('admin.goods.batch.excel_download', request()->query()) }}" class="btn btn-sm btn-success">
+                            <i class="fas fa-file-excel"></i> 엑셀 다운로드
+                        </a>
+                        <a href="{{ route('admin.goods.batch.excel_form') }}" class="btn btn-sm btn-info">
+                            <i class="fas fa-upload"></i> 엑셀 업로드
+                        </a>
+                        <button type="button" onclick="$('#batchForm').submit();" class="btn btn-sm btn-primary">
+                            <i class="fas fa-save"></i> 선택 일괄수정
+                        </button>
+                    </div>
                 </div>
                 <div class="card-body table-responsive p-0">
-                    <table class="table table-bordered table-hover text-nowrap">
-                        <thead>
-                            <tr>
-                                <th style="width: 50px"><input type="checkbox" id="checkAll"></th>
-                                <th style="width: 80px">이미지</th>
-                                <th>상품 정보</th>
-                                <th style="width: 120px">발주현황/판매일</th>
-                                <th style="width: 120px">판매가 (할인가)</th>
-                                <th style="width: 100px">재고</th>
-                                <th style="width: 100px">상태/배송</th>
-                                <th style="width: 120px">관리</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($goods as $item)
-                            <tr style="{{ $item->is_buying_service ? 'background-color: #ffccff;' : '' }}">
-                                <td class="text-center align-middle">
-                                    <input type="checkbox" name="goods_seq[]" value="{{ $item->goods_seq }}">
-                                    <div class="mt-1 text-xs text-muted">{{ $loop->iteration }}</div>
-                                </td>
-                                <td class="align-middle text-center">
-                                    @php
-                                        $imgSrc = $item->image;
-                                        if ($imgSrc && !str_starts_with($imgSrc, 'http') && !str_starts_with($imgSrc, '/')) {
-                                            $imgSrc = "/data/goods/" . $imgSrc;
-                                        }
-                                    @endphp
-                                    @if($item->image)
-                                        <img src="{{ $imgSrc }}" style="width: 80px; height: 80px; object-fit: cover; border:1px solid #ddd;" onerror="this.src='/images/no_img.gif'">
-                                    @else
-                                        <span class="text-muted text-xs">No Img</span>
-                                    @endif
-                                </td>
-                                <td class="align-middle">
-                                    <!-- Provider Info -->
-                                    <div class="mb-1">
-                                        @if($item->provider_seq == 1)
-                                            <span class="badge badge-success">매입</span>
+                    <form id="batchForm" method="post" action="{{ route('admin.goods.batch.modify') }}">
+                        @csrf
+                        <input type="hidden" name="mode" value="status_update">
+                        <table class="table table-bordered table-hover text-nowrap">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50px"><input type="checkbox" id="checkAll"></th>
+                                    <th style="width: 80px">이미지</th>
+                                    <th>상품 정보</th>
+                                    <th style="width: 120px">발주현황/판매일</th>
+                                    <th style="width: 120px">판매가 (할인가)</th>
+                                    <th style="width: 100px">재고</th>
+                                    <th style="width: 100px">상태/배송</th>
+                                    <th style="width: 120px">관리</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($goods as $item)
+                                <tr style="{{ $item->is_buying_service ? 'background-color: #ffccff;' : '' }}">
+                                    <td class="text-center align-middle">
+                                        <input type="checkbox" name="chk[]" value="{{ $item->goods_seq }}">
+                                        <div class="mt-1 text-xs text-muted">{{ $loop->iteration }}</div>
+                                    </td>
+                                    <td class="align-middle text-center">
+                                        @php
+                                            $imgSrc = $item->image;
+                                            if ($imgSrc && !str_starts_with($imgSrc, 'http') && !str_starts_with($imgSrc, '/')) {
+                                                $imgSrc = "/data/goods/" . $imgSrc;
+                                            }
+                                        @endphp
+                                        @if($item->image)
+                                            <img src="{{ $imgSrc }}" style="width: 80px; height: 80px; object-fit: cover; border:1px solid #ddd;" onerror="this.src='/images/no_img.gif'">
                                         @else
-                                            <span class="badge badge-info">{{ $item->provider_name }}</span>
+                                            <span class="text-muted text-xs">No Img</span>
                                         @endif
-                                    </div>
-                                    
-                                    <!-- Goods Info -->
-                                    <div style="font-weight: bold; font-size: 1.1em;">{{ $item->goods_name }}</div>
-                                    <div class="text-muted text-sm">
-                                        [<span class="text-dark font-weight-bold">{{ $item->goods_scode }}</span>] 
-                                        ({{ $item->goods_code }})
-                                    </div>
-                                    
-                                    <!-- Legacy Icons/Buttons -->
-                                    <div class="mt-1">
-                                        @if($item->offer_chk == 'A') <span class="badge badge-warning">KC인증</span> @endif
-                                        <button type="button" class="btn btn-xs btn-outline-secondary" onclick="copyToClipboard('{{ $item->goods_name }}')">이름복사</button>
-                                        <button type="button" class="btn btn-xs btn-outline-secondary" onclick="copyToClipboard('{{ $item->goods_code }}')">코드복사</button>
-                                    </div>
-                                    
-                                    <!-- Category -->
-                                    <div class="mt-1 text-xs text-info">
-                                        {{ $item->category_title }}
-                                    </div>
-                                    
-                                    <div class="mt-1">
-                                        <button type="button" class="btn btn-xs btn-default">정보</button>
-                                        <button type="button" class="btn btn-xs btn-success">상세</button>
-                                        <button type="button" class="btn btn-xs btn-danger">제작</button>
-                                        <button type="button" class="btn btn-xs btn-primary">샵온</button>
-                                    </div>
-                                </td>
-                                <td class="align-middle p-0">
-                                    <!-- Legacy Offer Info Table -->
-                                    {!! $item->offer_info !!}
-                                    
-                                    <!-- Fallback Recent Sale (if no offer info) -->
-                                    @if(empty($item->offer_info) && $item->l_date)
-                                    <div class="text-center p-2">
-                                        <small class="text-muted">최근판매일:<br>{{ substr($item->l_date, 0, 10) }}</small>
-                                    </div>
-                                    @endif
-                                </td>
-                                <td class="align-middle text-right pr-2 pl-0">
-                                    <!-- Legacy Price Display -->
-                                    {!! $item->disp_price !!}
-                                    <div class="text-right">
-                                        <small class="text-muted">({{ $item->opt_count }} 옵션)</small>
-                                    </div>
-                                </td>
-                                <td class="align-middle text-right">
-                                    <!-- Stock -->
-                                    <div class="{{ $item->n_stock < 0 ? 'text-danger font-weight-bold' : '' }}">
-                                        {{ number_format($item->n_stock) }} <small class="text-muted">실재고</small>
-                                    </div>
-                                    <div class="{{ $item->n_rstock < 0 ? 'text-danger font-weight-bold' : '' }}">
-                                        {{ number_format($item->n_rstock) }} <small class="text-muted">가용</small>
-                                    </div>
-                                    
-                                    <button class="btn btn-xs btn-secondary mt-1">옵션/재고</button>
-                                    <button class="btn btn-xs btn-warning mt-1">입출고</button>
-                                </td>
-                                <td class="align-middle text-center">
-                                    @if($item->goods_view == 'look')
-                                        <span class="badge badge-success">노출</span>
-                                    @else
-                                        <span class="badge badge-secondary">미노출</span>
-                                    @endif
-                                    <br>
-                                    @if($item->goods_status == 'runout')
-                                        <span class="badge badge-danger">품절</span>
-                                    @elseif($item->goods_status == 'stop')
-                                        <span class="badge badge-dark">판매중지</span>
-                                    @endif
-                                </td>
+                                    </td>
+                                    <td class="align-middle">
+                                        <!-- Provider Info -->
+                                        <div class="mb-1">
+                                            @if($item->provider_seq == 1)
+                                                <span class="badge badge-success">매입</span>
+                                            @else
+                                                <span class="badge badge-info">{{ $item->provider_name }}</span>
+                                            @endif
+                                        </div>
+                                        
+                                        <!-- Goods Info -->
+                                        <div style="font-weight: bold; font-size: 1.1em;">{{ $item->goods_name }}</div>
+                                        <div class="text-muted text-sm">
+                                            [<span class="text-dark font-weight-bold">{{ $item->goods_scode }}</span>] 
+                                            ({{ $item->goods_code }})
+                                        </div>
+                                        
+                                        <!-- Legacy Icons/Buttons -->
+                                        <div class="mt-1">
+                                            @if($item->offer_chk == 'A') <span class="badge badge-warning">KC인증</span> @endif
+                                            <button type="button" class="btn btn-xs btn-outline-secondary" onclick="copyToClipboard('{{ $item->goods_name }}')">이름복사</button>
+                                            <button type="button" class="btn btn-xs btn-outline-secondary" onclick="copyToClipboard('{{ $item->goods_code }}')">코드복사</button>
+                                        </div>
+                                        
+                                        <!-- Category -->
+                                        <div class="mt-1 text-xs text-info">
+                                            {{ $item->category_title }}
+                                        </div>
+                                        
+                                        <div class="mt-1">
+                                            <button type="button" class="btn btn-xs btn-default">정보</button>
+                                            <button type="button" class="btn btn-xs btn-success">상세</button>
+                                            <button type="button" class="btn btn-xs btn-danger">제작</button>
+                                            <button type="button" class="btn btn-xs btn-primary">샵온</button>
+                                        </div>
+                                    </td>
+                                    <td class="align-middle p-0">
+                                        <!-- Legacy Offer Info Table -->
+                                        {!! $item->offer_info !!}
+                                        
+                                        <!-- Fallback Recent Sale (if no offer info) -->
+                                        @if(empty($item->offer_info) && $item->l_date)
+                                        <div class="text-center p-2">
+                                            <small class="text-muted">최근판매일:<br>{{ substr($item->l_date, 0, 10) }}</small>
+                                        </div>
+                                        @endif
+                                    </td>
+                                    <td class="align-middle text-right pr-2 pl-0">
+                                        <!-- Legacy Price Display -->
+                                        {!! $item->disp_price !!}
+                                        <div class="text-right">
+                                            <small class="text-muted">({{ $item->opt_count }} 옵션)</small>
+                                        </div>
+                                    </td>
+                                    <td class="align-middle text-right">
+                                        <!-- Stock -->
+                                        <div class="{{ $item->n_stock < 0 ? 'text-danger font-weight-bold' : '' }}">
+                                            {{ number_format($item->n_stock) }} <small class="text-muted">실재고</small>
+                                        </div>
+                                        <div class="{{ $item->n_rstock < 0 ? 'text-danger font-weight-bold' : '' }}">
+                                            {{ number_format($item->n_rstock) }} <small class="text-muted">가용</small>
+                                        </div>
+                                        
+                                        <button class="btn btn-xs btn-secondary mt-1">옵션/재고</button>
+                                        <button class="btn btn-xs btn-warning mt-1">입출고</button>
+                                    </td>
+                                    <td class="align-middle text-center">
+                                        @if($item->goods_view == 'look')
+                                            <span class="badge badge-success mb-1">노출</span>
+                                        @else
+                                            <span class="badge badge-secondary mb-1">미노출</span>
+                                        @endif
+                                        <br>
+                                        <select name="goodsStatus_{{ $item->goods_seq }}" class="form-control form-control-sm">
+                                            <option value="normal" {{ $item->goods_status == 'normal' ? 'selected' : '' }}>정상</option>
+                                            <option value="runout" {{ $item->goods_status == 'runout' ? 'selected' : '' }}>품절</option>
+                                            <option value="stop" {{ $item->goods_status == 'stop' ? 'selected' : '' }}>판매중지</option>
+                                            <option value="unsold" {{ $item->goods_status == 'unsold' ? 'selected' : '' }}>판매종료</option>
+                                        </select>
+                                    </td>
                                 <td class="align-middle text-center">
                                     {{ substr($item->regist_date, 0, 10) }}<br>
                                     <a href="{{ route('admin.goods.edit', $item->goods_seq) }}" class="btn btn-sm btn-info mt-1">수정</a>

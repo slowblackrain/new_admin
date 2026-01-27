@@ -11,13 +11,13 @@
                     <li><a href="{{ route('mypage.order.list') }}"
                             style="display: block; padding: 10px 15px; color: #666; text-decoration: none; border-bottom: 1px solid #eee;">주문/배송
                             조회</a></li>
-                    <li><a href="#"
+                    <li><a href="{{ route('mypage.order.claim_list') }}"
                             style="display: block; padding: 10px 15px; color: #666; text-decoration: none; border-bottom: 1px solid #eee;">취소/반품/교환
                             내역</a></li>
                     <li><a href="{{ route('cart.index') }}"
                             style="display: block; padding: 10px 15px; color: #666; text-decoration: none; border-bottom: 1px solid #eee;">장바구니</a>
                     </li>
-                    <li><a href="#"
+                    <li><a href="{{ route('mypage.wishlist') }}"
                             style="display: block; padding: 10px 15px; color: #666; text-decoration: none; border-bottom: 1px solid #eee;">관심상품</a>
                     </li>
                 </ul>
@@ -26,11 +26,14 @@
                 <div style="padding: 12px 15px; font-weight: bold; background: #f9f9f9; border-bottom: 1px solid #eee;">
                     혜택관리</div>
                 <ul style="list-style: none; padding: 0; margin: 0;">
-                    <li><a href="#"
+                    <li><a href="{{ route('mypage.coupon') }}"
                             style="display: block; padding: 10px 15px; color: #666; text-decoration: none; border-bottom: 1px solid #eee;">쿠폰
                             내역</a></li>
-                    <li><a href="#"
+                    <li><a href="{{ route('mypage.emoney') }}"
                             style="display: block; padding: 10px 15px; color: #666; text-decoration: none; border-bottom: 1px solid #eee;">적립금
+                            내역</a></li>
+                    <li><a href="{{ route('mypage.point') }}"
+                            style="display: block; padding: 10px 15px; color: #666; text-decoration: none; border-bottom: 1px solid #eee;">포인트
                             내역</a></li>
                 </ul>
             </li>
@@ -38,10 +41,12 @@
                 <div style="padding: 12px 15px; font-weight: bold; background: #f9f9f9; border-bottom: 1px solid #eee;">
                     회원정보</div>
                 <ul style="list-style: none; padding: 0; margin: 0;">
-                    <li><a href="#"
+                    <li><a href="{{ route('mypage.delivery_address.index') }}"
+                            style="display: block; padding: 10px 15px; color: #666; text-decoration: none; border-bottom: 1px solid #eee;">배송지 관리</a></li>
+                    <li><a href="{{ route('mypage.member.check_password') }}"
                             style="display: block; padding: 10px 15px; color: #666; text-decoration: none; border-bottom: 1px solid #eee;">회원정보
                             수정</a></li>
-                    <li><a href="#"
+                    <li><a href="{{ route('mypage.member.drop') }}"
                             style="display: block; padding: 10px 15px; color: #666; text-decoration: none; border-bottom: 1px solid #eee;">회원탈퇴</a>
                     </li>
                 </ul>

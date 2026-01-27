@@ -29,7 +29,8 @@ class AppServiceProvider extends ServiceProvider
             return new \App\Providers\SellerUserProvider($app['hash'], $config['model']);
         });
 
-        \Illuminate\Support\Facades\View::composer('*', function ($view) {
+        // Scope to layouts to avoid overhead/conflicts on partials or exports
+        \Illuminate\Support\Facades\View::composer(['admin.layouts.*', 'front.layouts.*', 'layouts.*', 'welcome'], function ($view) {
             $globalCategories = \App\Models\Category::where('level', 2)
                 ->where('hide_in_navigation', '0')
                 ->orderBy('position', 'asc')

@@ -113,7 +113,7 @@
 
         @media (max-width: 768px) {
             .goods_list_ul li {
-                width: 50%;
+                width: 50% !important;
             }
         }
     </style>

@@ -158,6 +158,25 @@
 
                 <div class="btn_area_center">
                     <a href="{{ route('mypage.order.list') }}" class="btn_list">목록으로</a>
+
+                    @php
+                        $step = $order->step;
+                    @endphp
+
+                    {{-- Cancel: Until Delivery Ready (45) --}}
+                    @if($step < 45 && $step != 95 && $step != 99)
+                        <a href="{{ route('mypage.claim.apply', ['orderSeq' => $order->order_seq, 'type' => 'cancel']) }}" 
+                           class="btn_list" style="background:#d00; border:1px solid #d00;">주문취소</a>
+                    @endif
+
+                    {{-- Return/Exchange: After Delivery Complete (75) --}}
+                    {{-- 55=Shipping, 65=Delivered, 75=Complete. Usually can return after 55 or 65. --}}
+                    @if($step >= 55 && $step < 80)
+                        <a href="{{ route('mypage.claim.apply', ['orderSeq' => $order->order_seq, 'type' => 'return']) }}" 
+                           class="btn_list" style="background:#fff; color:#333; border:1px solid #333;">반품신청</a>
+                        <a href="{{ route('mypage.claim.apply', ['orderSeq' => $order->order_seq, 'type' => 'exchange']) }}" 
+                           class="btn_list" style="background:#fff; color:#333; border:1px solid #333;">교환신청</a>
+                    @endif
                 </div>
             </div>
         </div>

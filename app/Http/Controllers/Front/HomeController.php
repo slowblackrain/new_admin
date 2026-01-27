@@ -32,10 +32,20 @@ class HomeController extends Controller
         $newProducts = $this->getDisplayProducts(7152);
 
         // 4. Fetch Main Banners (Banner ID: 11)
-        $mainBannerGroup = \App\Models\DesignBanner::with('items')->find(11);
-        $mainBanners = $mainBannerGroup ? $mainBannerGroup->items : collect([]);
+        // fm_design_banner has multiple rows for same banner_seq with different skins.
+        // We fetch the latest modified one and match items by skin.
+        $mainBannerGroup = \App\Models\DesignBanner::where('banner_seq', 11)
+            ->orderBy('modtime', 'desc')
+            ->first();
 
-        // Fallback for demo if DB is empty or missing (Optional, can be removed if confident in DB data)
+        $mainBanners = collect([]);
+        if ($mainBannerGroup) {
+            $mainBanners = $mainBannerGroup->items()
+                ->where('skin', $mainBannerGroup->skin)
+                ->get();
+        }
+
+        // Fallback for demo if no items found
         if ($mainBanners->isEmpty()) {
             $mainBanners = collect([
                 (object)['image_url' => asset('images/legacy/main/banner/images_1.jpg'), 'link' => '/goods/catalog?code=004200130010'],
@@ -62,7 +72,30 @@ class HomeController extends Controller
         // 7. Special Rolling Banner (Display ID: 101810) - Bottom Right
         $specialRolling = $this->getDisplayProducts(101810);
 
-        return view('front.main.index', compact('categories', 'bestProducts', 'newProducts', 'mainBanners', 'gdfList', 'categoryPlan', 'specialRolling'));
+        // 8. Main Middle Banners (Left: 12, Right: 13)
+        // Fetch Banner 12 (Left)
+        $middleBannerL = collect([]);
+        $group12 = \App\Models\DesignBanner::where('banner_seq', 12)
+            ->orderBy('modtime', 'desc')
+            ->first();
+        if ($group12) {
+            $middleBannerL = $group12->items()->where('skin', $group12->skin)->get();
+        }
+
+        // Fetch Banner 13 (Right)
+        $middleBannerR = collect([]);
+        $group13 = \App\Models\DesignBanner::where('banner_seq', 13)
+            ->orderBy('modtime', 'desc')
+            ->first();
+        if ($group13) {
+            $middleBannerR = $group13->items()->where('skin', $group13->skin)->get();
+        }
+
+        return view('front.main.index', compact(
+            'categories', 'bestProducts', 'newProducts', 'mainBanners', 
+            'gdfList', 'categoryPlan', 'specialRolling',
+            'middleBannerL', 'middleBannerR'
+        ));
     }
 
     private function getDisplayProducts($displaySeq)

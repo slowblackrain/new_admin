@@ -156,7 +156,52 @@
                     </table>
                 </div>
 
-                <h4 style="margin-top: 30px;">결제 정보</h4>
+                <h4 style="margin-top: 30px;">할인 / 혜택 사용</h4>
+                <div class="order_info_table">
+                    <table class="form_table">
+                        <colgroup>
+                            <col width="150" />
+                            <col width="*" />
+                        </colgroup>
+                        <tbody>
+                            <tr>
+                                <th>쿠폰 사용</th>
+                                <td>
+                                    <select name="download_seq" id="download_seq" class="input_text" style="min-width: 200px;">
+                                        <option value="">쿠폰을 선택하세요</option>
+                                        @foreach($coupons as $coupon)
+                                            <option value="{{ $coupon->download_seq }}" 
+                                                data-type="{{ $coupon->sale_type }}"
+                                                data-percent="{{ $coupon->percent_goods_sale }}"
+                                                data-max="{{ $coupon->max_percent_goods_sale }}"
+                                                data-won="{{ $coupon->won_goods_sale }}">
+                                                {{ $coupon->coupon_name }} 
+                                                ({{ $coupon->sale_type == 'percent' ? $coupon->percent_goods_sale . '%' : number_format($coupon->won_goods_sale) . '원' }} 할인)
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <span id="coupon_discount_display" style="color: #d00; font-weight: bold; margin-left: 10px;"></span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>예치금</th>
+                                <td>
+                                    <input type="number" name="use_emoney" id="use_emoney" class="input_text" value="0" style="text-align:right;"> 원
+                                    <span style="color:#888; margin-left:10px;">(보유: <strong>{{ number_format($user->emoney ?? 0) }}</strong>원)</span>
+                                    <button type="button" class="btn_base" onclick="useAll('emoney', {{ $user->emoney ?? 0 }})">전액사용</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>포인트</th>
+                                <td>
+                                    <input type="number" name="use_point" id="use_point" class="input_text" value="0" style="text-align:right;"> P
+                                    <span style="color:#888; margin-left:10px;">(보유: <strong>{{ number_format($user->point ?? 0) }}</strong>P)</span>
+                                    <button type="button" class="btn_base" onclick="useAll('point', {{ $user->point ?? 0 }})">전액사용</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
                 <div class="order_info_table">
                     <table class="form_table">
                         <colgroup>
@@ -189,6 +234,10 @@
                 <div class="cart_total_area" style="margin-top: 50px;">
                     <div class="total_box">
                         <span>상품금액 <strong>{{ number_format($totalPrice) }}원</strong></span>
+                        <span class="plus" style="margin:0 10px;">+</span>
+                        <span>배송비 <strong>{{ number_format($shipping) }}원</strong></span>
+                        <span class="plus" style="margin:0 10px;">+</span>
+                        <span>포장비 <strong>{{ number_format($packagingCost) }}원</strong></span>
                         <span class="plus" style="margin:0 10px;">+</span>
                         <span>부가세 <strong>{{ number_format($tax) }}원</strong></span>
                         <span class="equal" style="margin:0 10px;">=</span>
@@ -305,6 +354,106 @@
             
             closeAddressModal();
         }
+
+        // Initial PHP values passing to JS
+        const initialFinalPrice = {{ $totalPrice + $shipping + $packagingCost + $tax }};
+        const initialGoodsPrice = {{ $totalPrice }};
+        const maxEmoney = {{ $user->emoney ?? 0 }};
+        const maxPoint = {{ $user->point ?? 0 }};
+
+        function useAll(type, amount) {
+            const input = document.getElementById('use_' + type);
+            const currentTotal = calculateCurrentTotal(type);
+            let useAmount = amount;
+            if (amount > currentTotal) useAmount = currentTotal;
+            
+            input.value = useAmount;
+            updateFinalPrice();
+        }
+
+        function calculateCurrentTotal(excludeType) {
+            // Recalculate everything to be safe
+            // Base - Coupon - (Other Points)
+            let total = initialFinalPrice - calculateCouponDiscount();
+            
+            if (excludeType !== 'emoney') total -= parseInt(document.getElementById('use_emoney').value || 0);
+            if (excludeType !== 'point') total -= parseInt(document.getElementById('use_point').value || 0);
+            return total;
+        }
+
+        function calculateCouponDiscount() {
+            const select = document.getElementById('download_seq');
+            const option = select.options[select.selectedIndex];
+            if (!option.value) return 0;
+
+            let discount = 0;
+            const type = option.dataset.type;
+            
+            if (type === 'percent') {
+                const percent = parseFloat(option.dataset.percent);
+                const max = parseFloat(option.dataset.max);
+                discount = Math.floor(initialGoodsPrice * (percent / 100));
+                if (max > 0 && discount > max) discount = max;
+            } else if (type === 'won') {
+                discount = parseFloat(option.dataset.won);
+            }
+            
+            // Cannot exceed total price (or goods price? usually goods price but settlement price cap in controller)
+            // Let's cap at initialFinalPrice for simplicity in UI
+            if (discount > initialFinalPrice) discount = initialFinalPrice;
+            
+            return discount;
+        }
+
+        function updateFinalPrice() {
+            let useEmoney = parseInt(document.getElementById('use_emoney').value || 0);
+            let usePoint = parseInt(document.getElementById('use_point').value || 0);
+            let couponDiscount = calculateCouponDiscount();
+
+            // Display Coupon Discount
+            if (couponDiscount > 0) {
+                 document.getElementById('coupon_discount_display').innerText = '-' + new Intl.NumberFormat().format(couponDiscount) + '원';
+            } else {
+                 document.getElementById('coupon_discount_display').innerText = '';
+            }
+
+            // Available total for points is (Final - Coupon)
+            let availableForPoints = initialFinalPrice - couponDiscount;
+
+            // Re-validate points against new available total
+            if (useEmoney > availableForPoints) {
+                 useEmoney = availableForPoints;
+                 document.getElementById('use_emoney').value = useEmoney;
+            }
+            availableForPoints -= useEmoney;
+
+            if (usePoint > availableForPoints) {
+                 usePoint = availableForPoints;
+                 document.getElementById('use_point').value = usePoint;
+            }
+
+            // Validation Max Holding
+            if (useEmoney > maxEmoney) {
+                alert('보유 예치금을 초과할 수 없습니다.');
+                useEmoney = maxEmoney;
+                document.getElementById('use_emoney').value = useEmoney;
+            }
+            if (usePoint > maxPoint) {
+                alert('보유 포인트를 초과할 수 없습니다.');
+                usePoint = maxPoint;
+                document.getElementById('use_point').value = usePoint;
+            }
+
+            let finalPrice = initialFinalPrice - couponDiscount - useEmoney - usePoint;
+
+            if (finalPrice < 0) finalPrice = 0;
+
+            document.querySelector('.final_price').innerText = new Intl.NumberFormat().format(finalPrice) + '원';
+        }
+
+        document.getElementById('use_emoney').addEventListener('change', updateFinalPrice);
+        document.getElementById('use_point').addEventListener('change', updateFinalPrice);
+        document.getElementById('download_seq').addEventListener('change', updateFinalPrice);
 
         function openDaumPostcode() {
             new daum.Postcode({

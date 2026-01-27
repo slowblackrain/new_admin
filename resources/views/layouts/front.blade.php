@@ -8,7 +8,6 @@
     <title>{{ $title ?? '도매토피아' }}</title>
 
     <!-- Legacy CSS -->
-    {{-- Adjust paths if necessary based on asset verification --}}
     <link rel="stylesheet" href="{{ asset('css/legacy/common.css') }}">
     <link rel="stylesheet" href="{{ asset('css/legacy/dometopia.css') }}">
     <link rel="stylesheet" href="{{ asset('css/legacy/main.css') }}">

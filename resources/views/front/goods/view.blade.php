@@ -428,6 +428,8 @@
                 <a href="javascript:void(0);" class="item on" onclick="switchTab('detail', this)">상품상세정보</a>
                 <a href="javascript:void(0);" class="item" onclick="switchTab('guide', this)">상품구매 필독사항</a>
                 <a href="javascript:void(0);" class="item" onclick="switchTab('shipping', this)">배송/거래정보 안내</a>
+                <a href="javascript:void(0);" class="item" onclick="switchTab('review', this)">상품사용후기</a>
+                <a href="javascript:void(0);" class="item" onclick="switchTab('qna', this)">상품Q&A</a>
             </div>
 
             <div id="tab_detail" class="tab_content_area active">
@@ -612,6 +614,14 @@
                     </ul>
                 </div>
             </div>
+
+            <div id="tab_review" class="tab_content_area" style="display:none; padding:20px;">
+                <div id="review_list_container">로딩중...</div>
+            </div>
+
+            <div id="tab_qna" class="tab_content_area" style="display:none; padding:20px;">
+                <div id="qna_list_container">로딩중...</div>
+            </div>
         </div>
     </div>
 
@@ -689,6 +699,28 @@
             // Toggle active state
             document.querySelectorAll('.detail.tab-nav .item').forEach(el => el.classList.remove('on'));
             if (element) element.classList.add('on');
+
+            // Load Board Content if reviewing/qna
+            if (tabName === 'review') {
+                loadBoardList('goods_review', gl_goods_seq, 'review_list_container');
+            } else if (tabName === 'qna') {
+                loadBoardList('goods_qna', gl_goods_seq, 'qna_list_container');
+            }
+        }
+
+        function loadBoardList(boardId, goodsSeq, targetId) {
+            const container = document.getElementById(targetId);
+            container.innerHTML = '<div style="text-align:center; padding:20px;">로딩중...</div>';
+            
+            fetch(`/board/goods-list?id=${boardId}&goods_seq=${goodsSeq}`)
+                .then(response => response.text())
+                .then(html => {
+                    container.innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Error loading board:', error);
+                    container.innerHTML = '<div style="text-align:center; color:red;">불러오기 실패</div>';
+                });
         }
 
         function toggleOptionTable(btn) {
@@ -898,6 +930,7 @@
             fetch("{{ route('cart.store') }}", {
                 method: "POST",
                 headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                credentials: 'include', // Ensure cookies are sent
                 body: formData
             }).then(r => r.json()).then(data => {
                 if (data.status === 'success') {

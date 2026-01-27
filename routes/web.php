@@ -57,25 +57,67 @@ Route::prefix('order/cart')->name('cart.')->group(function () {
 });
 
 Route::prefix('order')->name('order.')->group(function () {
-    Route::post('/order', [OrderController::class, 'index'])->name('form');
-    Route::get('/order', [OrderController::class, 'index'])->name('form_get');
-    Route::post('/order/complete', [OrderController::class, 'store'])->name('store');
-    Route::get('/order/complete/{id}', [OrderController::class, 'complete'])->name('complete');
+    Route::post('/form', [OrderController::class, 'index'])->name('form');
+    Route::get('/form', [OrderController::class, 'index'])->name('form_get');
+    Route::post('/pay', [OrderController::class, 'store'])->name('store');
+    Route::get('/complete/{id}', [OrderController::class, 'complete'])->name('complete');
 });
 
 Route::middleware(['auth'])->prefix('mypage')->name('mypage.')->group(function () {
-    Route::get('/delivery-address', [App\Http\Controllers\Front\DeliveryAddressController::class, 'index'])->name('delivery_address.index');
+    // Member Info Modification
+    Route::get('/my-info/check', [App\Http\Controllers\Front\MemberModifyController::class, 'checkPassword'])->name('member.check_password');
+    Route::post('/my-info/check', [App\Http\Controllers\Front\MemberModifyController::class, 'verifyPassword'])->name('member.verify_password');
+    Route::get('/my-info/edit', [App\Http\Controllers\Front\MemberModifyController::class, 'edit'])->name('member.edit');
+    Route::put('/my-info/update', [App\Http\Controllers\Front\MemberModifyController::class, 'update'])->name('member.update');
+
+    // Member Withdrawal
+    Route::get('/drop', [App\Http\Controllers\Front\MemberDropController::class, 'index'])->name('member.drop');
+    Route::post('/drop', [App\Http\Controllers\Front\MemberDropController::class, 'leave'])->name('member.leave');
+
+    Route::prefix('delivery-address')->name('delivery_address.')->group(function() {
+        Route::get('/', [App\Http\Controllers\Front\DeliveryAddressController::class, 'index'])->name('index');
+        Route::get('/create', [App\Http\Controllers\Front\DeliveryAddressController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\Front\DeliveryAddressController::class, 'store'])->name('store');
+        Route::get('/{id}/edit', [App\Http\Controllers\Front\DeliveryAddressController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [App\Http\Controllers\Front\DeliveryAddressController::class, 'update'])->name('update');
+        Route::delete('/{id}', [App\Http\Controllers\Front\DeliveryAddressController::class, 'destroy'])->name('destroy');
+        Route::get('/json', [App\Http\Controllers\Front\DeliveryAddressController::class, 'listJson'])->name('json');
+    });
     Route::get('/', [MypageController::class, 'index'])->name('index');
     Route::get('/order/list', [MypageController::class, 'orderList'])->name('order.list');
+    Route::get('/order/claim', [MypageController::class, 'orderClaimList'])->name('order.claim_list');
     
+    // Wishlist
+    Route::get('/wishlist', [MypageController::class, 'wishlist'])->name('wishlist');
+    Route::delete('/wishlist/{id}', [MypageController::class, 'wishlistDestroy'])->name('wishlist.destroy');
+
     Route::post('/order/add-item', [\App\Http\Controllers\Admin\Order\OrderProcessController::class, 'addItem'])->name('order.addItem');
     Route::get('/order_catalog', [MypageController::class, 'orderList'])->name('order.catalog');
     Route::get('/order/view/{id}', [MypageController::class, 'orderView'])->name('order.view');
+
+    // Claim Routes
+    Route::get('/claim/apply/{orderSeq}/{type}', [MypageController::class, 'claimApply'])->name('claim.apply');
+    Route::post('/claim/store/{orderSeq}', [MypageController::class, 'claimStore'])->name('claim.store');
+
+    // Benefit Routes (Coupon, Emoney, Point)
+    Route::get('/coupon', [MypageController::class, 'couponList'])->name('coupon');
+    Route::get('/emoney', [MypageController::class, 'emoneyList'])->name('emoney');
+    Route::get('/point', [MypageController::class, 'pointList'])->name('point');
 });
 
 Route::prefix('board')->name('board.')->group(function () {
     Route::get('/', [BoardController::class, 'index'])->name('index');
     Route::get('/view', [BoardController::class, 'view'])->name('view');
+    
+    // Write routes (protected by auth middleware usually, but controller checks auth too)
+    Route::middleware(['auth'])->group(function() {
+        Route::get('/write', [BoardController::class, 'create'])->name('write');
+        Route::post('/write', [BoardController::class, 'store'])->name('store');
+        Route::post('/comment', [BoardController::class, 'commentStore'])->name('comment.store');
+    });
+
+    // Public partial view for goods
+    Route::get('/goods-list', [BoardController::class, 'getGoodsBoardList'])->name('goods.list');
 });
 
 Route::prefix('service')->name('service.')->group(function () {

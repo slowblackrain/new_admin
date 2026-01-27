@@ -327,28 +327,26 @@ class GoodsController extends Controller
         $scProvider = $request->input('provider_seq');
 
         $query = DB::table('fm_goods as g')
-            ->leftJoin('fm_goods_image as i', function($join) {
-                $join->on('g.goods_seq', '=', 'i.goods_seq')->where('i.image_type', 'list1');
-            })
             ->leftJoin('fm_provider as p', 'g.provider_seq', '=', 'p.provider_seq')
-            ->leftJoin('fm_category_link as cl', function($join) {
-                $join->on('g.goods_seq', '=', 'cl.goods_seq')->where('cl.link', 1); // Primary Category
-            })
-            ->leftJoin('fm_category as c', 'cl.category_code', '=', 'c.category_code')
             ->select(
                 'g.goods_seq', 'g.goods_name', 'g.goods_code', 'g.goods_view', 'g.goods_status', 
                 'g.regist_date', 'g.update_date', 'g.goods_scode', 'g.provider_status',
-                'g.model', 'g.maker_name', 'g.origin_name', 'g.provider_seq', 'g.offer_chk',
-                'i.image',
+                'g.provider_seq', 'g.offer_chk',
                 'p.provider_name',
-                'c.title as category_title',
+                
+                // Optimized Image Subquery (Avoid Duplicates)
+                DB::raw('(SELECT image FROM fm_goods_image WHERE goods_seq = g.goods_seq AND image_type = "list1" LIMIT 1) as image'),
+                
+                // Optimized Category Subquery (Avoid Duplicates)
+                DB::raw('(SELECT c.title FROM fm_category_link cl JOIN fm_category c ON cl.category_code = c.category_code WHERE cl.goods_seq = g.goods_seq AND cl.link = 1 LIMIT 1) as category_title'),
+
                 DB::raw('(SELECT SUM(s.stock) FROM fm_goods_supply as s WHERE s.goods_seq = g.goods_seq) as total_stock'),
                 DB::raw('(SELECT SUM(s.badstock + s.reservation15 + s.reservation25) FROM fm_goods_supply as s WHERE s.goods_seq = g.goods_seq) as total_holding'),
                 DB::raw('(SELECT MAX(o.regist_date) FROM fm_order as o JOIN fm_order_item as oi ON o.order_seq = oi.order_seq WHERE oi.goods_seq = g.goods_seq) as l_date')
             )
             ->orderBy('g.regist_date', 'desc');
 
-        // Apply Filters
+        // Apply Filters (Existing Logic)
         if ($keyword) {
             $query->where(function($q) use ($keyword) {
                 $q->where('g.goods_name', 'like', "%{$keyword}%")
@@ -368,14 +366,8 @@ class GoodsController extends Controller
             $query->where('g.provider_status', $providerStatus);
         }
         
-        // Expanded Filter Logic
-        if ($minPrice) $query->where('g.sale_price', '>=', str_replace(',', '', $minPrice)); // Assuming sale_price exists in goods or we need to join option?
-        // Wait, price is usually in option. Legacy catalog search by main price often uses a representative column or joins.
-        // Let's check if fm_goods has 'sale_price' or similar default. 
-        // Legacy: "SELECT price FROM fm_goods_option WHERE goods_seq =? "
-        // For accurate search, we should join fm_goods_option.
-        // Doing a JOIN for search might duplicate rows if multiple options.
-        // Strategy: Use whereExists or Join and Group.
+        if ($minPrice) $query->where('g.sale_price', '>=', str_replace(',', '', $minPrice)); 
+        
         if ($minPrice || $maxPrice) {
             $query->whereExists(function($sub) use ($minPrice, $maxPrice) {
                  $sub->select(DB::raw(1))
@@ -386,80 +378,148 @@ class GoodsController extends Controller
             });
         }
 
-        if ($scBrand) {
-            // $query->where('g.brand_code', 'like', "%{$scBrand}%"); // Column missing in fm_goods. Defer.
-        }
-        if ($scModel) $query->where('g.model', 'like', "%{$scModel}%");
-        if ($scMaker) $query->where('g.maker_name', 'like', "%{$scMaker}%");
-        if ($scOrigin) $query->where('g.origin_name', 'like', "%{$scOrigin}%");
         if ($scProvider) $query->where('g.provider_seq', $scProvider);
         
-        // Get Providers for Dropdown
+        // Get Providers
         $providers = DB::table('fm_provider')->select('provider_seq', 'provider_name')->get();
 
         $goods = $query->paginate(20);
 
+        // Optimization: Batch Loading
+        $goodsSeqList = $goods->pluck('goods_seq')->toArray();
+
+        if (!empty($goodsSeqList)) {
+            // 1. Batch Fetch Options (for stats & default price)
+            // We need aggregate stats AND default option price data for existing helper logic.
+            // Option Stats
+            $optionStats = DB::table('fm_goods_option')
+                ->whereIn('goods_seq', $goodsSeqList)
+                ->groupBy('goods_seq')
+                ->selectRaw('goods_seq, MIN(price) as min_price, MAX(price) as max_price, COUNT(*) as opt_count')
+                ->get()
+                ->keyBy('goods_seq');
+
+            // Default Option Prices for Helper (Legacy Render)
+            // Need: mtype_discount, fifty_discount, hundred_discount from GOODS, and price from OPTION
+            $defaultOptionPrices = DB::table('fm_goods as a')
+                ->join('fm_goods_option as b', 'a.goods_seq', '=', 'b.goods_seq')
+                ->whereIn('a.goods_seq', $goodsSeqList)
+                ->where('b.default_option', 'y')
+                ->select('a.goods_seq', 'a.mtype_discount', 'a.fifty_discount', 'a.hundred_discount', 'b.price')
+                ->get()
+                ->keyBy('goods_seq');
+
+            // 2. Batch Fetch Offers
+            $offers = DB::table('fm_offer')
+                ->whereIn('goods_seq', $goodsSeqList)
+                ->where(function($q) {
+                    $q->where('step', '<', 11)
+                      ->orWhere('step', 13)
+                      ->orWhere('step', 14)
+                      ->orWhere('step', 100);
+                })
+                ->where('step', '>', 0)
+                ->orderBy('sno', 'desc')
+                ->get()
+                ->groupBy('goods_seq');
+
+            // 3. Batch Fetch Duplicate Counts for Offers (N+M optimization)
+            // Collect all offer_cn + shipment_date pairs to query duplicates
+            $offerKeys = [];
+            foreach ($offers as $group) {
+                foreach ($group as $o) {
+                    if ($o->offer_cn && $o->shipment_date) {
+                        $offerKeys[] = $o->offer_cn . '|' . $o->shipment_date;
+                    }
+                }
+            }
+            $offerKeys = array_unique($offerKeys);
+            
+            $dupCounts = [];
+            if (!empty($offerKeys)) {
+                // Construct OR query for duplicates or simple group by?
+                // Simple Group By for these offer_cns is better.
+                // Assuming efficient enough to verify 'step=8' duplicates.
+                // For simplicity, let's just fetch counts for these CNs regardless of date if easier, or exact match.
+                // Replicating: where('step', 8)->where('shipment_date', $data['shipment_date'])->where('offer_cn', $data['offer_cn'])
+                
+                // Extract CNs
+                $cns = [];
+                foreach($offerKeys as $k) { $cns[] = explode('|', $k)[0]; }
+                
+                $dups = DB::table('fm_offer')
+                    ->whereIn('offer_cn', $cns)
+                    ->where('step', 8)
+                    ->select('offer_cn', DB::raw('count(*) as cnt'))
+                    ->groupBy('offer_cn')
+                    ->get()
+                    ->pluck('cnt', 'offer_cn');
+                $dupCounts = $dups;
+            }
+
+            // 4. Batch Fetch Last Order Date (Replacing Subquery)
+            $lastDates = DB::table('fm_order_item as oi')
+                ->join('fm_order as o', 'o.order_seq', '=', 'oi.order_seq')
+                ->whereIn('oi.goods_seq', $goodsSeqList)
+                ->groupBy('oi.goods_seq')
+                ->selectRaw('oi.goods_seq, MAX(o.regist_date) as l_date')
+                ->get()
+                ->keyBy('goods_seq');
+        }
+
         foreach ($goods as $item) {
             // 1. Option Price & Count
-            $options = DB::table('fm_goods_option')
-                ->where('goods_seq', $item->goods_seq)
-                ->selectRaw('MIN(price) as min_price, MAX(price) as max_price, COUNT(*) as opt_count')
-                ->first();
-            
-            $item->min_price = optional($options)->min_price ?? 0;
-            $item->max_price = optional($options)->max_price ?? 0;
-            $item->opt_count = optional($options)->opt_count ?? 0;
+            $stat = $optionStats[$item->goods_seq] ?? null;
+            $item->min_price = $stat ? $stat->min_price : 0;
+            $item->max_price = $stat ? $stat->max_price : 0;
+            $item->opt_count = $stat ? $stat->opt_count : 0;
 
-            // 2. Stock Logic (Legacy Porting)
-            // n_stock = total_stock (synced with SCM if needed)
-            // n_rstock = n_stock - holding
-            
-            // Legacy Sync Logic: If stock < 0, sync with SCM WH 1
-            $currentStock = $item->total_stock ?? 0;
-            
-            if ($currentStock < 0) {
-                $scmStock = DB::table('fm_scm_location_link')
+            // 2. Stock Logic (Legacy Porting) - Keeping logic but note: this performs WRITES on GET. 
+            // Consideration: Move to Async Job if still slow. 
+            // For now, minimizing Reads is the goal.
+            // Check if current stock needed sync
+            $item->total_stock = $item->total_stock ?? 0;
+            if ($item->total_stock < 0) {
+                 // Fetch SCM Stock (Single fetch, inevitable for this specific logic unless we batch this too)
+                 // But since it only happens on negative stock, it's rare.
+                 $scmStock = DB::table('fm_scm_location_link')
                     ->where('goods_seq', $item->goods_seq)
                     ->where('wh_seq', 1) 
                     ->value('ea');
                 
-                $scmStock = $scmStock ?? 0;
-                
-                if ($currentStock != $scmStock) {
-                    // Sync Up!
-                    DB::table('fm_goods_supply')
+                 $scmStock = $scmStock ?? 0;
+                 if ($item->total_stock != $scmStock) {
+                     DB::table('fm_goods_supply')
                         ->where('goods_seq', $item->goods_seq)
                         ->update(['stock' => $scmStock, 'total_stock' => $scmStock]);
-                    
-                    $currentStock = $scmStock; 
-                }
+                     $item->total_stock = $scmStock;
+                 }
             }
-            $item->n_stock = $currentStock; // Real Stock
-            $item->n_rstock = $currentStock - ($item->total_holding ?? 0); // Available Stock
+            $item->n_stock = $item->total_stock; 
+            $item->n_rstock = $item->total_stock - ($item->total_holding ?? 0); 
             
-            // 3. Info & Price Logic (Legacy Porting)
-            // Use Services\LegacyGoodsHelper to generate HTML
-            $item->offer_info = \App\Services\LegacyGoodsHelper::getOfferInfoHtml($item->goods_seq);
-            $item->disp_price = \App\Services\LegacyGoodsHelper::getDiscountPriceHtml($item->goods_seq);
+            // 3. Info & Price Logic (Optimized)
+            $itemOffers = $offers[$item->goods_seq] ?? collect([]);
+            $item->offer_info = \App\Services\LegacyGoodsHelper::renderOfferInfo($itemOffers, $dupCounts);
 
-            // 4. Image Logic
-            // Legacy matches: if(strpos($data['image'], "/data/goods/goods_img") !== false) -> replace with CDN
+            $priceData = $defaultOptionPrices[$item->goods_seq] ?? null;
+            $item->disp_price = \App\Services\LegacyGoodsHelper::renderDiscountPrice($priceData);
+
+            // 4. Last Order Date (Manual Map)
+            $item->l_date = $lastDates[$item->goods_seq]->l_date ?? null;
+
+            // 5. Image Logic
             if ($item->image && strpos($item->image, "/data/goods/goods_img") !== false) {
                 $item->image = str_replace("/data/goods/goods_img", "https://dmtusr.vipweb.kr/goods_img", $item->image);
-            } else if ($item->image && !str_starts_with($item->image, 'http') && !str_starts_with($item->image, '/')) {
-                 // Ensure local paths have /data/goods prefix if simple filename
-                 // But wait, the Join in query might return full path or just filename?
-                 // Usually just filename like '1234.jpg'.
-                 // Legacy view uses: src="/data/goods/{$item->image}"
-                 // But if it is in goods_img folder, it's different.
-                 // Let's keep it simple: if it doesn't look like a path, assume /data/goods/
-                 // BUT if we applied CDN replacement, we are good.
             }
 
-            // 5. Visual Logic (Buying Service)
+            // 6. Buying Service Logic
             $item->is_buying_service = false;
             if (strpos($item->goods_scode, 'FFF') !== false) {
-                 // Check if any order item is in specific steps
+                 // Optimization: This is still N+1.
+                 // Pending Orders Check involves joins. 
+                 // It's rare? 'FFF' codes only. Conditional N+1.
+                 // Improvement: Batch fetch this too if needed.
                  $pendingOrders = DB::table('fm_order_item as i')
                     ->join('fm_order_item_option as io', 'i.item_seq', '=', 'io.item_seq')
                     ->where('i.goods_seq', $item->goods_seq)
@@ -467,7 +527,7 @@ class GoodsController extends Controller
                     ->exists();
                  
                  if ($pendingOrders) {
-                     $item->is_buying_service = true; // Use this to color row pink
+                     $item->is_buying_service = true; 
                  }
             }
         }

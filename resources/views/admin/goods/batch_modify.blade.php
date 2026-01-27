@@ -1,4 +1,4 @@
-@extends('admin.layouts.app')
+@extends('admin.layouts.admin')
 
 @section('content')
 <div class="content-wrapper">
@@ -18,7 +18,7 @@
                     </form>
                 </div>
                 <div class="card-body">
-                    <form action="{{ route('admin.goods.batch_save') }}" method="POST">
+                    <form action="{{ route('admin.goods.batch.modify') }}" method="POST">
                         @csrf
                         <table class="table table-bordered table-sm">
                             <thead>
@@ -40,7 +40,7 @@
                                         <select name="goodsStatus_{{ $item->goods_seq }}" class="form-control form-control-sm">
                                             <option value="normal" {{ $item->goods_status == 'normal' ? 'selected' : '' }}>정상</option>
                                             <option value="runout" {{ $item->goods_status == 'runout' ? 'selected' : '' }}>품절</option>
-                                            <option value="stop" {{ $item->goods_status == 'stop' ? 'selected' : '' }}>판매중지</option>
+                                            <option value="unsold" {{ $item->goods_status == 'unsold' ? 'selected' : '' }}>판매중지</option>
                                         </select>
                                     </td>
                                     <td>{{ substr($item->regist_date, 0, 10) }}</td>

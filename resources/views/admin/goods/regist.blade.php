@@ -254,6 +254,8 @@
         window.calcTieredPricing = calcTieredPricing;
     </script>
 
+@endsection
+
 @section('page-script')
     <!-- Legacy placeholder if needed -->
 @endsection

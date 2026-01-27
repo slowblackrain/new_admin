@@ -7,117 +7,133 @@ use Illuminate\Support\Facades\DB;
 
 class ScmManageController extends Controller
 {
-    // List Goods for Revision
+    // List Stock Revisions (History)
     public function revision(Request $request)
     {
-        $query = DB::table('fm_goods as g')
-            ->leftJoin('fm_goods_supply as sup', 'g.goods_seq', '=', 'sup.goods_seq')
-            ->select(
-                'g.goods_seq',
-                'g.goods_name',
-                'g.goods_code',
-                DB::raw('IFNULL(sup.stock, 0) as current_stock')
-            );
+        $query = \App\Models\Scm\ScmStockRevision::orderBy('regist_date', 'desc');
 
         if ($request->keyword) {
-            $query->where(function($q) use ($request) {
-                $q->where('g.goods_name', 'like', "%{$request->keyword}%")
-                  ->orWhere('g.goods_code', 'like', "%{$request->keyword}%");
-            });
+            $query->where('revision_code', 'like', "%{$request->keyword}%");
         }
 
-        $goods = $query->paginate(50);
+        $revisions = $query->paginate(20);
+        $warehouses = \App\Models\Scm\ScmWarehouse::all()->keyBy('wh_seq');
 
-        return view('admin.scm.manage.revision', compact('goods'));
+        return view('admin.scm.manage.revision', compact('revisions', 'warehouses'));
+    }
+
+    // Revision Registration Form
+    public function revision_regist(Request $request)
+    {
+        $warehouses = \App\Models\Scm\ScmWarehouse::all();
+        return view('admin.scm.manage.revision_regist', compact('warehouses'));
     }
 
     // Save Stock Revision
-    public function save_revision(Request $request)
+    public function revision_save(Request $request)
     {
-        $revisions = $request->input('stock'); // [goods_seq => new_stock]
-        
-        if (!$revisions || !is_array($revisions)) {
-            return back()->with('error', '변경할 내역이 없습니다.');
-        }
+        $request->validate([
+            'wh_seq' => 'required|integer',
+            'revision_type' => 'required|in:increase,decrease,set', 
+            'stock' => 'required|array', // [goods_seq => qty]
+        ]);
 
         DB::beginTransaction();
         try {
-            // Create Revision Master Record
-            $revision_code = 'R' . date('YmdHis');
-            $revision_seq = DB::table('fm_scm_stock_revision')->insertGetId([
-                'revision_code' => $revision_code,
-                'revision_type' => 'def', // Basic/Adjustment
+            $wh_seq = $request->wh_seq;
+            $type_map = ['increase' => 1, 'decrease' => 2, 'set' => 3];
+            $rev_type_int = $type_map[$request->revision_type];
+
+            // Create Master
+            $revision = \App\Models\Scm\ScmStockRevision::create([
+                'revision_code' => 'R' . date('YmdHis'),
+                'revision_type' => $rev_type_int,
                 'revision_status' => 1, // Complete
-                'wh_seq' => 1, // Default warehouse
-                'admin_memo' => 'Manual Revision via Admin',
-                'total_ea' => 0, // Will update later
+                'wh_seq' => $wh_seq,
+                'admin_memo' => $request->admin_memo,
+                'total_ea' => 0,
                 'complete_date' => now(),
+                'regist_date' => now(),
                 'krw_total_supply_price' => 0,
                 'krw_total_supply_tax' => 0,
-                'krw_total_price' => 0,
-                'regist_date' => now()
+                'krw_total_price' => 0
             ]);
 
-            $total_diff = 0;
+            $total_abs_ea = 0;
             $updated_count = 0;
 
-            foreach ($revisions as $goods_seq => $new_stock) {
-                // Ensure atomic read
-                $current = DB::table('fm_goods_supply')->where('goods_seq', $goods_seq)->lockForUpdate()->first();
-                $current_stock = $current ? $current->stock : 0;
-                $new_stock = (int)$new_stock;
+            foreach ($request->stock as $goods_seq => $qty) {
+                // Determine Delta
+                $qty = (int)$qty;
+                if ($qty == 0 && $request->revision_type != 'set') continue;
 
-                if ($current_stock == $new_stock) continue;
+                // Lock & Get Current Stock (Local Sync)
+                // Use updateLocationStock logic which handles Location Links
+                // But for 'Set', we need to know current Location Stock.
+                
+                $current_loc_ea = 0;
+                $link = \App\Models\Scm\ScmLocationLink::where('wh_seq', $wh_seq)
+                        ->where('goods_seq', $goods_seq)
+                        ->first();
+                if ($link) $current_loc_ea = $link->ea;
 
-                $diff = $new_stock - $current_stock;
+                $delta = 0;
+                if ($request->revision_type == 'increase') {
+                    $delta = abs($qty);
+                } elseif ($request->revision_type == 'decrease') {
+                    $delta = -abs($qty);
+                } elseif ($request->revision_type == 'set') {
+                    $delta = $qty - $current_loc_ea;
+                    if ($delta == 0) continue;
+                }
 
-                // Update Supply
-                DB::table('fm_goods_supply')->updateOrInsert(
-                    ['goods_seq' => $goods_seq],
-                    ['stock' => $new_stock, 'total_stock' => $new_stock] // Simplified: sync total_stock
-                );
+                // Update Location Stock
+                $this->updateLocationStock($wh_seq, $goods_seq, $delta);
 
-                // Update Location Stock (Default Warehouse 1)
-                $diff = $new_stock - $current_stock;
-                $this->updateLocationStock(1, $goods_seq, $diff);
+                // Need Goods Info for Log
+                // Default connection selects from Live DB or Local depending on config.
+                // Since we need to join or save names, we fetch.
+                $goods_info = DB::table('fm_goods')->where('goods_seq', $goods_seq)->first();
+                
+                if ($goods_info) {
+                    \App\Models\Scm\ScmStockRevisionGoods::create([
+                        'revision_seq' => $revision->revision_seq,
+                        'goods_seq' => $goods_seq,
+                        'goods_name' => $goods_info->goods_name,
+                        'goods_code' => $goods_info->goods_code,
+                        'use_tax' => 'Y',
+                        'option_type' => 'option',
+                        'option_seq' => 0, 
+                        'ea' => $delta, // Log the change amount? Or the target amount? Legacy 'ea' usually logged revision amount.
+                        // However, for 'set', logging delta is technically correct for 'change log', 
+                        // but sometimes users want to see "Changed TO X". 
+                        // Let's assume 'ea' in detail table is the DELTA.
+                        'supply_price' => 0,
+                        'krw_supply_price' => 0,
+                        'supply_tax' => 0,
+                        'krw_supply_tax' => 0
+                    ]);
+                }
 
-                // Insert Revision Detail
-                DB::table('fm_scm_stock_revision_goods')->insert([
-                    'revision_seq' => $revision_seq,
-                    'goods_seq' => $goods_seq,
-                    'goods_name' => '', // Lookup efficient? Maybe skip or fetch
-                    'goods_code' => '',
-                    'use_tax' => 'Y',
-                    'option_type' => 'option',
-                    'option_seq' => 0, // Assuming simple goods for now
-                    'option_name' => '',
-                    'ea' => $diff,
-                    'supply_price_type' => 'KRW',
-                    'supply_price' => 0,
-                    'krw_supply_price' => 0,
-                    'exchange_price' => 1,
-                    'supply_tax' => 0,
-                    'krw_supply_tax' => 0
-                ]);
-
-                $total_diff += abs($diff);
+                // Verify global stock sync if needed (optional, simplistic for now)
+                
+                $total_abs_ea += abs($delta);
                 $updated_count++;
             }
 
             if ($updated_count == 0) {
                 DB::rollBack();
-                return back()->with('warning', '변경된 재고가 없습니다.');
+                return back()->with('warning', '변경 사항이 없습니다.');
             }
 
-            // Update Master Count
-            DB::table('fm_scm_stock_revision')->where('revision_seq', $revision_seq)->update(['total_ea' => $total_diff]);
+            $revision->update(['total_ea' => $total_abs_ea]);
 
             DB::commit();
-            return back()->with('success', "$updated_count 건의 재고가 조정되었습니다.");
+            return redirect()->route('admin.scm_manage.revision')->with('success', '재고 조정이 완료되었습니다.');
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', '재고 조정 중 오류: ' . $e->getMessage());
+            return back()->with('error', '오류 발생: ' . $e->getMessage());
         }
     }
 
@@ -234,10 +250,12 @@ class ScmManageController extends Controller
                 if ($qty <= 0) continue;
 
                 // 2. Fetch Goods Info (for static log)
-                $goods = DB::table('fm_goods')->where('goods_seq', $goods_seq)->first();
+                // Default connection 'read' config -> Live DB
+                $goods = DB::table('fm_goods')->where('goods_seq', $goods_seq)->first(); 
                 if (!$goods) continue;
 
                 // 3. Update Location Links (The Core Logic)
+                // ... (No change to logic)
                 // OUT Warehouse: Decrease
                 $this->updateLocationStock($request->out_wh_seq, $goods_seq, -$qty);
                 
@@ -289,22 +307,27 @@ class ScmManageController extends Controller
             // Create new link if positive
             if ($delta > 0) {
                 // Need basic goods info to create link
+                // Default connection selects from Live DB
                 $goods = DB::table('fm_goods')->where('goods_seq', $goods_seq)->first();
-                \App\Models\Scm\ScmLocationLink::create([
-                    'wh_seq' => $wh_seq,
-                    'goods_seq' => $goods_seq,
-                    'goods_name' => $goods->goods_name,
-                    'goods_code' => $goods->goods_code,
-                    'option_type' => 'option',
-                    'option_seq' => 0,
-                    'ea' => $delta,
-                    'location_code' => '', // Default
-                ]);
+
+                if ($goods) {
+                    \App\Models\Scm\ScmLocationLink::create([
+                        'wh_seq' => $wh_seq,
+                        'goods_seq' => $goods_seq,
+                        'goods_name' => $goods->goods_name,
+                        'goods_code' => $goods->goods_code,
+                        'option_type' => 'option',
+                        'option_seq' => 0,
+                        'ea' => $delta,
+                        'location_code' => '', // Default
+                    ]);
+                }
             }
             // If delta < 0 and no link, we can theoretically create negative stock or ignore.
             // Let's create negative to track anomaly.
              else {
                  $goods = DB::table('fm_goods')->where('goods_seq', $goods_seq)->first();
+
                  if ($goods) {
                     \App\Models\Scm\ScmLocationLink::create([
                         'wh_seq' => $wh_seq,

@@ -6,23 +6,11 @@ use Illuminate\Support\Facades\DB;
 
 class LegacyGoodsHelper
 {
-    public static function getOfferInfoHtml($goodsSeq)
+    /**
+     * Optimized: Render Offer Info from Collection
+     */
+    public static function renderOfferInfo($offers, $dupCounts = [])
     {
-        $html = "";
-        
-        // Query matching legacy: (step < 11 || step = 13 || step = 14 || step = 100) and step > 0
-        $offers = DB::table('fm_offer')
-            ->where('goods_seq', $goodsSeq)
-            ->where(function($q) {
-                $q->where('step', '<', 11)
-                  ->orWhere('step', 13)
-                  ->orWhere('step', 14)
-                  ->orWhere('step', 100);
-            })
-            ->where('step', '>', 0)
-            ->orderBy('sno', 'desc')
-            ->get();
-
         if ($offers->isEmpty()) {
             return "";
         }
@@ -80,11 +68,12 @@ class LegacyGoodsHelper
             else if(strpos($ord_admin,"ms1201") !== false) $tmp_word = "<span style='color:#FF0000;cursor:pointer' title='이미숙'>▲</span>";
             else if(strpos($ord_admin,"topia8") !== false) $tmp_word = "<span style='color:#FF0000;cursor:pointer' title='김택용'>◎</span>";
 
-            // Count duplicates logic (simplified)
+            // Count duplicates logic
             if($data['offer_cn']){
-                $dupCnt = DB::table('fm_offer')->where('step', 8)->where('shipment_date', $data['shipment_date'])->where('offer_cn', $data['offer_cn'])->count();
-                if($dupCnt > 1) {
-                    $tmp_word .= "<span class='helpicon' title='".$data['offer_cn']."'>"; // Missing close tag in legacy?
+                // Use pre-fetched counts if available, else 0 (safeguard)
+                $cnt = $dupCounts[$data['offer_cn']] ?? 0;
+                if($cnt > 1) {
+                    $tmp_word .= "<span class='helpicon' title='".$data['offer_cn']."'>"; 
                 }
             }
 
@@ -123,44 +112,67 @@ class LegacyGoodsHelper
         return "<table border=0 align='center' class='goodsofferview' width='100%' cellpadding=0 cellspacing=0 style='margin:0;'>{$rows}</table>";
     }
 
+    public static function getOfferInfoHtml($goodsSeq)
+    {
+        // Query matching legacy: (step < 11 || step = 13 || step = 14 || step = 100) and step > 0
+        $offers = DB::table('fm_offer')
+            ->where('goods_seq', $goodsSeq)
+            ->where(function($q) {
+                $q->where('step', '<', 11)
+                  ->orWhere('step', 13)
+                  ->orWhere('step', 14)
+                  ->orWhere('step', 100);
+            })
+            ->where('step', '>', 0)
+            ->orderBy('sno', 'desc')
+            ->get();
+
+        // Warning: This legacy method still performs N+1 on duplicates inside!
+        // Recommendation: Use renderOfferInfo with pre-fetched data.
+        return self::renderOfferInfo($offers); 
+    }
+
+    /**
+     * Optimized: Render Discount Price from Data Array
+     */
+    public static function renderDiscountPrice($data)
+    {
+         if (!$data) return "";
+         $v = (array)$data;
+
+         if (!$v['mtype_discount']) {
+             return "<div style='padding:5px;'>".number_format($v['price'])."</div>";
+         }
+ 
+         $html = "<div style='width:100%;padding-right:5px; font-size:11px;'>";
+         
+         $mtype_discounted = $v['price'] - $v['mtype_discount'];
+         
+         if ($v['hundred_discount']) {
+             $hundred_val = $v['price'] - $v['hundred_discount'];
+             $html .= "<div style='padding:2px;'><span style='display:inline-block;width:25px;color:#FF5555'>수▲</span><span style='display:inline-block;text-align:right;width:55px;color:#5555FF'>".number_format($hundred_val)."</span></div>";
+         }
+         if ($v['fifty_discount']) {
+             $fifty_val = $v['price'] - $v['fifty_discount'];
+             $html .= "<div style='padding:2px;'><span style='display:inline-block;width:25px;color:#FF5555'>할▲</span><span style='display:inline-block;text-align:right;width:55px;color:#5555FF'>".number_format($fifty_val)."</span></div><div style='height:3px;'></div>";
+         }
+ 
+         $html .= "<div style='padding:2px;'><span style='display:inline-block;width:25px;color:#FF5555'>도▲</span><span style='display:inline-block;text-align:right;width:55px;color:#5555FF'>".number_format($mtype_discounted)."</span></div>";
+         $html .= "<div style='padding:2px;'><span style='display:inline-block;width:25px;color:#FF5555'>소▲</span><span style='display:inline-block;text-align:right;width:55px;color:#5555FF'>".number_format($v['price'])."</span></div>";
+         
+         $html .= "</div>";
+         return $html;
+    }
+
     public static function getDiscountPriceHtml($goodsSeq)
     {
         $v = DB::table('fm_goods as a')
             ->leftJoin('fm_goods_option as b', 'a.goods_seq', '=', 'b.goods_seq')
             ->where('a.goods_seq', $goodsSeq)
-            ->where('b.default_option', 'y') // Ensure we get default option price
+            ->where('b.default_option', 'y') 
             ->select('a.mtype_discount', 'a.fifty_discount', 'a.hundred_discount', 'b.price')
             ->first();
 
-        if (!$v) return "";
-        $v = (array)$v;
-
-        if (!$v['mtype_discount']) {
-            return "<div style='padding:5px;'>".number_format($v['price'])."</div>";
-        }
-
-        $html = "<div style='width:100%;padding-right:5px; font-size:11px;'>";
-        
-        // Calculate discounted prices (Legacy logic subtracts discount amount from price)
-        $mtype_discounted = $v['price'] - $v['mtype_discount'];
-        
-        // Check for admin session (assumed true for admin context in Laravel)
-        // Legacy: if($this->session->userdata["manager"]["manager_id"]) ...
-        // We will output it if valuable.
-        
-        if ($v['hundred_discount']) {
-            $hundred_val = $v['price'] - $v['hundred_discount'];
-            $html .= "<div style='padding:2px;'><span style='display:inline-block;width:25px;color:#FF5555'>수▲</span><span style='display:inline-block;text-align:right;width:55px;color:#5555FF'>".number_format($hundred_val)."</span></div>";
-        }
-        if ($v['fifty_discount']) {
-            $fifty_val = $v['price'] - $v['fifty_discount'];
-            $html .= "<div style='padding:2px;'><span style='display:inline-block;width:25px;color:#FF5555'>할▲</span><span style='display:inline-block;text-align:right;width:55px;color:#5555FF'>".number_format($fifty_val)."</span></div><div style='height:3px;'></div>";
-        }
-
-        $html .= "<div style='padding:2px;'><span style='display:inline-block;width:25px;color:#FF5555'>도▲</span><span style='display:inline-block;text-align:right;width:55px;color:#5555FF'>".number_format($mtype_discounted)."</span></div>";
-        $html .= "<div style='padding:2px;'><span style='display:inline-block;width:25px;color:#FF5555'>소▲</span><span style='display:inline-block;text-align:right;width:55px;color:#5555FF'>".number_format($v['price'])."</span></div>";
-        
-        $html .= "</div>";
-        return $html;
+        return self::renderDiscountPrice($v);
     }
 }

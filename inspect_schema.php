@@ -1,10 +1,13 @@
 <?php
-require_once __DIR__ . '/vendor/autoload.php';
-$app = require_once __DIR__ . '/bootstrap/app.php';
+use Illuminate\Support\Facades\DB;
+require 'vendor/autoload.php';
+$app = require_once 'bootstrap/app.php';
 $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
 $kernel->bootstrap();
 
-use Illuminate\Support\Facades\DB;
+$columns = DB::getSchemaBuilder()->getColumnListing('fm_design_banner');
+print_r($columns);
 
-$schema = DB::select('SHOW CREATE TABLE fm_member');
-print_r($schema);
+// Also peek at first row to see what kind of data is there
+$first = DB::table('fm_design_banner')->first();
+print_r($first);

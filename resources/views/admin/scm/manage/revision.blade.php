@@ -4,7 +4,7 @@
 <div class="content-wrapper">
     <div class="content-header">
         <div class="container-fluid">
-            <h1 class="m-0">재고 조정 (Stock Revision)</h1>
+            <h1 class="m-0">재고 조정 관리 (Stock Revision)</h1>
         </div>
     </div>
 
@@ -13,70 +13,78 @@
             @if(session('success'))
                 <div class="alert alert-success">{{ session('success') }}</div>
             @endif
-            @if(session('warning'))
-                <div class="alert alert-warning">{{ session('warning') }}</div>
-            @endif
             @if(session('error'))
                 <div class="alert alert-danger">{{ session('error') }}</div>
             @endif
 
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">상품 목록</h3>
+                    <h3 class="card-title">조정 이력</h3>
+                    <div class="card-tools">
+                        <a href="{{ route('admin.scm_manage.revision.regist') }}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus"></i> 재고 조정 등록
+                        </a>
+                    </div>
                 </div>
                 <div class="card-body">
-                    <!-- Search Form -->
+                    <!-- Search -->
                     <form method="get" class="mb-3">
                         <div class="row">
-                            <div class="col-md-5">
-                                <input type="text" name="keyword" class="form-control" placeholder="상품명/코드 검색" value="{{ request('keyword') }}">
-                            </div>
-                            <div class="col-md-2">
-                                <button type="submit" class="btn btn-primary">검색</button>
+                            <div class="col-md-4">
+                                <div class="input-group">
+                                    <input type="text" name="keyword" class="form-control" placeholder="조정코드 검색" value="{{ request('keyword') }}">
+                                    <span class="input-group-append">
+                                        <button class="btn btn-secondary" type="submit">검색</button>
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </form>
 
-                    <!-- Revision Form -->
-                    <form action="{{ route('admin.scm_manage.save_revision') }}" method="POST">
-                        @csrf
-                        <div class="mb-2 text-right">
-                            <button type="submit" class="btn btn-danger" onclick="return confirm('입력한 재고로 일괄 수정하시겠습니까?');">
-                                <i class="fas fa-save"></i> 변경사항 저장
-                            </button>
-                        </div>
-
-                        <table class="table table-bordered table-hover">
-                            <thead>
-                                <tr>
-                                    <th>상품코드</th>
-                                    <th>상품명</th>
-                                    <th>현재 전산재고</th>
-                                    <th>실사 재고 (수정)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($goods as $item)
-                                <tr>
-                                    <td>{{ $item->goods_code }}</td>
-                                    <td>{{ $item->goods_name }}</td>
-                                    <td>{{ number_format($item->current_stock) }}</td>
-                                    <td>
-                                        <input type="number" 
-                                               name="stock[{{ $item->goods_seq }}]" 
-                                               class="form-control form-control-sm" 
-                                               style="width: 100px" 
-                                               value="{{ $item->current_stock }}">
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                        
-                        <div class="mt-3">
-                            {{ $goods->links() }}
-                        </div>
-                    </form>
+                    <table class="table table-bordered table-hover">
+                        <thead>
+                            <tr>
+                                <th>조정일시</th>
+                                <th>조정코드</th>
+                                <th>창고</th>
+                                <th>유형</th>
+                                <th>총 수량</th>
+                                <th>비고</th>
+                                <th>상태</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($revisions as $rev)
+                            <tr>
+                                <td>{{ $rev->regist_date->format('Y-m-d H:i') }}</td>
+                                <td>{{ $rev->revision_code }}</td>
+                                <td>{{ $warehouses[$rev->wh_seq]->wh_name ?? $rev->wh_seq }}</td>
+                                <td>
+                                    @if($rev->revision_type == 1) <span class="badge badge-success">증가</span>
+                                    @elseif($rev->revision_type == 2) <span class="badge badge-danger">감소</span>
+                                    @elseif($rev->revision_type == 3) <span class="badge badge-warning">설정(Set)</span>
+                                    @elseif($rev->revision_type == 4) <span class="badge badge-dark">폐기</span>
+                                    @else {{ $rev->revision_type }}
+                                    @endif
+                                </td>
+                                <td>{{ number_format($rev->total_ea) }}</td>
+                                <td>{{ $rev->admin_memo }}</td>
+                                <td>
+                                    @if($rev->revision_status == 1) 완료
+                                    @else 임시
+                                    @endif
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="7" class="text-center py-4">조정 이력이 없습니다.</td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer clearfix">
+                    {{ $revisions->links() }}
                 </div>
             </div>
         </div>

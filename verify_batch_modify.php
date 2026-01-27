@@ -1,76 +1,53 @@
 <?php
-require_once __DIR__ . '/vendor/autoload.php';
+
+use App\Models\Goods;
+use App\Services\Goods\BatchService;
+use Illuminate\Http\Request;
+use Tests\TestCase;
+
+require __DIR__ . '/vendor/autoload.php';
+
 $app = require_once __DIR__ . '/bootstrap/app.php';
-$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
+$kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
 $kernel->bootstrap();
 
-use Illuminate\Support\Facades\DB;
-use App\Http\Controllers\Admin\GoodsBatchController;
-use Illuminate\Http\Request;
+echo "Starting BatchService Verification...\n";
 
-echo "\n[Batch Update Verification] Starting...\n";
+// 1. Create Dummy Goods
+$goods = Goods::create([
+    'goods_name' => 'Batch Service Item',
+    'goods_code' => 'BATCH_SVC_'.rand(100,999),
+    'goods_status' => 'normal',
+    'goods_view' => 'look',
+    'regist_date' => now(),
+    'update_date' => now()
+]);
 
-// Helper
-function createMockRequest($data) {
-    global $app;
-    $req = Request::create('/test', 'POST', $data);
-    $app->instance('request', $req);
-    return $req;
+$id = $goods->goods_seq;
+
+// 2. Instantiate Service
+$service = new BatchService();
+
+// 3. Simulate Request Data
+$request = Request::create('/admin/goods/batch/modify', 'POST', [
+    'goods_seq' => [$id],
+    'batch_goods_status_yn' => 1,
+    'batch_goods_status' => 'unsold',
+    'batch_goods_view_yn' => 1,
+    'batch_goods_view' => 'notLook'
+]);
+
+// 4. Run Service
+$result = $service->batchModify($request);
+
+// 5. Verify
+$goods->refresh();
+
+if ($goods->goods_status == 'unsold' && $goods->goods_view == 'notLook') {
+    echo "[PASS] Status and View updated correctly.\n";
+} else {
+    echo "[FAIL] Status: " . $goods->goods_status . ", View: " . $goods->goods_view . "\n";
 }
 
-try {
-    DB::beginTransaction();
-    $controller = new GoodsBatchController();
-
-    // 1. Get a target goods
-    $target = DB::table('fm_goods')->orderBy('goods_seq', 'desc')->first();
-    if(!$target) throw new Exception("No goods found to test.");
-    
-    echo "Target: " . $target->goods_seq . " (" . $target->goods_name . ")\n";
-    print_r($target);
-    // 2. Prepare Update Data
-    $opt = DB::table('fm_goods_option')->where('goods_seq', $target->goods_seq)->where('default_option', 'y')->first();
-    if(!$opt) $opt = DB::table('fm_goods_option')->where('goods_seq', $target->goods_seq)->first();
-    
-    $currentPrice = $opt ? $opt->price : 0;
-    $newPrice = $currentPrice + 100;
-    $newStatus = ($target->goods_status == 'normal') ? 'runout' : 'normal';
-    
-    echo "Original Price (Option): $currentPrice\n";
-    
-    $data = [
-        'goods_seq' => [$target->goods_seq],
-        'updates' => [
-            $target->goods_seq => [
-                'price' => $newPrice,
-                'goods_status' => $newStatus,
-                'goods_view' => 'look'
-            ]
-        ]
-    ];
-    
-    $req = createMockRequest($data);
-    
-    // 3. Exec Update
-    echo "Updating...\n";
-    $controller->update($req);
-    
-    // 4. Verify
-    $updated = DB::table('fm_goods')->where('goods_seq', $target->goods_seq)->first();
-    $updatedOpt = DB::table('fm_goods_option')->where('goods_seq', $target->goods_seq)->first();
-    
-    echo "Updated Price (Option): " . $updatedOpt->price . " (Expected: $newPrice)\n";
-    echo "Updated Status: " . $updated->goods_status . " (Expected: $newStatus)\n";
-    
-    if($updatedOpt->price != $newPrice) throw new Exception("Price update failed");
-    if($updated->goods_status != $newStatus) throw new Exception("Status update failed");
-
-    // Rollback
-    DB::rollBack();
-    echo "\n[SUCCESS] Batch Update Verified.\n";
-
-} catch (Exception $e) {
-    DB::rollBack();
-    echo "\n[ERROR] " . $e->getMessage() . "\n";
-    echo $e->getTraceAsString();
-}
+// Cleanup
+$goods->delete();
