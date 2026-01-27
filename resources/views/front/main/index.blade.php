@@ -12,6 +12,27 @@
                 *zoom: 1;
                 -ms-touch-action: pan-y;
                 touch-action: pan-y;
+                box-shadow: none !important;
+                border: none !important;
+                background: transparent !important;
+            }
+            .bx-wrapper img {
+                max-width: 100%;
+                display: block;
+            }
+            .bx-viewport {
+                /* fix other elements on the page moving (on Chrome) */
+                -webkit-transform: translatez(0);
+                -moz-transform: translatez(0);
+                -ms-transform: translatez(0);
+                -o-transform: translatez(0);
+                transform: translatez(0);
+            }
+            .bx-pager,
+            .bx-controls-auto {
+                position: absolute;
+                bottom: -30px;
+                width: 100%;
             }
 
             .bx-wrapper .bx-pager {
@@ -26,14 +47,6 @@
                 position: absolute;
                 width: 100%;
                 z-index: 50;
-            }
-
-            .bx-wrapper .bx-pager .bx-pager-item,
-            .bx-wrapper .bx-controls-auto .bx-controls-auto-item {
-                display: inline-block;
-                vertical-align: bottom;
-                *zoom: 1;
-                *display: inline;
             }
 
             .bx-wrapper .bx-pager.bx-default-pager a {
@@ -55,13 +68,23 @@
                 border: 1px solid #ef305e;
             }
 
+            .bx-controls-direction a {
+                position: absolute;
+                top: 50%;
+                margin-top: -16px;
+                outline: 0;
+                width: 32px;
+                height: 32px;
+                text-indent: -9999px;
+                z-index: 9999;
+            }
+            
             /* Ensure the row below starts on a new line */
             .mt13 {
                 clear: both;
             }
 
             /* Custom Fixes for Product Grid */
-            /* Removed duplicate rule */
         </style>
     <style>
         /* Legacy Product List Styles */
@@ -313,14 +336,31 @@
                 style="width:689px; margin-right: 12px; float:left;">
                 <div class="mslide">
                     @forelse($mainBanners as $banner)
+                        @php
+                            // Handle object vs model property
+                            $imgUrl = $banner->image_url ?? (
+                                $banner->image ? asset('data/design/' . $banner->image) : asset('images/no_image.gif')
+                            );
+                            // Legacy path might be relative 'images/banner/...' or absolute
+                            if ($banner instanceof \App\Models\DesignBannerItem) {
+                                // If it's a DB model, path is often relative to root or data/design
+                                // Inspection showed: "images/banner/11/images_1.jpg"
+                                // This might need a prefix if it's not starting with /
+                                if (!Str::startsWith($banner->image, '/')) {
+                                    $imgUrl = '/' . $banner->image;
+                                } else {
+                                    $imgUrl = $banner->image;
+                                }
+                            }
+                        @endphp
                         <div>
                             <a href="{{ $banner->link }}">
-                                <img src="{{ $banner->image_url }}" style="width:100%; height: 400px; object-fit: cover;"
-                                    onerror="this.src='https://via.placeholder.com/689x400?text=Main+Banner'">
+                                <img src="{{ $imgUrl }}" style="width:100%; height: 400px; object-fit: cover;"
+                                    onerror="this.src='{{ asset('images/legacy/main/banner/images_1.jpg') }}'">
                             </a>
                         </div>
                     @empty
-                        <div><img src="https://via.placeholder.com/689x400?text=Main+Banner" style="width:100%;"></div>
+                        <div><img src="{{ asset('images/legacy/main/banner/images_1.jpg') }}" style="width:100%;"></div>
                     @endforelse
                 </div>
             </div>
@@ -459,18 +499,50 @@
         </div>
 
         <!-- 롤 배너2, 1200카테고리 배너 -->
-        <div class="mt13" style="padding-top: 12px !important; display: flex; justify-content: space-between;">
-            <a href="/goods/catalog?sort=popular_sales&code=004200200001" target='_self'><img
-                    src="{{ asset('images/legacy/main/main_top_B1.jpg') }}" title="크리스마스 장식품" alt="크리스마스 장식품"
-                    style="width:288px;"></a>
-            <a href="/goods/catalog?code=00420033" target='_self'><img
-                    src="{{ asset('images/legacy/main/main_top_B2.jpg') }}" title="산타복" alt="산타복" style="width:288px;"></a>
-            <a href="/goods/search?search_text=구강위생용품" target='_self'><img
-                    src="{{ asset('images/legacy/main/main_top_B3.jpg') }}" title="수제 장식용 볼" alt="수제 장식용 볼"
-                    style="width:288px;"></a>
-            <a href="/goods/catalog?code=0020002300010001" target='_self'><img
-                    src="{{ asset('images/legacy/main/main_top_B4.jpg') }}" title="LED 트리" alt="LED 트리"
-                    style="width:288px;"></a>
+        <!-- 롤 배너2 (Main Middle Banners: B12 Left, B13 Right) -->
+        <!-- 롤 배너2 (Main Middle Banners: B12 Left, B13 Right) -->
+        <div class="mt13" style="display: flex; justify-content: space-between;">
+            <!-- Left Banner (12) -->
+            <div style="width: 594px; overflow: hidden;">
+                @if(isset($middleBannerL) && $middleBannerL->isNotEmpty())
+                    <ul class="middle_banner_slider">
+                        @foreach($middleBannerL as $banner)
+                             @php
+                                $imgUrl = $banner->image;
+                                if (!Str::startsWith($banner->image, '/') && !Str::startsWith($banner->image, 'http')) {
+                                    $imgUrl = '/' . $banner->image;
+                                }
+                            @endphp
+                            <li>
+                                <a href="{{ $banner->link }}" target='_self'>
+                                    <img src="{{ $imgUrl }}" title="{{ $banner->banner_title ?? '' }}" alt="{{ $banner->banner_title ?? '' }}" style="width:100%; display: block;">
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+            </div>
+
+            <!-- Right Banner (13) -->
+            <div style="width: 594px; overflow: hidden;">
+                @if(isset($middleBannerR) && $middleBannerR->isNotEmpty())
+                     <ul class="middle_banner_slider">
+                        @foreach($middleBannerR as $banner)
+                            @php
+                                $imgUrl = $banner->image;
+                                if (!Str::startsWith($banner->image, '/') && !Str::startsWith($banner->image, 'http')) {
+                                    $imgUrl = '/' . $banner->image;
+                                }
+                            @endphp
+                            <li>
+                                <a href="{{ $banner->link }}" target='_self'>
+                                    <img src="{{ $imgUrl }}" title="{{ $banner->banner_title ?? '' }}" alt="{{ $banner->banner_title ?? '' }}" style="width:100%; display: block;">
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+            </div>
         </div>
 
         <!-- 사업부 4가지 -->
@@ -720,19 +792,34 @@
 
 @push('scripts')
     <script src="{{ asset('js/jquery.bxslider.js') }}"></script>
-    <script>
+     <script>
      $(document).ready(function () {
+         // Main Visual Slider
          if ($('.mslide').length) {
              $('.mslide').bxSlider({
                  mode: 'horizontal',
                  auto: true,
-                 pause: 2500,
+                 pause: 4000,
                  pager: true,
                  controls: false,
                  autoHover: true,
                  infiniteLoop: true
              });
          }
+
+         // Middle Banners Slider (Banner 12, 13)
+         if ($('.middle_banner_slider').length) {
+             $('.middle_banner_slider').bxSlider({
+                 mode: 'horizontal',
+                 auto: true,
+                 pause: 4000,
+                 controls: false,
+                 pager: true,
+                 autoHover: true
+             });
+         }
+
+         // Right Side Best/New Slider
          if ($('.right_banner_slider').length) {
              $('.right_banner_slider').bxSlider({
                  mode: 'horizontal',
