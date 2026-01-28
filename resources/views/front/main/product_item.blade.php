@@ -38,11 +38,30 @@
                     }
 
                     $priceLabel = '도매가';
-                    if (str_starts_with($product->goods_scode, 'GUS')) {
+                     if (str_starts_with($product->goods_scode, 'GUS')) {
                          $priceLabel = '소매가';
                     } elseif (str_starts_with($product->goods_scode, 'GKQ')) {
                          $priceLabel = '특가';
                     }
+
+                    // --- Quick Menu Logic ---
+                    $hasMultipleOptions = $product->option->count() > 1; // Basic checks
+                    // If count is 1, check if it's a real option or just default price row (usually title is empty or '기본')
+                    // For legacy, almost all goods have 1 option row.
+                    // If there's 1 option row and it has no specific choice titles, it's "no option".
+                    $firstOpt = $product->option->first();
+                    $defaultOptionSeq = $firstOpt ? $firstOpt->option_seq : 0;
+                    
+                    // Legacy logic refinement: 
+                    // If option1..5 are empty, treat as single option.
+                    // Actually, if count > 0, we can try to add. 
+                    // But if user needs to CHOOSE something (like Color/Size), we must redirect.
+                    // Simple logic: if count > 1 OR (count==1 and option1 is not empty) => Redirect.
+                    // (Assuming 'option1' holds the first option category name)
+                    if ($firstOpt && !empty($firstOpt->option1)) {
+                         $hasMultipleOptions = true; 
+                    }
+                    // ------------------------
                 @endphp
                 <img src="{{ $imgSrc }}" width="172" height="172" onerror="this.src='/images/no_image.gif'" style="object-fit: cover;">
             </a>
@@ -52,11 +71,11 @@
                     <span class="QuickIconComment">새창보기</span>
                 </span>
                 <span class="goodsDisplayQuickIcon">
-                    <span class="goodsDisplayCart" onclick="alert('장바구니 담기 기능을 구현 중입니다.');"></span>
+                    <span class="goodsDisplayCart" onclick="QuickMenu.cart({{ $product->goods_seq }}, {{ $defaultOptionSeq }}, {{ $hasMultipleOptions ? 'true' : 'false' }});"></span>
                     <span class="QuickIconComment">장바구니</span>
                 </span>
                 <span class="goodsDisplayQuickIcon">
-                    <span class="goodsDisplayCard" onclick="alert('바로구매 기능을 구현 중입니다.');"></span>
+                    <span class="goodsDisplayCard" onclick="QuickMenu.buy({{ $product->goods_seq }}, {{ $defaultOptionSeq }}, {{ $hasMultipleOptions ? 'true' : 'false' }});"></span>
                     <span class="QuickIconComment">바로구매</span>
                 </span>
             </div>
@@ -125,10 +144,10 @@
         @endif
     </dd>
 
-    <dd class="goodsDisplayTitle" style="margin-left: 0 !important; width: 100% !important; text-align: center;">
+    <dd class="goodsDisplayTitle" style="margin-left: 0 !important; width: 100% !important; text-align: left;">
         <div class="list_price">
             <a href="{{ route('goods.view', ['no' => $product->goods_seq]) }}" target="_blank">
-                <h6 style="text-align: center;">{{ $product->goods_name }}</h6>
+                <h6 style="text-align: left;">{{ $product->goods_name }}</h6>
             </a>
         </div>
     </dd>

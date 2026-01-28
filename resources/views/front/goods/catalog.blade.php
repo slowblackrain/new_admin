@@ -115,6 +115,9 @@
             .goods_list_ul li {
                 width: 50% !important;
             }
+            .goodsDisplayThumbList {
+                display: none !important;
+            }
         }
     </style>
 @endsection

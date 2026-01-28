@@ -34,7 +34,7 @@ class GoodsController extends Controller
         }
 
         $goods = $query->orderBy('regist_date', 'desc')
-            ->paginate(12);
+            ->paginate(20);
 
         return view('front.goods.catalog', compact('categories', 'goods', 'categoryCode'));
     }
@@ -165,7 +165,7 @@ class GoodsController extends Controller
             // For prototype, we settle for default or just basic sort
         }
 
-        $goods = $query->orderBy('regist_date', 'desc')->paginate(12);
+        $goods = $query->orderBy('regist_date', 'desc')->paginate(20);
 
         // Append query strings to pagination links
         $goods->appends($request->all());

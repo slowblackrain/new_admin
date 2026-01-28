@@ -3,6 +3,7 @@
 @section('content')
     @push('styles')
         <link rel="stylesheet" href="{{ asset('css/main/main.css') }}">
+        <link rel="stylesheet" href="{{ asset('css/jquery.bxslider.css') }}">
         <style>
             /* bxSlider Pager Customization */
             .bx-wrapper {
@@ -90,14 +91,14 @@
         /* Legacy Product List Styles */
         /* Legacy Product List Styles Refined for 5-Column Grid */
         .goodsDisplayItemWrap {
-            border: 2px solid transparent !important; /* Pre-allocate space for hover border */
+            border: 2px solid transparent !important;
             padding: 7px !important;
             background: #FFF;
             position: relative;
             z-index: 1;
             float: left;
-            width: 198px !important; /* Exact fit: 198px * 5 = 990px */
-            height: 325px !important; /* Reduced from 360px based on content analysis */
+            width: 199px !important; /* Legacy width */
+            height: 325px !important;
             margin: 0 !important;
             margin-bottom: -1px !important;
             box-sizing: border-box !important; 
@@ -107,8 +108,32 @@
         .goodsDisplayItemWrap:nth-child(5n+1) {
             clear: both;
         }
+        
+        /* ... Mobile Styles ... */
+        @media (max-width: 768px) {
+            .bx-wrapper .bx-viewport {
+                overflow: hidden !important;
+                height: auto !important;
+                border: none !important;
+                box-shadow: none !important;
+                min-height: 200px !important; 
+            }
+            .mslide img {
+                width: 100% !important;
+                height: auto !important; 
+            }
+            .mslide > div {
+                float: left !important; 
+                display: block !important;
+            }
+            .section_main {
+                width: 100% !important;
+                float: none !important;
+                height: auto !important;
+            }
+        }
 
-        /* Reset DL/DT/DD to prevent browser defaults breaking layout */
+        /* Reset DL/DT/DD */
         .goodsDisplayItemWrap dl, 
         .goodsDisplayItemWrap dt, 
         .goodsDisplayItemWrap dd {
@@ -119,11 +144,11 @@
         
         .goodsDisplayItemWrap dt.goods-thumb {
             display: block;
-            width: 100%; /* Fill container (198px - 14px padding - 4px border = 180px) */
+            width: 100%; 
             height: 172px;
             overflow: hidden !important;
             border: 1px solid #f2f3f4;
-            margin: 0 auto !important; /* Center the image box */
+            margin: 0 auto !important; 
             box-sizing: border-box;
         }
 
@@ -156,18 +181,26 @@
 
         .goodsDisplayTitle h6 {
             margin: 0 !important;
-            padding: 0 4px !important; /* Slight inner padding */
-            font-size: 11px !important; /* Matched to legacy font size */
-            line-height: 1.4;
-            font-weight: normal !important;
-            height: 32px; /* Fixed height for consistency */
-            display: -webkit-box;
+            padding: 0 4px !important; 
+            font-size: 13px !important; /* Legacy is 13px */
+            line-height: 1.4 !important; /* Legacy is 1.4 */
+            font-weight: 700 !important; /* Legacy is bold */
+            height: 38px !important; /* Fixed height for 2 lines */
+            display: -webkit-box !important; /* Required for line-clamp */
             word-wrap: break-word;
-            overflow: hidden !important; /* Fix text overflow */
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            color: #666 !important;
+            overflow: hidden !important; 
+            -webkit-line-clamp: 2; /* Limit to 2 lines */
+            -webkit-box-orient: vertical; /* Required for line-clamp */
+            text-overflow: ellipsis; /* Add ellipsis */
+            color: #333 !important; /* Legacy is #333 */
+            font-family: '맑은고딕', 'Malgun Gothic', 'Noto Sans KR', sans-serif !important;
             text-align: left;
+            word-break: keep-all; /* Prevent mid-word breaks for Korean */
+            text-decoration: none !important;
+        }
+        .goodsDisplayTitle h6 a {
+            text-decoration: none !important;
+            color: inherit !important;
         }
 
         .goodsDisplaySalePrice {
@@ -176,16 +209,16 @@
              padding: 0 4px !important;
         }
         .goodsDisplaySalePrice .price_txt {
-            color: #f8601d;
-            font-size: 11px !important;
-            font-weight: 800;
+            color: #333; /* Legacy often uses dark gray for label */
+            font-size: 12px !important;
+            font-weight: normal;
         }
         .goodsDisplaySalePrice .price_num {
             color: #f8601d;
-            font-size: 14px !important;
+            font-size: 16px !important; /* Legacy is 16px */
             font-weight: 800;
             text-align: left;
-            float: right; /* Align price value to right */
+            float: right; 
         }
 
         .goodsDisplayItemWrap:hover {
@@ -221,6 +254,12 @@
             display: flex; /* Use flex for alignment */
             justify-content: center;
             align-items: center;
+        }
+
+        @media (max-width: 768px) {
+            .goodsDisplayThumbList {
+                display: none !important;
+            }
         }
 
         .goodsDisplayQuickIcon {
@@ -317,6 +356,42 @@
                 width: 100% !important;
                 height: auto !important;
             }
+            .goodsDisplayImageWrap > a > img {
+                width: 100% !important;
+                height: auto !important;
+            }
+
+            /* Responsive Banners */
+            .middle_banner_wrap { width: 100% !important; margin-bottom: 10px; }
+            .notice, .notice_list, .mds_recommand_roll, #right_banner_slider_container { 
+                width: 100% !important; 
+                height: auto !important; 
+                background-size: cover !important;
+            }
+            .notice_list, .mds_recommand_roll {
+                margin-top: 10px !important;
+            }
+            
+            /* Bottom Banners: Stack vertically for legibility */
+            #main-wrap .bnr_slide1 { display: block !important; }
+            #main-wrap .bnr_slide1 a { display: block !important; width: 100% !important; margin-bottom: 10px; text-align: center; }
+            #main-wrap .bnr_slide1 img { width: 100% !important; height: auto !important; }
+            
+            /* Hide large desktop-only images or sections if needed */
+             .main_header > div:first-child { display: none !important; } /* Hide left tree image on mobile */
+
+             /* General Container Fixes */
+             .mobile-container-fix { width: 100% !important; padding: 0 10px; box-sizing: border-box; }
+             
+             /* Ensure middle banners have height even if image fails - REMOVED to fix white space issue */
+             /* .middle_banner_wrap { min-height: 100px; background-color: #f5f5f5; } */
+             .middle_banner_wrap { min-height: 0 !important; height: auto !important; }
+
+             /* Force Even Count on Mobile for Recommended/New Products */
+             /* Hide the last item if it's the odd one (orphan) to maintain a complete 2-column grid */
+             .goodsroll.best .clearfix .goodsDisplayItemWrap:nth-child(odd):last-child {
+                 display: none !important;
+             }
         }
     </style>
     @endpush
@@ -366,10 +441,10 @@
             </div>
 
             <!-- GTD 베스트 // 롤링 -->
-            <div class="notice"
-                style="width: 291px !important; margin: 0 !important; background-color: transparent !important; box-shadow: none !important;">
-                <div class="notice_list" onclick="location.href='/goods/catalog?code=0177';"
-                    style="background-image: url('{{ asset('images/legacy/main/img/main_top_right1.png') }}'); width: 291px !important; height: 194px; cursor: pointer; position: relative;">
+            <div class="notice mobile-full-width"
+                style="width: 291px; margin: 0; background-color: transparent; box-shadow: none;">
+                <div class="notice_list mobile-full-width" onclick="location.href='/goods/catalog?code=0177';"
+                    style="background-image: url('{{ asset('images/legacy/main/img/main_top_right1.png') }}'); width: 291px; height: 194px; cursor: pointer; position: relative;">
 
                     <div
                         style="position: absolute; top: 80px; width: 100%; display: flex; justify-content: center; padding-top: 14px;">
@@ -420,11 +495,11 @@
                 </div>
 
                 <!-- Bottom Part: Green Nature Slider -->
-                <div class="mds_recommand_roll" onclick="location.href='/goods/catalog?code=01740017';"
-                    style="background-image: url('{{ asset('images/legacy/main/img/main_top_right2.png') }}'); width: 291px !important; height: 194px; margin-top: 12px; cursor: pointer; position: relative;">
+                <div class="mds_recommand_roll mobile-full-width" onclick="location.href='/goods/catalog?code=01740017';"
+                    style="background-image: url('{{ asset('images/legacy/main/img/main_top_right2.png') }}'); width: 291px; height: 194px; margin-top: 12px; cursor: pointer; position: relative;">
 
                     <div class="innerBox" style="position: absolute; bottom: 0;">
-                        <div id="right_banner_slider_container" style="width: 291px;">
+                        <div id="right_banner_slider_container" class="mobile-full-width" style="width: 291px;">
                             <ul class="right_banner_slider">
                                 @forelse($specialRolling as $product)
                                     @php
@@ -497,13 +572,16 @@
                 </div>
             </div>
         </div>
+        
+        @include('front.main.mobile_quick_menu')
 
         <!-- 롤 배너2, 1200카테고리 배너 -->
         <!-- 롤 배너2 (Main Middle Banners: B12 Left, B13 Right) -->
         <!-- 롤 배너2 (Main Middle Banners: B12 Left, B13 Right) -->
-        <div class="mt13" style="display: flex; justify-content: space-between;">
+        <!-- 롤 배너2 (Main Middle Banners: B12 Left, B13 Right) -->
+        <div class="mt13 middle-banner-container" style="display: flex; justify-content: space-between; flex-wrap: wrap;">
             <!-- Left Banner (12) -->
-            <div style="width: 594px; overflow: hidden;">
+            <div class="middle_banner_wrap" style="width: 594px; overflow: hidden;">
                 @if(isset($middleBannerL) && $middleBannerL->isNotEmpty())
                     <ul class="middle_banner_slider">
                         @foreach($middleBannerL as $banner)
@@ -524,7 +602,7 @@
             </div>
 
             <!-- Right Banner (13) -->
-            <div style="width: 594px; overflow: hidden;">
+            <div class="middle_banner_wrap" style="width: 594px; overflow: hidden;">
                 @if(isset($middleBannerR) && $middleBannerR->isNotEmpty())
                      <ul class="middle_banner_slider">
                         @foreach($middleBannerR as $banner)
@@ -557,21 +635,21 @@
                     src="{{ asset('images/legacy/main/n_bnr_tile04.jpg') }}" title="띠배너03" alt="도토창업아카데미"></a>
         </div>
 
-        <div class="clearfix" style="width: 1200px; margin: 0 auto; position: relative; padding-bottom: 50px;">
+        <div class="clearfix mobile-container-fix" style="width: 1200px; margin: 0 auto; position: relative; padding-bottom: 50px;">
             <style>
                 /* Responsive Styles for Left Category */
                 @media (max-width: 1219px) { /* Slightly above 1200 to catch edge cases */
                     #leftCate { display: none !important; }
                     .goodsroll { width: 100% !important; float: none !important; }
-                    #main-wrap { width: 100% !important; padding: 0 10px; box-sizing: border-box; }
+                    #main-wrap { width: 100% !important; padding: 0; box-sizing: border-box; overflow-x: hidden; }
                     .main_header, .bnr_slide1, .mt13 { width: 100% !important; flex-wrap: wrap; height: auto !important; }
                     .section_main { width: 100% !important; float: none !important; margin-right: 0 !important; }
-                    .notice { width: 100% !important; margin-left: 0 !important; float: none !important; display: flex; justify-content: space-between; height: auto !important; background: none;}
-                    .notice .notice_list, .notice .mds_recommand_roll { width: 49% !important; margin: 0 !important; }
+                    .notice { width: 100% !important; margin-left: 0 !important; float: none !important; display: flex; flex-direction: column; height: auto !important; background: none;}
+                    .notice .notice_list, .notice .mds_recommand_roll { width: 100% !important; margin: 10px 0 !important; background-size: cover; }
                 }
 
                 #leftCate { float: left; width: 196px; z-index: 20; position: relative; }
-                .goodsroll { float: right; width: 990px; }
+                .goodsroll { float: right; width: 995px; } /* Increased to 995px to fit 5x199px items */
                 
                 #leftCate .catelist .list { 
                     width: 196px; 
@@ -585,7 +663,10 @@
                 }
                 #leftCate .catelist .list:first-child { border-top: 1px solid #eeeeea; }
                 
-                #leftCate .catelist .list > a { display: block; width: 100%; height: 100%; }
+                #leftCate .catelist .list > a { display: block; width: 100%; height: 100%; text-decoration: none !important; }
+                
+                /* Remove underlines globally for these sections */
+                a { text-decoration: none; color: inherit; }
                 
                 #leftCate .catelist .list a > span { 
                     float: left; width: 57px; height: 48px; margin-right: 5px; 
@@ -796,17 +877,64 @@
      $(document).ready(function () {
          // Main Visual Slider
          if ($('.mslide').length) {
+             var isMobile = $(window).width() <= 768;
              $('.mslide').bxSlider({
-                 mode: 'horizontal',
+                 mode: isMobile ? 'fade' : 'horizontal',
                  auto: true,
-                 pause: 4000,
                  pager: true,
                  controls: false,
-                 autoHover: true,
-                 infiniteLoop: true
+                 autoControls: false,
+                 minSlides: 1,
+                 maxSlides: 1,
+                 moveSlides: 1,
+                 slideWidth: 1200,
+                 speed: 500,
+                 pause: 6000,
+                 infiniteLoop: true,
+                 touchEnabled: true,
+                 preventDefaultSwipeX: true,
+                 oneToOneTouch: false,
+                 responsive: true,
+                 adaptiveHeight: true
              });
          }
-
+         
+         // 2026-01-28 Auto-hide broken middle banners to prevent white space
+         $('.middle_banner_wrap').each(function() {
+             var $wrap = $(this);
+             var hasValidImg = false;
+             $wrap.find('img').each(function() {
+                 if (this.complete && this.naturalWidth > 0) {
+                     hasValidImg = true;
+                     return false; // break
+                 }
+             });
+             
+             // If images are not yet loaded, wait for them
+             if (!hasValidImg) {
+                 var $imgs = $wrap.find('img');
+                 if ($imgs.length > 0) {
+                      var loadedCount = 0;
+                      $imgs.on('load error', function() {
+                          loadedCount++;
+                          if (this.naturalWidth > 0) $(this).closest('.middle_banner_wrap').show();
+                          if (loadedCount === $imgs.length && $wrap.find('img').filter(function(){ return this.naturalWidth > 0; }).length === 0) {
+                              $wrap.hide();
+                          }
+                      });
+                      // Hide initially until confirmed valid
+                      $wrap.hide(); 
+                 } else {
+                     $wrap.hide();
+                 }
+             }
+         });
+         
+         // Fix bottom banner grid on mobile via JS backup
+         if (isMobile) {
+             $('.bnr_slide1 img').css({'width': '100%', 'height': 'auto'});
+             $('.bnr_slide1 a').css({'display': 'block', 'width': '100%', 'margin-bottom': '10px'});
+         }
          // Middle Banners Slider (Banner 12, 13)
          if ($('.middle_banner_slider').length) {
              $('.middle_banner_slider').bxSlider({

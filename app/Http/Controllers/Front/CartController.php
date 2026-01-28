@@ -112,6 +112,9 @@ class CartController extends Controller
                 $cart->ip = $request->ip();
                 $cart->save();
 
+                // Append to cart_seqs array for response
+                $createdCartSeqs[] = $cart->cart_seq;
+
                 // Create Cart Option
                 $cartOption = new CartOption();
                 $cartOption->cart_seq = $cart->cart_seq;
@@ -144,7 +147,11 @@ class CartController extends Controller
             DB::commit();
 
             if ($request->ajax()) {
-                return response()->json(['status' => 'success', 'message' => '장바구니에 담겼습니다.']);
+                return response()->json([
+                    'status' => 'success', 
+                    'message' => '장바구니에 담겼습니다.',
+                    'cart_seqs' => $createdCartSeqs ?? []
+                ]);
             }
             return redirect()->route('cart.index');
 

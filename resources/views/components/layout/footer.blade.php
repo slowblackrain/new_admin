@@ -1,6 +1,6 @@
 <!-- footer-->
 <div id="doto_footer">
-    <div class="f_nav">
+    <div class="f_nav mobile-hidden">
         <div class="container">
             <ul class="menu">
                 <li><a href="/service/privacy"><b>개인정보처리방침</b></a></li>
@@ -17,7 +17,7 @@
             </div>
         </div>
     </div><!--f_nav-->
-    <div class="footer-contents clearbox">
+    <div class="footer-contents clearbox mobile-hidden">
         <div class="container">
             <div class="foot_left">
                 <div class="foot-top">
@@ -78,12 +78,86 @@
             </div>
         </div>
     </div>
-    <div class="copyright">
+
+    <!-- Mobile Simplified Footer (Updated to match Legacy) -->
+    <div class="mobile-footer">
+        <div class="mf-links">
+            @guest
+                <a href="/member/login">로그인</a>
+            @else
+                <a href="/member/logout">로그아웃</a>
+            @endguest
+            <a href="/service/cs">고객센터</a>
+            <a href="/service/privacy">개인정보처리방침</a>
+            <a href="/service/agreement">이용약관</a>
+        </div>
+        <div class="mf-info">
+            <p><strong>(주)트리</strong> | 대표: 부영운</p>
+            <p>사업자등록번호: 137-86-10726 | 통신판매업신고: 제2017-충남당진-0028호</p>
+            <p>고객센터: <a href="tel:1566-6779">1566-6779</a> | 팩스: 041-353-9060</p>
+            <p>메일: dometopia@dometopia.com</p>
+            <p>인천 본사: 인천광역시 서구 봉오재3로 120 가정봄2프라자 2층</p>
+            <p>당진 물류/반품: 충청남도 당진시 송악읍 틀모시로 355-22</p>
+            <p class="copyright-text">Copyright ⓒ Tree Co., Ltd. All rights reserved.</p>
+        </div>
+    </div>
+
+    <div class="copyright mobile-hidden">
         <div class="container">
             <span class="fleft">Copyright ⓒ Tree Co., Ltd. All rights reserved.</span>
         </div>
     </div>
 </div>
+
+<style>
+    .mobile-footer {
+        display: none;
+        background: #f9f9f9;
+        padding: 20px 15px;
+        text-align: center;
+        border-top: 1px solid #eee;
+        margin-bottom: 60px; /* Space for Bottom Nav */
+        font-size: 11px;
+        color: #666;
+        line-height: 1.6;
+    }
+    .mobile-footer .mf-links {
+        margin-bottom: 15px;
+        border-bottom: 1px solid #e5e5e5;
+        padding-bottom: 15px;
+    }
+    .mobile-footer .mf-links a {
+        display: inline-block;
+        margin: 0 8px;
+        font-size: 12px;
+        color: #333;
+        text-decoration: none;
+        font-weight: bold;
+    }
+    .mobile-footer .mf-info p {
+        margin: 4px 0;
+        word-break: keep-all;
+    }
+    .mobile-footer .mf-info strong {
+        color: #333;
+    }
+    .mobile-footer .copyright-text {
+        margin-top: 10px;
+        color: #999;
+    }
+
+    @media (max-width: 768px) {
+        .mobile-hidden {
+            display: none !important;
+        }
+        .mobile-footer {
+            display: block;
+        }
+        #doto_footer {
+            border-top: none;
+        }
+    }
+</style>
 
 <!-- 공통 적용 스크립트 -->
 <script type="text/javascript" src="//wcs.naver.net/wcslog.js"> </script>

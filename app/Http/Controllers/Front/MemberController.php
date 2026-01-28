@@ -53,7 +53,7 @@ class MemberController extends Controller
             // Login Success
             \Illuminate\Support\Facades\Auth::login($member);
 
-            return redirect()->route('main');
+            return redirect()->route('home');
         } else {
             return back()->withErrors(['userid' => 'Invalid credentials.']);
         }
@@ -124,13 +124,13 @@ class MemberController extends Controller
         // 4. Login after registration
         \Illuminate\Support\Facades\Auth::login($member);
 
-        return redirect()->route('main')->with('message', '회원가입이 완료되었습니다.');
+        return redirect()->route('home')->with('message', '회원가입이 완료되었습니다.');
     }
 
     public function logout()
     {
         \Illuminate\Support\Facades\Auth::logout();
-        return redirect()->route('main');
+        return redirect()->route('home');
     }
 
     public function check_id(Request $request)

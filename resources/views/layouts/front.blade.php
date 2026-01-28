@@ -23,6 +23,10 @@
 
 <body>
 
+    @include('front.layouts.mobile_header')
+    @include('front.layouts.mobile_sidebar')
+    @include('front.layouts.mobile_bottom_nav')
+
     <x-layout.header />
 
     <main id="main-container" style="min-height: 600px;">
@@ -33,5 +37,11 @@
 
     @stack('scripts')
     <script src="{{ asset('js/legacy/goods-display-doto.js') }}"></script>
+    <script src="{{ asset('js/quick_menu.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            QuickMenu.init('{{ csrf_token() }}');
+        });
+    </script>
 </body>
 </html>

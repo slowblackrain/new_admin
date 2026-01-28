@@ -117,13 +117,9 @@ class HomeController extends Controller
             
             // For now, let's trust count_w * count_h as the display limit
             // But usually perpage is the reliable one if set? 
-            // Only fm_design_display columns shown in file view earlier were count_w, count_h. 
-            // Let's assume w * h. 
-            // Wait, looking at legacy code: 
-            // $perpage = $this->count_w * $this->count_h;
-            // So we will calculate it.
             $limit = $countW * $countH;
         }
+
 
 
         // 1. Get Display Tab Info
