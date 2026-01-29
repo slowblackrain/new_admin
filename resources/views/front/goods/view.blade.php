@@ -20,7 +20,22 @@
                         style="border:1px solid #E2E2E2; margin:auto; width:100%; min-height:300px; text-align:center;">
                         @php
                             $viewImage = $product->images->where('image_type', 'view')->first();
-                            $imgSrc = $viewImage ? 'http://dometopia.com' . $viewImage->image : '/images/no_image.gif';
+                            $imgSrc = '/images/no_image.gif';
+                            if ($viewImage) {
+                                $iPath = $viewImage->image;
+                                if ($iPath) {
+                                    if (Str::startsWith($iPath, 'http')) {
+                                        $imgSrc = $iPath;
+                                    } elseif (strpos($iPath, 'goods_img') !== false) {
+                                        $sfx = substr($iPath, strpos($iPath, 'goods_img') + 9);
+                                        $imgSrc = "https://dmtusr.vipweb.kr/goods_img" . $sfx;
+                                    } elseif (strpos($iPath, '/data/goods/') === 0) {
+                                        $imgSrc = "http://dometopia.com" . $iPath;
+                                    } else {
+                                        $imgSrc = "http://dometopia.com/data/goods/" . $iPath;
+                                    }
+                                }
+                            }
                         @endphp
                         <a href="#" style="width:100%; display:inline-block;">
                             <img src="{{ $imgSrc }}" alt="{{ $product->goods_name }}" style="width:100%; height:auto;"
@@ -34,10 +49,26 @@
                     <div class="box_thumbs">
                         <ul class="pagination clearbox">
                             @foreach($product->images->where('image_type', 'view') as $img)
+                                @php
+                                    $iPath = $img->image;
+                                    $tSrc = '/images/no_image.gif';
+                                    if ($iPath) {
+                                        if (Str::startsWith($iPath, 'http')) {
+                                            $tSrc = $iPath;
+                                        } elseif (strpos($iPath, 'goods_img') !== false) {
+                                            $sfx = substr($iPath, strpos($iPath, 'goods_img') + 9);
+                                            $tSrc = "https://dmtusr.vipweb.kr/goods_img" . $sfx;
+                                        } elseif (strpos($iPath, '/data/goods/') === 0) {
+                                            $tSrc = "http://dometopia.com" . $iPath;
+                                        } else {
+                                            $tSrc = "http://dometopia.com/data/goods/" . $iPath;
+                                        }
+                                    }
+                                @endphp
                                 <li>
                                     <a href="javascript:void(0);"
-                                        onclick="changeMainImage('http://dometopia.com{{ $img->image }}')">
-                                        <img src="http://dometopia.com{{ $img->image }}" width="85" height="85"
+                                        onclick="changeMainImage('{{ $tSrc }}')">
+                                        <img src="{{ $tSrc }}" width="85" height="85"
                                             onerror="this.src='/images/no_image.gif'" />
                                     </a>
                                 </li>
@@ -650,6 +681,17 @@
         </div>
     </div>
 
+    {{-- Custom Cart Confirmation Modal --}}
+    <div id="cart_confirm_modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:10000; justify-content:center; align-items:center;">
+        <div style="background:#fff; padding:30px; border-radius:10px; text-align:center; width:300px; box-shadow:0 5px 15px rgba(0,0,0,0.3);">
+            <p style="font-size:16px; margin-bottom:20px; font-weight:bold;">장바구니에 담겼습니다.</p>
+            <div style="display:flex; justify-content:space-between; gap:10px;">
+                <button type="button" onclick="closeCartModal()" style="flex:1; padding:10px; border:1px solid #ddd; background:#fff; cursor:pointer; border-radius:5px;">쇼핑 계속하기</button>
+                <button type="button" onclick="location.href='{{ route('cart.index') }}'" style="flex:1; padding:10px; border:none; background:#3ba0ff; color:#fff; cursor:pointer; border-radius:5px;">장바구니 이동</button>
+            </div>
+        </div>
+    </div>
+
     {{-- JS Logic --}}
     <script>
         const priceInfo = @json($priceInfo ?? []);
@@ -916,6 +958,10 @@
             }
         }
 
+        function closeCartModal() {
+            document.getElementById('cart_confirm_modal').style.display = 'none';
+        }
+
         function processCart() {
             if (!validateForm()) return;
             let form = document.forms['goodsForm'];
@@ -934,7 +980,9 @@
                 body: formData
             }).then(r => r.json()).then(data => {
                 if (data.status === 'success') {
-                    if (confirm('장바구니에 담겼습니다. 이동하시겠습니까?')) window.location.href = "{{ route('cart.index') }}";
+                    // Show Custom Modal instead of confirm
+                    const modal = document.getElementById('cart_confirm_modal');
+                    modal.style.display = 'flex';
                 } else {
                     alert(data.message || 'Error');
                 }

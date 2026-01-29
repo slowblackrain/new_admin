@@ -92,36 +92,88 @@ class CartController extends Controller
 
         DB::beginTransaction();
         try {
+            $user = Auth::user();
+            $member_seq = $user ? $user->member_seq : 0;
+            $sessionId = Session::getId();
+
             foreach ($option_seqs as $idx => $optSeq) {
                 if (empty($optSeq))
                     continue;
                 $ea = $eas[$idx] ?? 1;
 
-                // Create Cart
-                $cart = new Cart();
-                $cart->goods_seq = $goods_seq;
-                    $cart->member_seq = Auth::check() ? Auth::id() : 0;
-                // Force 0 if Auth::id() returns null unexpectedly
-                if (is_null($cart->member_seq)) $cart->member_seq = 0;
-                $cart->session_id = Session::getId();
-                $cart->distribution = 'cart';
-                $cart->regist_date = now();
-                $cart->update_date = now();
-                $cart->fblike = 'N';
-                $cart->provider = 'N';
-                $cart->ip = $request->ip();
-                $cart->save();
-
-                // Append to cart_seqs array for response
-                $createdCartSeqs[] = $cart->cart_seq;
-
-                // Create Cart Option
-                $cartOption = new CartOption();
-                $cartOption->cart_seq = $cart->cart_seq;
-                $cartOption->ea = $ea;
-
+                // 1. Get Option Data
                 $goodsOption = DB::table('fm_goods_option')->where('option_seq', $optSeq)->first();
-                if ($goodsOption) {
+                if (!$goodsOption) continue;
+
+                // 2. Check if item already exists in Cart (Same Goods + Same Options)
+                // Only merge if NO custom inputs are provided (inputs make items unique)
+                $existingCart = null;
+                if (empty($mappedInputs)) {
+                    $query = Cart::query()
+                        ->where('goods_seq', $goods_seq)
+                        ->where(function($q) use ($member_seq, $sessionId) {
+                            if ($member_seq > 0) {
+                                $q->where('member_seq', $member_seq);
+                            } else {
+                                $q->where('session_id', $sessionId);
+                            }
+                        });
+
+                    // Join with options to check strings
+                    // Optimization: Fetch candidate carts and compare in PHP to handle all 5 options easier
+                    $candidates = $query->with('options')->get();
+
+                    foreach ($candidates as $candidate) {
+                        $candOpt = $candidate->options->first();
+                        if ($candOpt && 
+                            (string)$candOpt->option1 === (string)$goodsOption->option1 &&
+                            (string)$candOpt->option2 === (string)$goodsOption->option2 &&
+                            (string)$candOpt->option3 === (string)$goodsOption->option3 &&
+                            (string)$candOpt->option4 === (string)$goodsOption->option4 &&
+                            (string)$candOpt->option5 === (string)$goodsOption->option5
+                        ) {
+                            $existingCart = $candidate;
+                            break;
+                        }
+                    }
+                }
+
+                if ($existingCart) {
+                    // Update Existing
+                    $cartOption = $existingCart->options->first();
+                    $cartOption->ea += $ea;
+                    $cartOption->save();
+                    
+                    // Touch parent cart to update timestamp
+                    $existingCart->update_date = now();
+                    $existingCart->save();
+
+                    $createdCartSeqs[] = $existingCart->cart_seq;
+                } else {
+                    // Create New
+                    $cart = new Cart();
+                    $cart->goods_seq = $goods_seq;
+                    $cart->member_seq = $member_seq; // Already resolved above
+                    // Force 0 if null
+                    if (is_null($cart->member_seq)) $cart->member_seq = 0;
+                    
+                    $cart->session_id = $sessionId;
+                    $cart->distribution = 'cart';
+                    $cart->regist_date = now();
+                    $cart->update_date = now();
+                    $cart->fblike = 'N';
+                    $cart->provider = 'N';
+                    $cart->ip = $request->ip();
+                    $cart->save();
+
+                    // Append to cart_seqs array for response
+                    $createdCartSeqs[] = $cart->cart_seq;
+
+                    // Create Cart Option
+                    $cartOption = new CartOption();
+                    $cartOption->cart_seq = $cart->cart_seq;
+                    $cartOption->ea = $ea;
+
                     $cartOption->option1 = $goodsOption->option1 ?? '';
                     $cartOption->option2 = $goodsOption->option2 ?? '';
                     $cartOption->option3 = $goodsOption->option3 ?? '';
@@ -129,18 +181,18 @@ class CartController extends Controller
                     $cartOption->option5 = $goodsOption->option5 ?? '';
                     $cartOption->title1 = $goodsOption->option_title ?? '옵션';
                     $cartOption->choice = '1';
-                }
-                $cartOption->save();
+                    $cartOption->save();
 
-                // Save Inputs for THIS cart item
-                foreach ($mappedInputs as $mInput) {
-                    $cartInput = new \App\Models\CartInput();
-                    $cartInput->cart_seq = $cart->cart_seq;
-                    $cartInput->cart_option_seq = $cartOption->cart_option_seq;
-                    $cartInput->input_title = $mInput['title'];
-                    $cartInput->type = $mInput['type'];
-                    $cartInput->input_value = $mInput['value'];
-                    $cartInput->save();
+                    // Save Inputs for THIS cart item
+                    foreach ($mappedInputs as $mInput) {
+                        $cartInput = new \App\Models\CartInput();
+                        $cartInput->cart_seq = $cart->cart_seq;
+                        $cartInput->cart_option_seq = $cartOption->cart_option_seq;
+                        $cartInput->input_title = $mInput['title'];
+                        $cartInput->type = $mInput['type'];
+                        $cartInput->input_value = $mInput['value'];
+                        $cartInput->save();
+                    }
                 }
             }
 

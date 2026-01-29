@@ -1,16 +1,26 @@
 @extends('layouts.front')
 
 @section('content')
-    <div class="location_wrap">
-        <div class="location_cont">
-            <em><a href="/" class="local_home">HOME</a> &gt; 장바구니</em>
+    @push('styles')
+        <link rel="stylesheet" href="/css/order.css?v={{ time() }}">
+    @endpush
+    <div class="order_header_v2">
+        <div class="order_header_inner clearbox">
+            <!-- Left: Title with Icon -->
+            <div class="title_area">
+                <h2>장바구니<i><img src="/images/icon/order_card.png" alt="Cart Icon"></i></h2>
+            </div>
+            
+            <!-- Right: Step Indicator -->
+            <div class="step_area">
+                <ul>
+                    <li class="on"><span class="num">1</span> <span class="txt">장바구니</span></li>
+                    <li><span class="num">2</span> <span class="txt">주문/결제</span></li>
+                    <li><span class="num">3</span> <span class="txt">주문완료</span></li>
+                </ul>
+            </div>
         </div>
     </div>
-
-    <div class="content_wrap">
-        <div class="cart_title_area">
-            <h3>장바구니</h3>
-        </div>
 
         <div class="cart_list_area">
             <form name="cartForm" id="cartForm" method="post" action="">
@@ -85,12 +95,21 @@
                                     ?? $goods->images->where('image_type', 'view')->first();
                                 
                                 $imagePath = $mainImage ? $mainImage->image : '';
-                                if ($imagePath && strpos($imagePath, '/data/goods/') === 0) {
-                                    $imgSrc = $imagePath;
-                                } elseif ($imagePath) {
-                                    $imgSrc = '/data/goods/' . $imagePath;
-                                } else {
-                                    $imgSrc = '/images/no_image.gif';
+                                $imgSrc = '/images/no_image.gif';
+                                
+                                if ($imagePath) {
+                                    $imagePath = trim($imagePath);
+                                    if (Str::startsWith($imagePath, 'http')) {
+                                        $imgSrc = $imagePath;
+                                    } elseif (strpos($imagePath, 'goods_img') !== false) {
+                                        // Handle paths like /data/goods_img/1/2007/... or just goods_img/...
+                                        $suffix = substr($imagePath, strpos($imagePath, 'goods_img') + 9);
+                                        $imgSrc = "https://dmtusr.vipweb.kr/goods_img" . $suffix;
+                                    } elseif (strpos($imagePath, '/data/goods/') === 0) {
+                                        $imgSrc = "http://dometopia.com" . $imagePath;
+                                    } else {
+                                        $imgSrc = "http://dometopia.com/data/goods/" . $imagePath;
+                                    }
                                 }
                             @endphp
                             <tr data-cart-seq="{{ $item->cart_seq }}" data-price="{{ $price }}">
@@ -300,7 +319,19 @@
 
             // Order Buttons (Placeholder)
             document.querySelector('.btn_order_all').addEventListener('click', function () {
-                alert('주문 기능은 아직 구현되지 않았습니다.');
+                const chkItems = document.querySelectorAll('.chk_item');
+                if (chkItems.length === 0) {
+                    alert('장바구니에 담긴 상품이 없습니다.');
+                    return;
+                }
+
+                // Check all items
+                chkItems.forEach(chk => chk.checked = true);
+                if (document.getElementById('chk_all')) document.getElementById('chk_all').checked = true;
+
+                const form = document.getElementById('cartForm');
+                form.action = "{{ route('order.form') }}";
+                form.submit();
             });
 
             document.querySelector('.btn_order_select').addEventListener('click', function () {
@@ -319,128 +350,4 @@
         });
     </script>
 
-    <style>
-        .cart_table {
-            width: 100%;
-            border-collapse: collapse;
-            border-top: 2px solid #333;
-        }
-
-        .cart_table th {
-            background: #f9f9f9;
-            padding: 15px 0;
-            border-bottom: 1px solid #ddd;
-        }
-
-        .cart_table td {
-            padding: 15px 10px;
-            border-bottom: 1px solid #ddd;
-            text-align: center;
-            vertical-align: middle;
-        }
-
-        .cart_table .info_cell {
-            text-align: left;
-        }
-
-        .cart_table .g_name {
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .cart_table .g_opt {
-            font-size: 12px;
-            color: #888;
-        }
-
-        .price_bold {
-            font-weight: bold;
-            color: #d00;
-        }
-
-        .cart_total_area {
-            background: #f2f2f2;
-            padding: 20px;
-            margin-top: 30px;
-            text-align: center;
-            border: 1px solid #ddd;
-        }
-
-        .total_box span {
-            font-size: 16px;
-            margin: 0 10px;
-        }
-
-        .total_box strong {
-            font-size: 20px;
-            font-weight: bold;
-        }
-
-        .total_box .final_price strong {
-            color: #d00;
-        }
-
-        .btn_area_center {
-            margin-top: 30px;
-            text-align: center;
-        }
-
-        .btn_area_center button {
-            padding: 15px 40px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            border: none;
-        }
-
-        .btn_order_all {
-            background: #d00;
-            color: #fff;
-        }
-
-        .btn_order_select {
-            background: #333;
-            color: #fff;
-            margin-left: 10px;
-        }
-
-        .no_data {
-            padding: 50px 0;
-            color: #888;
-        }
-
-        .g_inputs {
-            margin-top: 8px;
-            font-size: 12px;
-            color: #666;
-            background: #f8f9fa;
-            padding: 5px;
-            border-radius: 4px;
-        }
-
-        .input_row {
-            margin-bottom: 2px;
-        }
-
-        .input_badge {
-            display: inline-block;
-            background: #eee;
-            padding: 1px 4px;
-            border-radius: 2px;
-            font-size: 11px;
-            margin-right: 4px;
-            color: #555;
-        }
-
-        .file_link {
-            color: #007bff;
-            text-decoration: underline;
-        }
-
-        .btn_qty_mod {
-            padding: 2px 5px;
-            font-size: 11px;
-            cursor: pointer;
-        }
-    </style>
 @endsection

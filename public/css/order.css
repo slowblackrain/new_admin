@@ -1,0 +1,862 @@
+@charset "utf-8";
+
+/* ==========================================================================
+   Reference: MyPage Styles (mypage.css)
+   We should share common table styles.
+   ========================================================================== */
+
+/* Cart & Order Common Tables */
+.cart_table {
+    width: 100%;
+    border-collapse: collapse;
+    border-top: 2px solid #333;
+    margin-bottom: 20px;
+}
+
+.cart_table th {
+    background: #f9f9f9;
+    padding: 10px 0;
+    border-bottom: 1px solid #ddd;
+}
+
+.cart_table td {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 14px;
+}
+
+.cart_table .info_cell {
+    text-align: left;
+    padding-left: 10px;
+}
+
+.cart_table .img_cell img {
+    vertical-align: middle;
+}
+
+/* Location Breadcrumb */
+.location_wrap {
+    width: 100%;
+    margin-bottom: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding-top: 20px;
+}
+
+.location_cont {
+    text-align: right;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 13px;
+    color: #666;
+}
+
+.location_cont em {
+    font-style: normal;
+}
+
+/* Form Tables (Order Form) */
+.form_table {
+    width: 100%;
+    border-collapse: collapse;
+    border-top: 1px solid #ddd;
+}
+
+.form_table th {
+    background: #f9f9f9;
+    padding: 10px 15px;
+    border-bottom: 1px solid #ddd;
+    text-align: left;
+    font-weight: normal;
+}
+
+.form_table td {
+    padding: 10px 15px;
+    border-bottom: 1px solid #ddd;
+}
+
+/* Inputs & Forms */
+.input_text {
+    height: 30px;
+    border: 1px solid #ccc;
+    padding: 0 5px;
+    vertical-align: middle;
+}
+
+.full_width {
+    width: 98%;
+}
+
+.required {
+    color: #d00;
+}
+
+/* Buttons */
+.btn_area_center {
+    margin: 40px 0;
+    text-align: center;
+}
+
+.btn_order_all {
+    display: inline-block;
+    width: 200px;
+    height: 60px;
+    line-height: 60px;
+    padding: 0;
+    background: #d00;
+    color: #fff;
+    font-size: 18px;
+    font-weight: bold;
+    border: none;
+    cursor: pointer;
+    margin: 0 5px;
+    vertical-align: middle;
+}
+
+.btn_order_all:hover {
+    background: #b00;
+}
+
+.btn_order_select {
+    display: inline-block;
+    width: 200px;
+    height: 60px;
+    line-height: 60px;
+    padding: 0;
+    background: #666;
+    color: #fff;
+    font-size: 18px;
+    font-weight: bold;
+    border: none;
+    cursor: pointer;
+    margin: 0 5px;
+    vertical-align: middle;
+}
+
+.btn_order_select:hover {
+    background: #555;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+
+/* Navigation Font */
+.location_cont {
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 13px;
+    color: #555;
+    letter-spacing: -0.5px;
+}
+
+.cart_title_area h3 {
+    font-family: 'Noto Sans KR', sans-serif;
+}
+
+/* ... existing styles ... */
+
+.btn_cancel {
+    display: inline-block;
+    width: 200px;
+    height: 60px;
+    line-height: 60px;
+    padding: 0;
+    background: #666;
+    color: #fff;
+    font-size: 18px;
+    font-weight: bold;
+    text-decoration: none;
+    margin-left: 5px;
+    vertical-align: middle;
+    text-align: center;
+    /* box-sizing is key if padding was used, but 0 padding assumes size includes border-box */
+}
+
+.btn_cancel:hover {
+    background: #555;
+}
+
+.btn_base {
+    padding: 5px 10px;
+    background: #333;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+}
+
+.btn_addr_list {
+    background: #007bff;
+    margin-left: 5px;
+}
+
+/* Total Box (Order/Cart) */
+.cart_total_area {
+    margin-top: 50px;
+}
+
+.total_box {
+    border: 3px solid #ddd;
+    padding: 20px;
+    text-align: center;
+    background: #f9f9f9;
+    font-size: 14px;
+}
+
+.total_box span {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.total_box strong {
+    font-weight: bold;
+}
+
+.total_box .plus,
+.total_box .equal {
+    font-size: 20px;
+    color: #888;
+    font-weight: normal;
+    margin: 0 15px;
+}
+
+.total_box .final_price {
+    color: #d00;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+/* Modal Styles */
+.modal_overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+}
+
+.modal_content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 400px;
+    background: #fff;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.modal_header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.btn_close_modal {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.address_list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.address_list li {
+    border-bottom: 1px solid #eee;
+    padding: 10px;
+    cursor: pointer;
+}
+
+.address_list li:hover {
+    background: #f9f9f9;
+}
+
+.addr_item strong {
+    font-size: 14px;
+    color: #333;
+}
+
+.addr_item span {
+    font-size: 12px;
+    color: #888;
+    margin-left: 5px;
+}
+
+.addr_item p {
+    margin: 5px 0 0;
+    font-size: 13px;
+    color: #666;
+}
+
+/* Agreement & Policies */
+.agreement_area {
+    margin: 0 auto;
+    width: 100%;
+    max-width: 1200px;
+    /* Expanded for grid layout */
+    margin-top: 30px;
+}
+
+.agreement_grid_container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: start;
+}
+
+/* Force margin reset for titles inside grid items for perfect alignment */
+.agreement_item h6,
+.agreement_item .agreement-title-label {
+    margin-top: 0 !important;
+    margin-bottom: 10px;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.agreement_item {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.agreement-full-width {
+    grid-column: span 2;
+    /* Span full width (2 columns) */
+}
+
+.agreement-full-width {
+    grid-column: span 2;
+}
+
+.shipping-agree-text {
+    margin-top: 10px;
+    border: 1px solid #eee;
+    padding: 10px;
+    background-color: #f9f9f9;
+    height: 150px;
+    overflow-y: auto;
+}
+
+.agreement_box {
+    border: 1px solid #ccc;
+    padding: 10px;
+    height: 150px;
+    overflow-y: auto;
+    background: #fff;
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.agreement_check {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.agreement_check label {
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.privacy_table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 5px;
+}
+
+.privacy_table th,
+.privacy_table td {
+    border: 1px solid #eee;
+    padding: 5px;
+    font-size: 11px;
+}
+
+.privacy_table th {
+    background: #f5f5f5;
+}
+
+
+/* Receipt Forms */
+.receipt_form_wrap {
+    margin-top: 10px;
+    padding: 15px;
+    background: #f8f8f8;
+    border: 1px solid #eee;
+}
+
+.receipt_row {
+    margin-bottom: 5px;
+}
+
+.receipt_row span.label {
+    display: inline-block;
+    width: 80px;
+    color: #555;
+}
+
+.hide {
+    display: none;
+}
+
+/* Mobile (Reuse logic from mypage.css or define here) */
+@media (max-width: 1024px) {
+
+    .cart_table,
+    .form_table th,
+    .form_table td {
+        font-size: 13px;
+    }
+
+    .input_text {
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .btn_order_all,
+    .btn_cancel {
+        width: 100%;
+        margin: 5px 0;
+        display: block;
+        margin-left: 0;
+    }
+
+    .total_box {
+        text-align: right;
+    }
+
+    .total_box span {
+        display: block;
+        margin: 5px 0;
+    }
+
+    .total_box .plus,
+    .total_box .equal {
+        display: none;
+    }
+
+    .agreement_grid_container {
+        grid-template-columns: 1fr;
+        /* Stack vertically on mobile */
+    }
+
+    .agreement_item {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .agreement-full-width {
+        grid-column: auto;
+    }
+}
+
+/* Guidance Alert Box */
+/* Guidance Alert Box */
+.doto-order-info-alert {
+    background-color: #f8f9fa;
+    border: 1px solid #ddd;
+    border-left: 5px solid #0056b3;
+    padding: 20px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    position: relative;
+    z-index: 100 !important;
+}
+
+.doto-order-info-alert h3 {
+    position: relative !important;
+    /* Fix overlap issue */
+    top: auto !important;
+    left: auto !important;
+    font-size: 14px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 15px;
+    font-family: 'Noto Sans KR', sans-serif;
+    display: block;
+}
+
+.doto-order-info-alert ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.doto-order-info-alert li {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 5px;
+    padding-left: 10px;
+    text-indent: -10px;
+}
+
+/* --- Legacy Order Styles --- */
+
+/* Order Title & Step Indicator */
+/* Order Title & Step Indicator (Legacy Replication) */
+.cart_nav {
+    overflow: hidden;
+    margin-bottom: 30px;
+}
+
+.cart_nav .title {
+    border-bottom: 2px solid #ce0005;
+    /* Legacy Red */
+    padding-bottom: 12px;
+    /* Spacing between text and line */
+    overflow: hidden;
+}
+
+.cart_nav h2 {
+    float: left;
+    font-size: 26px;
+    font-weight: bold;
+    color: #333;
+    font-family: 'Malgun Gothic', 'Dotum', sans-serif;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.cart_nav h2 i {
+    vertical-align: middle;
+    margin-left: 10px;
+}
+
+.cart_nav h2 img {
+    vertical-align: middle;
+}
+
+.cart_nav .step {
+    float: right;
+    margin-top: 5px;
+}
+
+.cart_nav .step ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+}
+
+.cart_nav .step li {
+    float: left;
+    margin-left: 20px;
+    font-size: 12px;
+    color: #999;
+    font-family: 'Dotum', sans-serif;
+    position: relative;
+    padding-left: 0;
+    line-height: 20px;
+}
+
+.cart_nav .step li span.num {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #e2e2e2;
+    color: #fff;
+    text-align: center;
+    line-height: 20px;
+    font-family: Arial, sans-serif;
+    font-weight: bold;
+    margin-right: 5px;
+    font-size: 11px;
+}
+
+.cart_nav .step li.on span.num {
+    background: #ce0005;
+}
+
+.cart_nav .step li.on {
+    color: #333;
+    font-weight: bold;
+}
+
+/* Connecting lines */
+.cart_nav .step li+li:before {
+    content: '';
+    display: block;
+    position: absolute;
+    left: -15px;
+    top: 10px;
+    width: 10px;
+    height: 1px;
+    background: #e2e2e2;
+}
+
+
+
+
+/* Table Header Icons (Badges) */
+.icon_sq_n,
+.icon_sq_w,
+.icon_sq_p,
+.icon_sq_s {
+    display: inline-block;
+    width: 17px;
+    height: 17px;
+    line-height: 17px;
+    text-align: center;
+    color: #fff;
+    font-size: 11px;
+    margin-right: 4px;
+    vertical-align: middle;
+    border-radius: 2px;
+    font-family: Arial, sans-serif;
+}
+
+.icon_sq_n {
+    background: #88a7d4;
+}
+
+.icon_sq_w {
+    background: #88a7d4;
+}
+
+.icon_sq_p {
+    background: #88a7d4;
+}
+
+.icon_sq_s {
+    background: #88a7d4;
+}
+
+
+/* Legacy Summary Box */
+.cart_total_area_legacy {
+    display: table;
+    width: 100%;
+    border: 1px solid #ddd;
+    margin-top: 30px;
+    background: #fff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.total_left {
+    display: table-cell;
+    width: 200px;
+    padding: 20px;
+    vertical-align: middle;
+    border-right: 1px solid #eee;
+    background: #fdfdfd;
+}
+
+.total_left .total_row {
+    overflow: hidden;
+    margin-bottom: 8px;
+    font-size: 13px;
+    color: #555;
+    border-bottom: 1px dotted #eee;
+    padding-bottom: 5px;
+}
+
+.total_left .total_row:last-child {
+    border-bottom: none;
+}
+
+.total_left .th {
+    float: left;
+}
+
+.total_left .td {
+    float: right;
+    font-weight: bold;
+    color: #333;
+}
+
+.total_right {
+    display: table-cell;
+    vertical-align: middle;
+    padding: 20px;
+    text-align: center;
+    background: #fff;
+}
+
+.calc_box {
+    display: inline-block;
+    font-size: 14px;
+    color: #555;
+    font-family: 'Noto Sans KR', sans-serif;
+    white-space: nowrap;
+    /* Force single line */
+}
+
+.calc_box .item {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.calc_box .item strong {
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+    font-family: Arial, sans-serif;
+}
+
+.calc_box .item.total strong {
+    color: #ef3f22;
+    font-size: 24px;
+}
+
+.calc_box .op {
+    display: inline-block;
+    width: 26px;
+    height: 26px;
+    line-height: 24px;
+    background: #e0e0e0;
+    color: #fff;
+    text-align: center;
+    border-radius: 50%;
+    margin: 0 8px;
+    /* Reduced spacing */
+    font-weight: bold;
+    font-family: Arial;
+    vertical-align: middle;
+}
+
+
+/* --- Order Header V2 (Robust Fix) --- */
+.order_header_v2 {
+    margin-bottom: 30px;
+    margin-top: 60px;
+    /* Added spacing from top menu */
+}
+
+.order_header_inner {
+    border-bottom: 2px solid #ce0005;
+    /* Legacy Red */
+    padding-bottom: 15px;
+    /* Spacing */
+    overflow: hidden;
+    /* Clearfix behavior */
+}
+
+/* Title Area */
+.order_header_v2 .title_area {
+    float: left;
+}
+
+.order_header_v2 h2 {
+    font-size: 26px;
+    font-weight: bold;
+    color: #333;
+    font-family: 'Malgun Gothic', 'Dotum', sans-serif;
+    margin: 0;
+    line-height: 1;
+    /* Tight line height */
+    display: flex;
+    /* Flexbox for vertical alignment */
+    align-items: center;
+    /* Center Vertically */
+}
+
+.order_header_v2 h2 i {
+    display: inline-block;
+    margin-left: 10px;
+    vertical-align: middle;
+    /* Fallback */
+    line-height: 0;
+    /* Remove extra space */
+}
+
+.order_header_v2 h2 img {
+    vertical-align: top;
+    /* Flex container handles alignment */
+}
+
+
+/* Step Area */
+.order_header_v2 .step_area {
+    float: right;
+    margin-top: 5px;
+    /* Alignment adjustment */
+}
+
+.order_header_v2 .step_area ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+}
+
+.order_header_v2 .step_area li {
+    float: left;
+    margin-left: 30px;
+    /* Increased spacing */
+    font-size: 14px;
+    /* Increased font size */
+    color: #aeaeae;
+    font-family: 'Dotum', sans-serif;
+    position: relative;
+    padding-left: 35px;
+    /* Space for line */
+    line-height: 28px;
+    /* Match circle height */
+    font-weight: bold;
+}
+
+.order_header_v2 .step_area li:first-child {
+    padding-left: 0;
+}
+
+/* Step Circle (Number) */
+.order_header_v2 .step_area li span.num {
+    display: inline-block;
+    width: 28px;
+    /* Increased from 20px */
+    height: 28px;
+    line-height: 28px;
+    border-radius: 50%;
+    background: #e2e2e2;
+    color: #fff;
+    text-align: center;
+    font-family: Arial, sans-serif;
+    font-weight: bold;
+    margin-right: 8px;
+    font-size: 15px;
+    /* Increased from 11px */
+    vertical-align: middle;
+}
+
+/* Step Text */
+.order_header_v2 .step_area li span.txt {
+    vertical-align: middle;
+    display: inline-block;
+    letter-spacing: -1px;
+}
+
+/* Active State */
+.order_header_v2 .step_area li.on span.num {
+    background: #ce0005;
+}
+
+.order_header_v2 .step_area li.on {
+    color: #333;
+}
+
+/* Connecting Line */
+.order_header_v2 .step_area li+li:before {
+    content: '';
+    display: block;
+    position: absolute;
+    left: 0;
+    top: 50%;
+    margin-top: -1px;
+    /* Center vertical */
+    width: 25px;
+    /* Longer line */
+    height: 2px;
+    /* Thicker line */
+    background: #e2e2e2;
+}

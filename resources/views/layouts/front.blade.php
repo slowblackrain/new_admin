@@ -19,6 +19,7 @@
 
     @stack('styles')
     <link rel="stylesheet" href="{{ asset('css/legacy/responsive.css') }}">
+    <link rel="stylesheet" href="/css/layout.css?v={{ time() }}">
 </head>
 
 <body>

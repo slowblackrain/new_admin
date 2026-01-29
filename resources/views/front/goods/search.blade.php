@@ -54,7 +54,21 @@
                                     <div class="img_area">
                                         @php
                                             $mainImage = $item->images->where('image_type', 'list1')->first();
-                                            $imgSrc = $mainImage ? 'http://dometopia.com' . $mainImage->image : '/images/no_image.gif';
+                                            $imgSrc = '/images/no_image.gif';
+                                            
+                                            $imagePath = $mainImage ? $mainImage->image : '';
+                                            if ($imagePath) {
+                                                if (Str::startsWith($imagePath, 'http')) {
+                                                    $imgSrc = $imagePath;
+                                                } elseif (strpos($imagePath, 'goods_img') !== false) {
+                                                    $suffix = substr($imagePath, strpos($imagePath, 'goods_img') + 9);
+                                                    $imgSrc = "https://dmtusr.vipweb.kr/goods_img" . $suffix;
+                                                } elseif (strpos($imagePath, '/data/goods/') === 0) {
+                                                    $imgSrc = "http://dometopia.com" . $imagePath;
+                                                } else {
+                                                    $imgSrc = "http://dometopia.com/data/goods/" . $imagePath;
+                                                }
+                                            }
                                         @endphp
                                         <img src="{{ $imgSrc }}" alt="{{ $item->goods_name }}"
                                             onerror="this.src='/images/no_image.gif'">

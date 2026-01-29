@@ -1,15 +1,26 @@
 @extends('layouts.front')
 
 @section('content')
-    <div class="location_wrap">
-        <div class="location_cont">
-            <em><a href="/" class="local_home">HOME</a> &gt; 주문서 작성</em>
+    @push('styles')
+        <link rel="stylesheet" href="/css/order.css?v={{ time() }}">
+    @endpush
+    <div class="order_header_v2">
+        <div class="order_header_inner clearbox">
+            <!-- Left: Title with Icon -->
+            <div class="title_area">
+                <h2>주문/결제<i><img src="/images/icon/order_card.png" alt="Card Icon"></i></h2>
+            </div>
+            
+            <!-- Right: Step Indicator -->
+            <div class="step_area">
+                <ul>
+                    <li><span class="num">1</span> <span class="txt">장바구니</span></li>
+                    <li class="on"><span class="num">2</span> <span class="txt">주문/결제</span></li>
+                    <li><span class="num">3</span> <span class="txt">주문완료</span></li>
+                </ul>
+            </div>
         </div>
-    </div>
-
-    <div class="content_wrap">
-        <div class="cart_title_area">
-            <h3>주문서 작성</h3>
+    </div>    <!-- Subtitle or other content if needed -->
         </div>
 
         @if ($errors->any())
@@ -24,11 +35,12 @@
         @endif
 
         <div class="cart_list_area">
-            <h4>주문 상품 정보</h4>
+            <h4>주문 리스트 확인</h4>
             <table class="cart_table">
                 <colgroup>
                     <col width="100" />
                     <col width="*" />
+                    <col width="80" />
                     <col width="100" />
                     <col width="100" />
                     <col width="100" />
@@ -36,12 +48,13 @@
                 </colgroup>
                 <thead>
                     <tr>
-                        <th scope="col">이미지</th>
-                        <th scope="col">상품정보</th>
-                        <th scope="col">수량</th>
-                        <th scope="col">상품금액</th>
-                        <th scope="col">배송비</th>
-                        <th scope="col">합계</th>
+                        <th scope="col">이미지</th> {{-- No Text in Screenshot --}}
+                        <th scope="col">주문상품</th>
+                        <th scope="col"><span class="icon_sq_n">N</span> 수량</th>
+                        <th scope="col"><span class="icon_sq_w">W</span> 단가</th>
+                        <th scope="col"><span class="icon_sq_p">%</span> 할인</th>
+                        <th scope="col"><span class="icon_sq_w">W</span> 주문금액</th>
+                        <th scope="col"><span class="icon_sq_s">S</span> 배송비</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -55,7 +68,22 @@
                             $itemPrice = $price * $ea;
 
                             $mainImage = $goods->images->where('image_type', 'list1')->first();
-                            $imgSrc = $mainImage ? '/data/goods/' . $mainImage->image : '/images/no_image.gif';
+                            
+                            $imagePath = $mainImage ? $mainImage->image : '';
+                            if ($imagePath && strpos($imagePath, '/data/goods/') === 0) {
+                                $imgSrc = "http://dometopia.com" . $imagePath;
+                            } elseif ($imagePath && strpos($imagePath, 'goods_img') !== false) {
+                                    $suffix = substr($imagePath, strpos($imagePath, 'goods_img') + 9);
+                                    $imgSrc = "https://dmtusr.vipweb.kr/goods_img" . $suffix;
+                            } elseif ($imagePath) {
+                                if (Str::startsWith($imagePath, 'http')) {
+                                    $imgSrc = $imagePath;
+                                } else {
+                                    $imgSrc = "http://dometopia.com/data/goods/" . $imagePath;
+                                }
+                            } else {
+                                $imgSrc = '/images/no_image.gif';
+                            }
                         @endphp
                         <tr>
                             <td class="img_cell">
@@ -67,18 +95,46 @@
                             </td>
                             <td>{{ $ea }}</td>
                             <td>{{ number_format($price) }}원</td>
-                            <td>기본배송</td>
+                            <td>-</td> {{-- Discount Placeholder --}}
                             <td class="price_bold">{{ number_format($itemPrice) }}원</td>
+                            <td>기본배송</td>
                         </tr>
                     @endforeach
                 </tbody>
             </table>
 
+            <div class="cart_total_area_legacy">
+                <div class="total_left">
+                    <div class="total_row">
+                        <span class="th">총 상품</span>
+                        <span class="td"><strong>{{ count($cartItems) }}</strong></span>
+                    </div>
+                    <div class="total_row">
+                        <span class="th">총 수량</span>
+                        <span class="td"><strong>{{ $cartItems->sum('ea') }}</strong></span>
+                    </div>
+                </div>
+                <div class="total_right">
+                    <div class="calc_box">
+                        <span class="item">총 상품 금액: <strong>{{ number_format($totalPrice) }}</strong></span>
+                        <span class="op plus">+</span>
+                        <span class="item">배송비: <strong>{{ number_format($shipping) }}</strong></span>
+                        <span class="op minus">-</span>
+                        <span class="item">총 할인: <strong>0</strong></span>
+                        <span class="op plus">+</span>
+                        <span class="item">총 부가세: <strong>{{ number_format($tax) }}</strong> (면세)</span>
+                        <span class="item ml10">예상포인트: 0</span>
+                        <span class="op equal">=</span>
+                        <span class="item total">총 결제 금액: <strong>{{ number_format($finalPrice) }}</strong></span>
+                    </div>
+                </div>
+            </div>
+
             <form name="orderForm" id="orderForm" method="post" action="{{ route('order.store') }}">
                 @csrf
                 {{-- 주문서 처리 로직은 다음 Phase에서 구현 --}}
 
-                <h4 style="margin-top: 50px;">주문자 정보</h4>
+                <h4 class="mt50">주문자 정보</h4>
                 <div class="order_info_table">
                     <table class="form_table">
                         <colgroup>
@@ -90,6 +146,10 @@
                                 <th>주문자명 <span class="required">*</span></th>
                                 <td><input type="text" name="order_user_name" value="{{ $user->user_name ?? '' }}"
                                         class="input_text" required></td>
+                            </tr>
+                            <tr>
+                                <th>전화번호</th>
+                                <td><input type="text" name="order_phone" value="{{ $user->phone ?? '' }}" class="input_text"></td>
                             </tr>
                             <tr>
                                 <th>휴대전화 <span class="required">*</span></th>
@@ -105,7 +165,18 @@
                     </table>
                 </div>
 
-                <h4 style="margin-top: 30px;">배송지 정보 <label><input type="checkbox" id="copy_user_info"> 주문자 정보와 동일</label>
+                @if(!auth()->check())
+                <div class="doto-order-info-alert">
+                    <h3>주의사항</h3>
+                    <ul>
+                        <li>ㆍ비회원의 주문배송조회를 위한 로그인은 주문번호와 이메일 정보로 확인할 수 있습니다.</li>
+                        <li>ㆍ구매 내역은 이메일과 SMS로 발송됩니다.</li>
+                        <li>ㆍ정확한 이메일과 휴대폰번호를 입력해 주십시오.</li>
+                    </ul>
+                </div>
+                @endif
+
+                <h4 class="mt30">배송지 정보 <label><input type="checkbox" id="copy_user_info"> 주문자 정보와 동일</label>
                 </h4>
                 <div class="order_info_table">
                     <table class="form_table">
@@ -118,6 +189,10 @@
                                 <th>수령인 <span class="required">*</span></th>
                                 <td><input type="text" name="recipient_user_name" id="recipient_user_name"
                                         class="input_text" required></td>
+                            </tr>
+                            <tr>
+                                <th>전화번호</th>
+                                <td><input type="text" name="recipient_phone" id="recipient_phone" class="input_text"></td>
                             </tr>
                             <tr>
                                 <th>휴대전화 <span class="required">*</span></th>
@@ -156,7 +231,7 @@
                     </table>
                 </div>
 
-                <h4 style="margin-top: 30px;">할인 / 혜택 사용</h4>
+                <h4 class="mt30">할인 / 혜택 사용</h4>
                 <div class="order_info_table">
                     <table class="form_table">
                         <colgroup>
@@ -231,20 +306,151 @@
                     </table>
                 </div>
 
-                <div class="cart_total_area" style="margin-top: 50px;">
-                    <div class="total_box">
-                        <span>상품금액 <strong>{{ number_format($totalPrice) }}원</strong></span>
-                        <span class="plus" style="margin:0 10px;">+</span>
-                        <span>배송비 <strong>{{ number_format($shipping) }}원</strong></span>
-                        <span class="plus" style="margin:0 10px;">+</span>
-                        <span>포장비 <strong>{{ number_format($packagingCost) }}원</strong></span>
-                        <span class="plus" style="margin:0 10px;">+</span>
-                        <span>부가세 <strong>{{ number_format($tax) }}원</strong></span>
-                        <span class="equal" style="margin:0 10px;">=</span>
-                        <span>총 결제금액 <strong class="final_price"
-                                style="color:#d00; font-size:24px;">{{ number_format($finalPrice) }}원</strong></span>
-                    </div>
+                {{-- Phase 1: Receipt Request Section --}}
+                <div class="order_info_table mt30">
+                    <h4 style="margin-bottom:10px;">증빙 서류 신청</h4>
+                    <table class="form_table">
+                        <colgroup>
+                            <col width="150" />
+                            <col width="*" />
+                        </colgroup>
+                        <tbody>
+                            <tr>
+                                <th>신청 선택</th>
+                                <td>
+                                    <label><input type="radio" name="typereceipt" value="0" checked onclick="toggleReceipt(0)"> 신청안함</label>
+                                    <label class="ml10"><input type="radio" name="typereceipt" value="1" onclick="toggleReceipt(1)"> 세금계산서</label>
+                                    <label class="ml10"><input type="radio" name="typereceipt" value="2" onclick="toggleReceipt(2)"> 현금영수증</label>
+                                </td>
+                            </tr>
+                            <tr id="receipt_form_row" class="hide">
+                                <th>정보 입력</th>
+                                <td>
+                                    {{-- Tax Invoice Form --}}
+                                    <div id="tax_form" class="hide">
+                                        <div class="receipt_row"><span class="label">상호명</span> <input type="text" name="co_name" class="input_text"></div>
+                                        <div class="receipt_row"><span class="label">사업자번호</span> <input type="text" name="busi_no" class="input_text" placeholder="'-'없이 입력"></div>
+                                        <div class="receipt_row"><span class="label">대표자명</span> <input type="text" name="co_ceo" class="input_text"></div>
+                                        <div class="receipt_row"><span class="label">업태</span> <input type="text" name="co_status" class="input_text"></div>
+                                        <div class="receipt_row"><span class="label">종목</span> <input type="text" name="co_type" class="input_text"></div>
+                                        <div class="receipt_row"><span class="label">담당자명</span> <input type="text" name="tax_person" class="input_text"></div>
+                                        <div class="receipt_row"><span class="label">이메일</span> <input type="text" name="tax_email" class="input_text"></div>
+                                    </div>
+                                    {{-- Cash Receipt Form --}}
+                                    <div id="cash_form" class="hide">
+                                        <div class="receipt_row">
+                                            <label><input type="radio" name="cuse" value="0" checked> 개인소득공제용</label>
+                                            <label class="ml10"><input type="radio" name="cuse" value="1"> 사업자지출증빙용</label>
+                                        </div>
+                                        <div class="receipt_row mt5">
+                                            <span class="label">휴대폰/번호</span> <input type="text" name="cash_receipt_number" class="input_text" placeholder="'-'없이 입력">
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
+
+
+
+                {{-- Phase 1: Agreements Section --}}
+                <div class="agreement_area">
+                
+                @if(true)
+                <div class="agreement_grid_container">
+                    {{-- Row 1: Shipping Policy & Cancellation Policy --}}
+                    {{-- Item 1: Shipping Policy --}}
+                    <div class="agreement_item agreement-full-width">
+                         <div style="margin-bottom:10px;">
+                            <label><input type="checkbox" name="delivery_chk"> <span style="font-weight:bold; color:#d00;">배송비 정책에 동의합니다</span></label>
+                        </div>
+                        <div class="shipping-agree-text">
+                            <ul style="list-style: none; padding-left: 0; font-size: 13px; color: #555;">
+                                <li style="margin-bottom: 5px;">1. 배송비는 15만원 이상 구매하면 무료입니다.</li>
+                                <li style="margin-bottom: 5px;">2. 선불/착불 선택 가능하며 선불은 기본 1박스만 선결제 됩니다.</li>
+                                <li style="margin-bottom: 5px;">3. 1박스를 선불로 결제하더라도 추가 박스 발생시 착불로 배송됩니다.<br>(전량 선불 결제를 원할 시 고객센터로 연락주세요.)</li>
+                                <li>4. 궁금한 점은 고객센터로 연락주시기 바랍니다.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    {{-- Item 2: Cancellation Policy --}}
+                    <div class="agreement_item">
+                        <h6 class="fx20">청약철회 관련 방침</h6>
+                        <div class="agreement_box" contenteditable="false">
+                            1. 반품/교환 사유에 따른 요청 가능 기간<br>
+                            반품 시 먼저 판매자와 연락하셔서 반품사유, 택배사, 배송비, 반품지 주소 등을 협의하신 후 반품상품을 발송해 주시기 바랍니다.<br>
+                            구매자 단순변심 : 상품 수령 후 7일 이내 (구매자 반품 배송비 부담)<br>
+                            표시/광고와 상이, 상품 하자 : 상품 수령 후 3개월 이내 혹은 표시/광고와 다른 사실을 안 날로부터 30일 이내 (판매자 반품 배송비 부담) 둘 중 하나 경과 시 반품/교환 불가<br><br>
+                            2. 반품/교환 불가능 사유<br>
+                            - 반품 요청 기간이 지난 경우<br>
+                            - 구매자의 책임 있는 사유로 상품 등이 멸실 또는 훼손된 경우 (단, 상품의 내용을 확인하기 위하여 포장 등을 훼손한 경우는 제외)<br>
+                            - 포장을 개봉하였으나 포장이 훼손되어 상품가치가 현저히 상실된 경우<br>
+                            - 구매자의 사용 또는 일부 소비에 의하여 상품의 가치가 현저히 감소한 경우<br>
+                            - 시간의 경과에 의하여 재판매가 곤란할 정도로 상품 등의 가치가 현저히 감소한 경우<br>
+                            - 고객주문 확인 후 상품제작에 들어가는 주문제작상품 (판매자에게 회복 불가능한 손해가 예상되고, 그러한 예정으로 청약철회권 행사가 불가하다는 사실을 서면 동의 받은 경우)<br>
+                            - 복제가 가능한 상품 등의 포장을 훼손한 경우<br>
+                        </div>
+                        <div class="agreement_check center">
+                            <label><input type="radio" name="cancellation" value="Y"> 동의함</label>
+                            <label class="ml10"><input type="radio" name="cancellation" value="N" checked> 동의안함</label>
+                        </div>
+                    </div>
+                    
+                    {{-- Row 2: Privacy Agreement (Mandatory & Optional) --}}
+                    @if(!auth()->check())
+                    {{-- Item 3: Non-member Mandatory Privacy Agreement --}}
+                    <div class="agreement_item">
+                        <h6 class="fx20">비회원 개인정보 동의(필수)</h6>
+                        <div class="agreement_box" contenteditable="false">
+                            도매토피아는 회원님께 최대한으로 최적화되고 맞춤화된 서비스를 제공하기 위하여 다음과 같은 목적으로 개인정보를 수집하고 있습니다.
+                            @if(isset($Overseas) && $Overseas == 'Y')
+                            <table class="privacy_table">
+                                <tr align="center">
+                                    <th>목적</th>
+                                    <th>항목</th>
+                                    <th>보유기간</th>
+                                </tr>
+                                <tr align="center">
+                                    <td>상품 주문내역 안내, 상품배송</td>
+                                    <td>이름, 핸드폰번호, 주문자 이메일, 받는분 성함, 받는분 핸드폰, 받는분 주소</td>
+                                    <td>개인정보는 서비스 제공 기간동안 보유 및 이용하며, 탈퇴 시 즉시 파기됩니다.</td>
+                                </tr>
+                                <tr align="center">
+                                    <td>해외 직배송 상품 통관업무처리</td>
+                                    <td>개인통관번호</td>
+                                    <td>개인정보는 서비스 제공 기간동안 보유 및 이용하며, 탈퇴 시 즉시 파기됩니다.</td>
+                                </tr>
+                            </table>
+                            @else
+                            <table class="privacy_table">
+                                <tr align="center">
+                                    <th>목적</th>
+                                    <th>항목</th>
+                                    <th>보유기간</th>
+                                </tr>
+                                <tr align="center">
+                                    <td>상품 주문내역 안내, 상품배송</td>
+                                    <td>주문자 정보(전화번호) 배송지정보(이름, 핸드폰, 주소)</td>
+                                    <td>개인정보는 서비스 제공 기간동안 보유 및 이용하며, 탈퇴 시 즉시 파기됩니다.</td>
+                                </tr>
+                            </table>
+                            @endif
+                        </div>
+                        <div class="agreement_check center">
+                            <label><input type="radio" name="privacy_agree" value="Y"> 개인정보 수집ㆍ이용에 동의</label>
+                            <label class="ml10"><input type="radio" name="privacy_agree" value="N" checked> 개인정보 수집ㆍ이용에 동의하지 않음</label>
+                        </div>
+                    </div>
+
+                    {{-- Item 4: Non-member Optional Privacy Agreement (Removed) --}}
+                    @endif
+                </div>
+                {{-- End Grid Container --}}
+                @endif
+                </div>
+                {{-- End Agreement Area --}}
 
                 <div class="btn_area_center">
                     <button type="submit" class="btn_order_all">결제하기</button>
@@ -455,6 +661,51 @@
         document.getElementById('use_point').addEventListener('change', updateFinalPrice);
         document.getElementById('download_seq').addEventListener('change', updateFinalPrice);
 
+        // Toggle Receipt Forms
+        function toggleReceipt(type) {
+            const row = document.getElementById('receipt_form_row');
+            const taxForm = document.getElementById('tax_form');
+            const cashForm = document.getElementById('cash_form');
+
+            if (type == 0) {
+                row.style.display = 'none';
+                taxForm.style.display = 'none';
+                cashForm.style.display = 'none';
+            } else if (type == 1) { // Tax Invoice
+                row.style.display = 'table-row';
+                taxForm.style.display = 'block';
+                cashForm.style.display = 'none';
+            } else if (type == 2) { // Cash Receipt
+                row.style.display = 'table-row';
+                taxForm.style.display = 'none';
+                cashForm.style.display = 'block';
+            }
+        }
+
+        // Validate Agreements on Submit
+        document.getElementById('orderForm').addEventListener('submit', function(e) {
+            // Shipping Policy
+            if (!document.querySelector('input[name="delivery_chk"]:checked')) {
+                alert('배송비 정책에 동의하셔야 합니다.');
+                e.preventDefault();
+                return false;
+            }
+            // Cancellation Policy
+            const cancelAgree = document.querySelector('input[name="cancellation"]:checked');
+            if (!cancelAgree || cancelAgree.value !== 'Y') {
+                alert('청약철회 관련 방침에 동의하셔야 합니다.');
+                e.preventDefault();
+                return false;
+            }
+            // Privacy Policy (Non-member)
+            const privacyAgree = document.querySelector('input[name="privacy_agree"]:checked');
+            if (privacyAgree && privacyAgree.value !== 'Y') {
+                alert('비회원 개인정보 수집 이용에 동의하셔야 합니다.');
+                e.preventDefault();
+                return false;
+            }
+        });
+
         function openDaumPostcode() {
             new daum.Postcode({
                 oncomplete: function (data) {
@@ -489,144 +740,4 @@
         }
     </script>
 
-    <style>
-        .cart_table {
-            width: 100%;
-            border-collapse: collapse;
-            border-top: 2px solid #333;
-            margin-bottom: 20px;
-        }
-
-        .cart_table th {
-            background: #f9f9f9;
-            padding: 10px 0;
-            border-bottom: 1px solid #ddd;
-        }
-
-        .cart_table td {
-            padding: 10px;
-            border-bottom: 1px solid #ddd;
-            text-align: center;
-            vertical-align: middle;
-        }
-
-        .cart_table .info_cell {
-            text-align: left;
-        }
-
-        .form_table {
-            width: 100%;
-            border-collapse: collapse;
-            border-top: 1px solid #ddd;
-        }
-
-        .form_table th {
-            background: #f9f9f9;
-            padding: 10px 15px;
-            border-bottom: 1px solid #ddd;
-            text-align: left;
-            font-weight: normal;
-        }
-
-        .form_table td {
-            padding: 10px 15px;
-            border-bottom: 1px solid #ddd;
-        }
-
-        .input_text {
-            height: 30px;
-            border: 1px solid #ccc;
-            padding: 0 5px;
-        }
-
-        .full_width {
-            width: 98%;
-        }
-
-        .required {
-            color: #d00;
-        }
-
-        .btn_area_center {
-            margin: 40px 0;
-            text-align: center;
-        }
-
-        .btn_order_all {
-            padding: 15px 50px;
-            background: #d00;
-            color: #fff;
-            font-size: 18px;
-            font-weight: bold;
-            border: none;
-            cursor: pointer;
-        }
-
-        .btn_cancel {
-            padding: 15px 50px;
-            background: #666;
-            color: #fff;
-            font-size: 18px;
-            font-weight: bold;
-            text-decoration: none;
-            margin-left: 10px;
-        }
-
-        .btn_base {
-            padding: 5px 10px;
-            background: #333;
-            color: #fff;
-            border: none;
-            cursor: pointer;
-        }
-
-        .btn_addr_list {
-            background: #007bff;
-            margin-left: 5px;
-        }
-
-        /* Modal Styles */
-        .modal_overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 9999;
-        }
-        .modal_content {
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            width: 400px;
-            background: #fff;
-            padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-        }
-        .modal_header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #ddd;
-            padding-bottom: 10px;
-            margin-bottom: 15px;
-        }
-        .btn_close_modal {
-            background: none; border: none; font-size: 20px; cursor: pointer;
-        }
-        .address_list {
-            list-style: none; padding: 0; margin: 0;
-            max-height: 300px; overflow-y: auto;
-        }
-        .address_list li {
-            border-bottom: 1px solid #eee;
-            padding: 10px;
-            cursor: pointer;
-        }
-        .address_list li:hover {
-            background: #f9f9f9;
-        }
-        .addr_item strong { font-size: 14px; color: #333; }
-        .addr_item span { font-size: 12px; color: #888; margin-left: 5px; }
-        .addr_item p { margin: 5px 0 0; font-size: 13px; color: #666; }
-    </style>
 @endsection

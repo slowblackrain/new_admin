@@ -1,0 +1,27 @@
+@charset "utf-8";
+
+/* ==========================================================================
+   Global Layout Constraints
+   Fixes width mismatch between header (1200px) and main content.
+   ========================================================================== */
+
+#main-container {
+    width: 1200px;
+    margin: 0 auto;
+    background: #fff;
+    min-height: 600px;
+    position: relative;
+    /* For z-index context if needed */
+}
+
+/* Mobile / Tablet Responsive Reset */
+/* Matching the breakpoint in responsive.css (1210px) */
+@media screen and (max-width: 1210px) {
+    #main-container {
+        width: 100%;
+        margin: 0;
+        padding: 0 10px;
+        /* Prevent content from touching edges */
+        box-sizing: border-box;
+    }
+}
