@@ -2,6 +2,8 @@
 
 @section('content')
     <link rel="stylesheet" type="text/css" href="/css/legacy/view.css">
+    <link rel="stylesheet" type="text/css" href="/css/legacy/buttons.css">
+    <link rel="stylesheet" type="text/css" href="/css/legacy/sub_page.css">
     <link rel="stylesheet" type="text/css" href="/css/legacy/view_responsive.css">
 
     {{-- Scripts for legacy compatibility --}}
@@ -274,7 +276,7 @@
                                             {{-- Default Case (Catch-all) --}}
                                         @else
                                             <div class="goods_spec_table">
-                                                <table style="width:100%; border-spacing:0; border-collapse:collapse;">
+                                                <table width="100%" cellpadding="0" cellspacing="0" border="0">
                                                     <colgroup>
                                                         <col width="30%" />
                                                         <col width="30%" />
@@ -282,43 +284,37 @@
                                                         <col width="20%" />
                                                     </colgroup>
                                                     <thead>
-                                                        <tr style="background:#f9f9f9; text-align:center;">
-                                                            <th
-                                                                style="padding:10px; border-bottom:1px solid #eee; border-right:1px solid #eee;">
+                                                        <tr>
+                                                            <th class="gst_th">
                                                                 @if(substr($scode, 0, 2) == 'GK') 공장도가 @else 수입가 @endif
                                                                 @if($hundred_ea > 0)<br>({{ number_format($hundred_ea) }}개 이상)@endif
                                                             </th>
-                                                            <th
-                                                                style="padding:10px; border-bottom:1px solid #eee; border-right:1px solid #eee;">
+                                                            <th class="gst_th">
                                                                 도매할인가
                                                                 @if($fifty_ea > 0)<br>({{ number_format($fifty_ea) }}개 이상)@endif
                                                             </th>
-                                                            <th
-                                                                style="padding:10px; border-bottom:1px solid #eee; border-right:1px solid #eee;">
+                                                            <th class="gst_th">
                                                                 <span class="price_blue">도매가</span>
                                                             </th>
-                                                            <th style="padding:10px; border-bottom:1px solid #eee;">소매가</th>
+                                                            <th class="gst_th">소매가</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        <tr style="text-align:center;">
-                                                            <td
-                                                                style="padding:10px; border-bottom:1px solid #eee; border-right:1px solid #eee;">
+                                                        <tr>
+                                                            <td class="gst_td">
                                                                 @if($hundred_ea > 0) {{ number_format($hundred_price) }} 원 @else
                                                                 {{ number_format($sale_price) }} 원 @endif
                                                             </td>
-                                                            <td
-                                                                style="padding:10px; border-bottom:1px solid #eee; border-right:1px solid #eee;">
+                                                            <td class="gst_td">
                                                                 @if($fifty_ea > 0) {{ number_format($fifty_price) }} 원 @else
                                                                 {{ number_format($sale_price) }} 원 @endif
                                                             </td>
-                                                            <td
-                                                                style="padding:10px; border-bottom:1px solid #eee; border-right:1px solid #eee;">
+                                                            <td class="gst_td">
                                                                 <span
                                                                     class="price_red">{{ number_format($ori_price - $mtype_discount) }}
                                                                     원</span>
                                                             </td>
-                                                            <td style="padding:10px; border-bottom:1px solid #eee;">
+                                                            <td class="gst_td">
                                                                 {{ number_format($ori_price) }} 원
                                                             </td>
                                                         </tr>
@@ -330,13 +326,10 @@
                                 @endif
                             </tr>
 
-                            {{-- Event, Multi-buy, Member Grade benefits placeholders if needed --}}
-                            {{-- ... --}}
                             {{-- Shipping Info Row --}}
                             <tr>
-                                <th style="border-top: 1px solid #ddd; border-bottom: 1px solid #000;">배송비</th>
-                                <td colspan="6"
-                                    style="padding: 10px; border-top: 1px solid #ddd; border-bottom: 1px solid #000;">
+                                <th class="gst_th">배송비</th>
+                                <td colspan="6" class="gst_td">
                                     @if($shippingInfo['is_free'])
                                         <span class="price_blue" style="font-weight:bold;">무료배송</span>
                                         (주문금액 {{ number_format($shippingInfo['threshold']) }}원 이상)
@@ -349,16 +342,39 @@
                                 </td>
                             </tr>
                         </table>
+                        
+                        {{-- Corporate Member Promo (Legacy Parity) --}}
+                        @if(!session('gubun'))
+                        <div class="option-box2" style="margin-top:10px; border-top:1px solid #ddd; padding:10px 0;">
+                            <a href="/page/index?tpl=etc/business_info.html" target="_blank">
+                                <img src="/images/legacy/asset/wholesale6.jpg" alt="기업회원 우대 정책">
+                            </a>
+                            <br>
+                            <span style="font-size:12px; color:#666;">
+                                ※기업(판매, 구매) 회원가입시 수량과 관계없이 <span style="color:red; font-weight:bold;">도매가</span>로 구매할 수 있습니다.
+                            </span>
+                            <a href="/member/agreement" target="_blank" style="vertical-align:middle;">
+                                <img src="/images/legacy/asset/agreement6.jpg" alt="회원가입">
+                            </a>
+                        </div>
+                        @endif
 
                         {{-- Options Area --}}
                         <div id="select_option_lay">
-                            {{-- Inputs --}}
-                            @if($product->inputs->count() > 0)
+                            {{-- Specific Logic for Printing Options (SubOptions) --}}
+                            @php
+                                $printingSubOptions = $product->subOptions->where('suboption_title', '인쇄');
+                            @endphp
+
+                            @if($printingSubOptions->count() > 0)
                                 <h3 class="mt20"
                                     style="font-size: 14px; font-weight: bold; margin-top: 20px; margin-bottom: 10px;">
                                     인쇄옵션
                                     <button type="button" class="doto-goodsOpt-folding" onclick="toggleOptionTable(this)"
                                         style="width:31px; height:31px; border:none; cursor:pointer; background: url('/images/legacy/icon/cl_m.jpg') no-repeat; vertical-align:middle; margin-left:12px;"></button>
+                                    
+                                    <button type="button" class="button bgblue" style="color:white;padding:5px; margin-left:5px;" onclick="location.href='/etc/print_info'">인쇄비용안내</button>
+                                    <button type="button" class="button" style="color: red;padding:5px;background: yellow;font-weight: bold;font-size: 13px; margin-left:5px;" >50만원 이상 구매시 1도인쇄/몰드 비용 무료입니다.</button>
                                 </h3>
                                 <div class="goods_option_table" id="goods_option_input_area"
                                     style="display:block; border: 1px solid #e9ecef; border-bottom: none;">
@@ -367,29 +383,97 @@
                                             <col width="100" />
                                             <col />
                                         </colgroup>
+                                        <tr style="height:40px; border-bottom:1px solid #e9ecef;">
+                                            <th class="inputsTitle"
+                                                style="background:#FFF; padding-left:10px; text-align:left; font-weight:normal; color:#333;">
+                                                인쇄
+                                            </th>
+                                            <td style="padding:0 10px;" colspan="2">
+                                                <select id="suboption_select_box" onchange="addSubOption()"
+                                                    style="width:100%; height:25px; border:1px solid #ddd;">
+                                                    <option value="">선택</option>
+                                                    @foreach($printingSubOptions as $subOpt)
+                                                        @php
+                                                            $displayText = $subOpt->suboption;
+                                                            switch($subOpt->suboption){
+                                                                case "중국1도" :
+                                                                    $displayText .= " 50만원 미만시 인쇄비 80원, 몰드 2만원";
+                                                                    break;
+                                                                case "중국2도" :
+                                                                    $displayText .= " 150원/몰드4만원/500개당 몰드1개 무료";
+                                                                    break;
+                                                                case "중국3도" :
+                                                                    $displayText .= " 200원/몰드6만원/500개당 몰드1개 무료";
+                                                                    break;
+                                                                case "중국4도" :
+                                                                    $displayText .= " 250원/몰드8만원/500개당 몰드1개 무료";
+                                                                    break;
+                                                                case "한국1도" :
+                                                                    $displayText .= " 상담후 결제";
+                                                                    break;
+                                                                case "중국스티커" :
+                                                                    $displayText .= " 기본 1,000장 15,000원/작업비장당80원별도/납기12일내외 ";
+                                                                    break;
+                                                            }
+                                                        @endphp
+                                                        <option value="{{ $subOpt->suboption_seq }}"
+                                                            data-price="{{ $subOpt->price }}"
+                                                            data-name="{{ $displayText }}">
+                                                            {{ $displayText }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        
+                                        {{-- Render Printing Text Input --}}
                                         @foreach($product->inputs as $input)
-                                            <tr style="height:40px; border-bottom:1px solid #e9ecef;">
-                                                <th class="inputsTitle"
-                                                    style="background:#FFF; padding-left:10px; text-align:left; font-weight:normal; color:#333;">
-                                                    {{ $input->input_name }} @if($input->input_require == '1') <span
-                                                    style="color:red">*</span> @endif
-                                                </th>
-                                                <td style="padding:0 10px;">
-                                                    @if($input->input_form == 'text')
+                                            @if($input->input_name == '인쇄문구')
+                                                <tr style="height:40px; border-bottom:1px solid #e9ecef;">
+                                                    <th class="inputsTitle"
+                                                        style="background:#FFF; padding-left:10px; text-align:left; font-weight:normal; color:#333;">
+                                                        {{ $input->input_name }}
+                                                    </th>
+                                                    <td style="padding:0 10px;" colspan="2">
                                                         <input type="text" name="inputs[{{ $input->input_seq }}]" class="input_text"
-                                                            style="width:100%; height:25px; border:1px solid #ddd;"
-                                                            @if($input->input_require == '1') required @endif>
-                                                    @elseif($input->input_form == 'edit')
-                                                        <textarea name="inputs[{{ $input->input_seq }}]" rows="2"
-                                                            style="width:100%; border:1px solid #ddd;" @if($input->input_require == '1')
-                                                            required @endif></textarea>
-                                                    @elseif($input->input_form == 'file')
-                                                        <input type="file" name="inputs[{{ $input->input_seq }}]"
-                                                            @if($input->input_require == '1') required @endif>
-                                                    @endif
-                                                </td>
-                                            </tr>
+                                                            style="width:100%; height:25px; border:1px solid #ddd;">
+                                                    </td>
+                                                </tr>
+                                            @endif
                                         @endforeach
+
+                                        {{-- Render Printing Image Inputs (Multi-file) --}}
+                                        @php $fileInputCount = 0; @endphp
+                                        @foreach($product->inputs as $input)
+                                            @if($input->input_name == '인쇄이미지')
+                                                @php $fileInputCount++; @endphp
+                                                <tr class="printing-image-row" id="printing_image_row_{{ $fileInputCount }}" 
+                                                    style="height:40px; border-bottom:1px solid #e9ecef; @if($fileInputCount > 1) display:none; @endif">
+                                                    <th class="inputsTitle"
+                                                        style="background:#FFF; padding-left:10px; text-align:left; font-weight:normal; color:#333;">
+                                                        {{ $input->input_name }}
+                                                        @if($fileInputCount == 1)
+                                                            <button type="button" class="button bgblue" style="width:20px; height:20px; line-height:18px; padding:0; text-align:center;" onclick="addFileRow()">+</button>
+                                                            <button type="button" class="button bgblue" style="width:20px; height:20px; line-height:18px; padding:0; text-align:center;" onclick="removeFileRow()">-</button>
+                                                        @endif
+                                                    </th>
+                                                    <td style="padding:0 10px;" colspan="2">
+                                                        <input type="file" name="inputs[{{ $input->input_seq }}]" class="input_file">
+                                                    </td>
+                                                </tr>
+                                            @endif
+                                        @endforeach
+
+                                        {{-- Purchase Amount Row --}}
+                                        <tr class="quanity_row" style="height:40px; border-bottom:1px solid #e9ecef; background-color:#f7f8f9;">
+                                            <td class="option_text quantity_cell_sub" style="padding-left:10px;"> 구매금액</td>
+                                            <td class="quantity_cell_sub" align="center">
+                                                <span class="first_label">1</span>개 X <span class="first_price">{{ number_format($product->price) }}</span>원
+                                            </td>
+                                            <td class="quantity_cell_sub_price" align="right" style="padding-right:10px;">
+                                                <strong class="first_totprice" style="font-size:14px; color:#d32f2f;">{{ number_format($product->price) }}</strong>원
+                                            </td>
+                                        </tr>
                                     </table>
                                 </div>
                             @endif
@@ -706,6 +790,7 @@
         const discount100 = {{ $product->hundred_discount ?? 0 }};
 
         let selectedOptions = {};
+        let selectedSubOptions = {};
 
         document.addEventListener('DOMContentLoaded', function () {
             updateTotal();
@@ -794,46 +879,96 @@
             }
 
             selectedOptions[seq] = { name: name, price: price, qty: 1 };
-            renderOptionRow(seq);
+            renderOptionRow(seq, 'option');
             updateTotal();
             selectBox.selectedIndex = 0;
         }
 
-        function renderOptionRow(seq) {
-            const item = selectedOptions[seq];
-            const tbody = document.getElementById('selected_options_tbody');
+        function addSubOption() {
+            const selectBox = document.getElementById('suboption_select_box');
+            if (!selectBox) return;
+            const selectedIdx = selectBox.selectedIndex;
+            if (selectedIdx === 0) return;
+
+            const option = selectBox.options[selectedIdx];
+            const seq = option.value;
+            const name = option.getAttribute('data-name');
+            const price = parseFloat(option.getAttribute('data-price')) || 0;
+
+            if (selectedSubOptions[seq]) {
+                alert('이미 선택된 옵션입니다.');
+                selectBox.selectedIndex = 0;
+                return;
+            }
+
+            selectedSubOptions[seq] = { name: name, price: price, qty: 1 }; // Suboptions usually default to 1 qty, synced with main option? Or independent? Legacy implies independent or fixed.
+            renderOptionRow(seq, 'suboption');
+            updateTotal();
+            selectBox.selectedIndex = 0;
+        }
+
+        function renderOptionRow(seq, type) {
+            const containerId = 'selected_options_tbody';
+            const tbody = document.getElementById(containerId);
             const row = document.createElement('tr');
-            row.id = `option_row_${seq}`;
+            row.id = `${type}_row_${seq}`;
             row.style.borderBottom = '1px solid #eee';
+            
+            let item;
+            if (type === 'option') item = selectedOptions[seq];
+            else item = selectedSubOptions[seq];
+
+            const namePrefix = type === 'suboption' ? '[추가] ' : '';
+
             row.innerHTML = `
-                                                            <td style="padding: 10px; text-align: left;"><span style="font-weight: bold;">${item.name}</span></td>
-                                                            <td style="padding: 10px; text-align: center;">
-                                                                <div style="display: inline-flex; align-items: center; border: 1px solid #ddd;">
-                                                                    <button type="button" onclick="changeQty('${seq}', -1)" style="width: 25px; height: 25px;">-</button>
-                                                                    <input type="text" value="${item.qty}" readonly style="width: 40px; text-align: center; border: none;">
-                                                                    <button type="button" onclick="changeQty('${seq}', 1)" style="width: 25px; height: 25px;">+</button>
-                                                                </div>
-                                                            </td>
-                                                            <td style="padding: 10px; text-align: right;">
-                                                                <span style="font-weight: bold;">${new Intl.NumberFormat('ko-KR').format(item.price)}원</span>
-                                                                <button type="button" onclick="removeOption('${seq}')" style="margin-left:5px;">x</button>
-                                                            </td>
-                                                        `;
+                <td style="padding: 10px; text-align: left;"><span style="font-weight: bold;">${namePrefix}${item.name}</span></td>
+                <td style="padding: 10px; text-align: center;">
+                    <div style="display: inline-flex; align-items: center; border: 1px solid #ddd;">
+                        <button type="button" onclick="changeQty('${seq}', -1, '${type}')" style="width: 25px; height: 25px;">-</button>
+                        <input type="text" value="${item.qty}" readonly style="width: 40px; text-align: center; border: none;">
+                        <button type="button" onclick="changeQty('${seq}', 1, '${type}')" style="width: 25px; height: 25px;">+</button>
+                    </div>
+                </td>
+                <td style="padding: 10px; text-align: right;">
+                    <span style="font-weight: bold;">${new Intl.NumberFormat('ko-KR').format(item.price * item.qty)}원</span>
+                    <button type="button" onclick="removeOption('${seq}', '${type}')" style="margin-left:5px;">x</button>
+                </td>
+            `;
             tbody.appendChild(row);
         }
 
-        function changeQty(seq, delta) {
-            if (!selectedOptions[seq]) return;
-            let newQty = selectedOptions[seq].qty + delta;
+        function changeQty(seq, delta, type) {
+            let item;
+            if (type === 'suboption') item = selectedSubOptions[seq];
+            else if (type === 'option') item = selectedOptions[seq];
+            else {
+                // Legacy support for single qty inputs if any
+                return; 
+            }
+
+            if (!item) return;
+
+            let newQty = item.qty + delta;
             if (newQty < 1) newQty = 1;
-            selectedOptions[seq].qty = newQty;
-            document.querySelector(`#option_row_${seq} input`).value = newQty;
+            item.qty = newQty;
+            
+            const row = document.getElementById(`${type}_row_${seq}`);
+            if(row) {
+                row.querySelector('input').value = newQty;
+                row.querySelector('td:last-child span').innerText = new Intl.NumberFormat('ko-KR').format(item.price * newQty) + '원';
+            }
+
             updateTotal();
         }
 
-        function removeOption(seq) {
-            delete selectedOptions[seq];
-            document.getElementById(`option_row_${seq}`).remove();
+        function removeOption(seq, type) {
+            if (type === 'suboption') {
+                delete selectedSubOptions[seq];
+            } else {
+                delete selectedOptions[seq];
+            }
+            const row = document.getElementById(`${type}_row_${seq}`);
+            if(row) row.remove();
             updateTotal();
         }
 
@@ -846,35 +981,60 @@
             const quickDev = document.getElementById('quick_selected_dev');
             quickDev.innerHTML = '';
 
+            // Calculate Suboptions Total First (to add to EACH main option? No, usually separate lines or added to total)
+            // In legacy, suboptions are seemingly independent items in the cart or attached to the main item.
+            // For simplicity in calculation, we sum them up. 
+            // However, visually they are usually shown.
+            
+            let subOptionsTotal = 0;
+            for (const [seq, item] of Object.entries(selectedSubOptions)) {
+                subOptionsTotal += (item.price * item.qty);
+                hiddenContainer.innerHTML += `<input type="hidden" name="suboption_seq[]" value="${seq}"><input type="hidden" name="suboption_ea[]" value="${item.qty}">`;
+                
+                quickDev.innerHTML += `
+                    <div class="quick-opt-row">
+                        <span style="width:40%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">[추가] ${item.name}</span>
+                        <div class="quick-qty-ctrl">
+                            <button type="button" onclick="changeQty('${seq}', -1, 'suboption')">-</button>
+                            <input type="text" value="${item.qty}" readonly>
+                            <button type="button" onclick="changeQty('${seq}', 1, 'suboption')">+</button>
+                        </div>
+                        <span style="font-size:11px;">${new Intl.NumberFormat('ko-KR').format(item.price * item.qty)}</span>
+                        <button type="button" onclick="removeOption('${seq}', 'suboption')" style="border:none; bg:none; cursor:pointer;">x</button>
+                    </div>`;
+            }
+
+
             if (hasOptions) {
                 // Render Options
                 for (const [seq, item] of Object.entries(selectedOptions)) {
                     let basePrice = item.price;
                     let finalUnitPrice = basePrice;
+                    let qty = item.qty;
 
-                    if (hundredEa > 0 && item.qty >= hundredEa) {
+                    if (hundredEa > 0 && qty >= hundredEa) {
                         finalUnitPrice = basePrice - discount100;
-                    } else if (fiftyEa > 0 && item.qty >= fiftyEa) {
+                    } else if (fiftyEa > 0 && qty >= fiftyEa) {
                         finalUnitPrice = basePrice - discount50;
                     } else {
                         finalUnitPrice = basePrice - discountMtype;
                     }
 
-                    total += finalUnitPrice * item.qty;
-                    hiddenContainer.innerHTML += `<input type="hidden" name="option_seq[]" value="${seq}"><input type="hidden" name="ea[]" value="${item.qty}">`;
+                    total += finalUnitPrice * qty;
+                    hiddenContainer.innerHTML += `<input type="hidden" name="option_seq[]" value="${seq}"><input type="hidden" name="ea[]" value="${qty}">`;
 
                     // Add Interactive Row to Quick View
                     quickDev.innerHTML += `
-                                                    <div class="quick-opt-row">
-                                                        <span style="width:40%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.name}</span>
-                                                        <div class="quick-qty-ctrl">
-                                                            <button type="button" onclick="changeQty('${seq}', -1)">-</button>
-                                                            <input type="text" value="${item.qty}" readonly>
-                                                            <button type="button" onclick="changeQty('${seq}', 1)">+</button>
-                                                        </div>
-                                                        <span style="font-size:11px;">${new Intl.NumberFormat('ko-KR').format(finalUnitPrice * item.qty)}</span>
-                                                        <button type="button" onclick="removeOption('${seq}')" style="border:none; bg:none; cursor:pointer;">x</button>
-                                                    </div>`;
+                        <div class="quick-opt-row">
+                            <span style="width:40%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.name}</span>
+                            <div class="quick-qty-ctrl">
+                                <button type="button" onclick="changeQty('${seq}', -1, 'option')">-</button>
+                                <input type="text" value="${item.qty}" readonly>
+                                <button type="button" onclick="changeQty('${seq}', 1, 'option')">+</button>
+                            </div>
+                            <span style="font-size:11px;">${new Intl.NumberFormat('ko-KR').format(finalUnitPrice * qty)}</span>
+                            <button type="button" onclick="removeOption('${seq}', 'option')" style="border:none; bg:none; cursor:pointer;">x</button>
+                        </div>`;
                 }
             } else {
                 const qtyInput = document.getElementById('default_qty');
@@ -896,16 +1056,18 @@
 
                 // Sync for no-option:
                 quickDev.innerHTML += `
-                                                <div class="quick-opt-row">
-                                                    <span>수량</span>
-                                                    <div class="quick-qty-ctrl">
-                                                        <button type="button" onclick="changeDefaultQty(-1)">-</button>
-                                                        <input type="text" value="${qty}" readonly>
-                                                        <button type="button" onclick="changeDefaultQty(1)">+</button>
-                                                    </div>
-                                                    <span>${new Intl.NumberFormat('ko-KR').format(total)}</span>
-                                                </div>`;
+                    <div class="quick-opt-row">
+                        <span>수량</span>
+                        <div class="quick-qty-ctrl">
+                            <button type="button" onclick="changeDefaultQty(-1)">-</button>
+                            <input type="text" value="${qty}" readonly>
+                            <button type="button" onclick="changeDefaultQty(1)">+</button>
+                        </div>
+                        <span>${new Intl.NumberFormat('ko-KR').format(total)}</span>
+                    </div>`;
             }
+            
+            total += subOptionsTotal;
 
             const formattedTotal = new Intl.NumberFormat('ko-KR').format(total) + '원';
             document.getElementById('total_price').innerText = formattedTotal;
@@ -962,15 +1124,152 @@
             document.getElementById('cart_confirm_modal').style.display = 'none';
         }
 
-        function processCart() {
-            if (!validateForm()) return;
-            let form = document.forms['goodsForm'];
-            if (!form) form = document.getElementById('goodsForm');
-
-            if (!form) {
-                alert('주문 폼(goodsForm)을 찾을 수 없습니다.');
-                return;
+        function addFileRow() {
+            const rows = document.querySelectorAll('.printing-image-row');
+            for (let i = 0; i < rows.length; i++) {
+                if (rows[i].style.display === 'none') {
+                    rows[i].style.display = 'table-row';
+                    return;
+                }
             }
+            alert('최대 10개까지 등록 가능합니다.');
+        }
+
+        function removeFileRow() {
+            const rows = document.querySelectorAll('.printing-image-row');
+            // Iterate backwards, identifying the last visible row
+            for (let i = rows.length - 1; i > 0; i--) { // Start from last, stop at index 1 (keep index 0 visible)
+                if (rows[i].style.display !== 'none') {
+                    rows[i].style.display = 'none';
+                    // Reset input value
+                    const input = rows[i].querySelector('input[type="file"]');
+                    if (input) input.value = '';
+                    return;
+                }
+            }
+        }
+
+        function updateTotal() {
+            let total = 0;
+            let totalQty = 0; // Track total quantity
+            const hiddenContainer = document.getElementById('form_hidden_inputs');
+            hiddenContainer.innerHTML = '';
+
+            // Sync to Quick View
+            const quickDev = document.getElementById('quick_selected_dev');
+            quickDev.innerHTML = '';
+
+            let subOptionsTotal = 0;
+            for (const [seq, item] of Object.entries(selectedSubOptions)) {
+                subOptionsTotal += (item.price * item.qty);
+                // Suboptions don't usually count towards main "qty" in legacy unless specified, 
+                // but for "min purchase" check they might. For "Purchase Amount" row (1개 X ...), 
+                // it usually tracks the MAIN item quantity.
+                
+                hiddenContainer.innerHTML += `<input type="hidden" name="suboption_seq[]" value="${seq}"><input type="hidden" name="suboption_ea[]" value="${item.qty}">`;
+                
+                quickDev.innerHTML += `
+                    <div class="quick-opt-row">
+                        <span style="width:40%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">[추가] ${item.name}</span>
+                        <div class="quick-qty-ctrl">
+                            <button type="button" onclick="changeQty('${seq}', -1, 'suboption')">-</button>
+                            <input type="text" value="${item.qty}" readonly>
+                            <button type="button" onclick="changeQty('${seq}', 1, 'suboption')">+</button>
+                        </div>
+                        <span style="font-size:11px;">${new Intl.NumberFormat('ko-KR').format(item.price * item.qty)}</span>
+                        <button type="button" onclick="removeOption('${seq}', 'suboption')" style="border:none; bg:none; cursor:pointer;">x</button>
+                    </div>`;
+            }
+
+            if (hasOptions) {
+                // Render Options
+                for (const [seq, item] of Object.entries(selectedOptions)) {
+                    let basePrice = item.price;
+                    let finalUnitPrice = basePrice;
+                    let qty = item.qty;
+                    totalQty += qty;
+
+                    if (hundredEa > 0 && qty >= hundredEa) {
+                        finalUnitPrice = basePrice - discount100;
+                    } else if (fiftyEa > 0 && qty >= fiftyEa) {
+                        finalUnitPrice = basePrice - discount50;
+                    } else {
+                        finalUnitPrice = basePrice - discountMtype;
+                    }
+
+                    total += finalUnitPrice * qty;
+                    hiddenContainer.innerHTML += `<input type="hidden" name="option_seq[]" value="${seq}"><input type="hidden" name="ea[]" value="${qty}">`;
+
+                    // Add Interactive Row to Quick View
+                    quickDev.innerHTML += `
+                        <div class="quick-opt-row">
+                            <span style="width:40%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.name}</span>
+                            <div class="quick-qty-ctrl">
+                                <button type="button" onclick="changeQty('${seq}', -1, 'option')">-</button>
+                                <input type="text" value="${item.qty}" readonly>
+                                <button type="button" onclick="changeQty('${seq}', 1, 'option')">+</button>
+                            </div>
+                            <span style="font-size:11px;">${new Intl.NumberFormat('ko-KR').format(finalUnitPrice * qty)}</span>
+                            <button type="button" onclick="removeOption('${seq}', 'option')" style="border:none; bg:none; cursor:pointer;">x</button>
+                        </div>`;
+                }
+            } else {
+                const qtyInput = document.getElementById('default_qty');
+                let qty = qtyInput ? parseInt(qtyInput.value) : 1;
+                totalQty += qty;
+
+                let basePrice = priceInfo.ori_price || 0;
+                let finalUnitPrice = basePrice;
+
+                if (hundredEa > 0 && qty >= hundredEa) {
+                    finalUnitPrice = basePrice - discount100;
+                } else if (fiftyEa > 0 && qty >= fiftyEa) {
+                    finalUnitPrice = basePrice - discount50;
+                } else {
+                    finalUnitPrice = basePrice - discountMtype;
+                }
+
+                total = finalUnitPrice * qty;
+                hiddenContainer.innerHTML += `<input type="hidden" name="option_seq[]" value="${defaultSeq}"><input type="hidden" name="ea[]" value="${qty}">`;
+
+                // Sync for no-option:
+                quickDev.innerHTML += `
+                    <div class="quick-opt-row">
+                        <span>수량</span>
+                        <div class="quick-qty-ctrl">
+                            <button type="button" onclick="changeDefaultQty(-1)">-</button>
+                            <input type="text" value="${qty}" readonly>
+                            <button type="button" onclick="changeDefaultQty(1)">+</button>
+                        </div>
+                        <span>${new Intl.NumberFormat('ko-KR').format(total)}</span>
+                    </div>`;
+            }
+            
+            total += subOptionsTotal;
+
+            const formattedTotal = new Intl.NumberFormat('ko-KR').format(total) + '원';
+            const formattedTotalNum = new Intl.NumberFormat('ko-KR').format(total);
+            
+            // Update Main Total
+            document.getElementById('total_price').innerText = formattedTotal;
+            document.getElementById('quick_total_price').innerText = formattedTotal;
+
+            // Update Purchase Amount Row
+            const firstLabel = document.querySelector('.first_label');
+            const firstPrice = document.querySelector('.first_price'); // Unit Price? Calculate average?
+            const firstTotPrice = document.querySelector('.first_totprice');
+            
+            if(firstLabel) firstLabel.innerText = totalQty;
+            if(firstTotPrice) firstTotPrice.innerText = formattedTotalNum;
+            
+            // Calculate pseudo unit price for display: Total / Qty
+            // This is just a visual approximation if multiple options with diff prices are selected.
+            if(firstPrice && totalQty > 0) {
+                 firstPrice.innerText = new Intl.NumberFormat('ko-KR').format(Math.round(total / totalQty));
+            } else if (firstPrice) {
+                 firstPrice.innerText = '0';
+            }
+        }
             const formData = new FormData(form);
 
             fetch("{{ route('cart.store') }}", {

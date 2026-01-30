@@ -33,6 +33,12 @@ Route::get('/login', function () {
 })->name('login');
 
 // Front & Member Routes
+Route::prefix('common')->name('common.')->group(function () {
+    Route::get('/get_right_display', [App\Http\Controllers\Front\CommonController::class, 'getRightDisplay'])->name('get_right_display');
+    Route::get('/get_right_total', [App\Http\Controllers\Front\CommonController::class, 'getRightTotal'])->name('get_right_total');
+});
+Route::post('/goods/goods_recent_del', [App\Http\Controllers\Front\CommonController::class, 'deleteRecentItem'])->name('goods.recent_del');
+
 Route::prefix('goods')->name('goods.')->group(function () {
     Route::get('/view', [GoodsController::class, 'view'])->name('view');
     Route::get('/catalog', [GoodsController::class, 'catalog'])->name('catalog');

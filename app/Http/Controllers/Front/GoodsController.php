@@ -11,32 +11,82 @@ class GoodsController extends Controller
 {
     public function catalog(Request $request)
     {
-        // 1. Fetch Categories for Sidebar
-        $categories = Category::whereRaw('length(category_code) = 4')->orderBy('position')->limit(20)->get();
+        // 1. Fetch Categories for Sidebar (Depth 1)
+        $categories = Category::whereRaw('length(category_code) = 4')
+            ->orderBy('position')
+            ->limit(20)
+            ->get();
 
-        // 2. Fetch Goods with Pagination
-        $query = Goods::active()->with(['option', 'images']);
-
+        // 2. Determine Current Category & Sub-categories
+        $code = $request->input('code');
+        $currentCategory = null;
+        $childCategories = collect();
         $categoryCode = 'All';
 
-        // Filter by Category Code if present
-        if ($request->has('code') && $request->code) {
-            $code = $request->code;
-            $query->whereHas('categories', function ($q) use ($code) {
-                // Category code hierarchy: 0001, 00010001 ...
-                // LIKE '0001%' matches all subcategories
-                $q->where('fm_category.category_code', 'like', $code . '%');
-            });
-
-            // Fetch Current Category Name for display
+        if ($code) {
             $currentCategory = Category::where('category_code', $code)->first();
             $categoryCode = $currentCategory ? ($currentCategory->title ?? $code) : $code;
+
+            // Fetch children (Next Depth) relative to current code
+            // Logic: length = current length + 4, and starts with current code
+            $nextDepthLen = strlen($code) + 4;
+            $childCategories = Category::where('category_code', 'like', $code . '%')
+                ->whereRaw('length(category_code) = ?', [$nextDepthLen])
+                ->where('hide', '!=', '1')
+                ->orderBy('position')
+                ->get();
         }
 
-        $goods = $query->orderBy('regist_date', 'desc')
-            ->paginate(20);
+        // 3. Build Goods Query
+        $query = Goods::active()->with(['option', 'images']);
 
-        return view('front.goods.catalog', compact('categories', 'goods', 'categoryCode'));
+        if ($code) {
+            $query->whereHas('categories', function ($q) use ($code) {
+                $q->where('fm_category.category_code', 'like', $code . '%');
+            });
+        }
+
+        // 4. Apply Sorting (Legacy Logic)
+        $sort = $request->input('sort', '');
+        switch ($sort) {
+            case 'A': // Box Goods
+                $query->where('goods_scode', 'like', 'A%')
+                      ->orderBy('goods_seq', 'desc');
+                break;
+            case 'G': // Single Goods
+                $query->where('goods_scode', 'like', 'G%')
+                      ->orderBy('goods_seq', 'desc');
+                break;
+            case 'price_asc':
+                $query->select('fm_goods.*')
+                      ->leftJoin('fm_goods_option', 'fm_goods.goods_seq', '=', 'fm_goods_option.goods_seq')
+                      ->orderBy('fm_goods_option.price', 'asc')
+                      ->distinct();
+                break;
+            case 'price_desc':
+                $query->select('fm_goods.*')
+                      ->leftJoin('fm_goods_option', 'fm_goods.goods_seq', '=', 'fm_goods_option.goods_seq')
+                      ->orderBy('fm_goods_option.price', 'desc')
+                      ->distinct();
+                break;
+            case 'new': 
+                $query->orderBy('regist_date', 'desc');
+                break;
+            default:
+                $query->orderBy('regist_date', 'desc');
+                break;
+        }
+
+        $goods = $query->paginate(20)->withQueryString();
+
+        return view('front.goods.catalog', compact(
+            'categories', 
+            'goods', 
+            'categoryCode', 
+            'currentCategory', 
+            'childCategories',
+            'sort'
+        ));
     }
 
     public function view(Request $request, \App\Services\PricingService $pricingService, \App\Services\ShippingService $shippingService)
@@ -45,7 +95,7 @@ class GoodsController extends Controller
 
         // Fetch product or fail
         // In legacy, 'no' maps to 'goods_seq'
-        $product = Goods::active()->with(['option', 'images', 'inputs'])->where('goods_seq', $no)->firstOrFail();
+        $product = Goods::active()->with(['option', 'images', 'inputs', 'subOptions'])->where('goods_seq', $no)->firstOrFail();
 
         // 1. Calculate Prices for Display (Tiered Pricing) using Service
         $priceInfo = $pricingService->getProductPricingInfo($product);
@@ -110,7 +160,21 @@ class GoodsController extends Controller
         // Fetch categories for sidebar
         $categories = Category::whereRaw('length(category_code) = 4')->orderBy('position')->limit(20)->get();
 
-        return view('front.goods.view', compact(
+        // [New] Recent Viewed Items Logic (Cookie)
+        $todayGoods = json_decode($request->cookie('goods_today', '[]'), true);
+        if (!is_array($todayGoods)) {
+            $todayGoods = [];
+        }
+        // Prepend current goods_seq
+        array_unshift($todayGoods, $no);
+        // Remove duplicates
+        $todayGoods = array_unique($todayGoods);
+        // Keep max 20
+        $todayGoods = array_slice($todayGoods, 0, 20);
+        // Create Cookie (1 day)
+        $cookie = cookie('goods_today', json_encode($todayGoods), 1440);
+
+        return response()->view('front.goods.view', compact(
             'product',
             'categories',
             'priceInfo',
@@ -121,57 +185,173 @@ class GoodsController extends Controller
             'gusImg',
             'makerName',
             'detailImgMap'
-        ));
+        ))->withCookie($cookie);
     }
 
     public function search(Request $request, \App\Contracts\SearchIntentionInterface $aiSearchService)
     {
         // 1. Fetch Categories for Sidebar
+        // Use default connection
         $categories = Category::whereRaw('length(category_code) = 4')->orderBy('position')->limit(20)->get();
 
-        // 2. Get Search Term
-        $keyword = $request->input('s_search') ?? $request->input('keyword') ?? $request->input('search_text');
+        // 2. Get Search Terms & Parameters
+        $keyword = $request->input('search_text') ?? $request->input('s_search') ?? $request->input('keyword');
+        $subText = $request->input('sub_text');
+        $subSearchType = $request->input('sub_search', 'I'); // I: Include, E: Exclude
+        
+        $manualStartPrice = $request->input('start_price');
+        $manualEndPrice = $request->input('end_price');
+        $fmDate = $request->input('fm_date');
+        $toDate = $request->input('to_date');
+        $manualSort = $request->input('sort'); // Check raw input to see if user manually selected
 
-        // 3. AI Analysis (Query Expansion)
+        // 3. AI Analysis (Supplementary)
         $aiAnalysis = $aiSearchService->analyze($keyword ?? '');
 
-        // 4. Build Query
+        // 4. Determine Effective Parameters (Manual > AI)
+        $startPrice = $manualStartPrice ?? $aiAnalysis['filters']['price_min'] ?? null;
+        $endPrice = $manualEndPrice ?? $aiAnalysis['filters']['price_max'] ?? null;
+        
+        // Sort: User Input > AI Suggestion > Smart Default (Relevance for search, Newest for browsing)
+        $defaultSort = $keyword ? 'accuracy' : 'new';
+        $sort = $manualSort ?? $aiAnalysis['sort'] ?? $defaultSort;
+
+        // SYNC UI: Merge effective values back into Request so Blade helpers work
+        $request->merge([
+            'start_price' => $startPrice,
+            'end_price' => $endPrice,
+            'sort' => $sort
+        ]);
+
+        // 5. Build Query (on Production)
+        // Use default connection which handles environment automatically
         $query = Goods::active()->with(['option', 'images']);
 
-        if (!empty($aiAnalysis['keywords'])) {
-            $query->where(function ($q) use ($aiAnalysis) {
-                foreach ($aiAnalysis['keywords'] as $term) {
+        // Keyword Search (Main)
+        if ($keyword) {
+            $query->where(function ($q) use ($keyword, $aiAnalysis) {
+                // Use AI synonyms mixed with original keyword
+                // Strategy: Search (Original OR Synonyms)
+                $terms = !empty($aiAnalysis['keywords']) ? $aiAnalysis['keywords'] : [$keyword];
+                
+                foreach ($terms as $term) {
                     $q->orWhere('goods_name', 'like', "%{$term}%")
-                        ->orWhere('goods_code', 'like', "%{$term}%");
+                      ->orWhere('goods_code', 'like', "%{$term}%")
+                      ->orWhere('goods_scode', 'like', "%{$term}%")
+                      ->orWhere('keyword', 'like', "%{$term}%");
                 }
             });
-        } elseif ($keyword) {
-            // Fallback if AI returns nothing (shouldn't happen with current Mock)
-            $query->where('goods_name', 'like', "%{$keyword}%");
         }
 
-        // Apply AI Filters
-        if (isset($aiAnalysis['filters']['price_max'])) {
-            // Need to join options or use whereHas for price
-            $query->whereHas('option', function ($q) use ($aiAnalysis) {
-                $q->where('price', '<=', $aiAnalysis['filters']['price_max']);
+        // Sub-Search
+        if ($subText) {
+            $subTerms = explode(' ', $subText);
+            if ($subSearchType == 'I') { 
+                $query->where(function ($q) use ($subTerms) {
+                    foreach ($subTerms as $term) {
+                        $q->where('goods_name', 'like', "%{$term}%");
+                    }
+                });
+            } elseif ($subSearchType == 'E') {
+                $query->where(function ($q) use ($subTerms) {
+                    foreach ($subTerms as $term) {
+                        $q->where('goods_name', 'not like', "%{$term}%");
+                    }
+                });
+            }
+        }
+
+        // Price Filter (Effective)
+        if ($startPrice) {
+            $query->whereHas('option', function ($q) use ($startPrice) {
+                $q->where('price', '>=', $startPrice);
+            });
+        }
+        if ($endPrice) {
+            $query->whereHas('option', function ($q) use ($endPrice) {
+                $q->where('price', '<=', $endPrice);
             });
         }
 
-        // Apply AI Sort
-        if (($aiAnalysis['sort'] ?? '') === 'price_asc') {
-            // Complex sort with join needed usually, but for now simple
-            // This is tricky with Eloquent relations, strictly speaking requires join
-            // For prototype, we settle for default or just basic sort
+        // Date Filter
+        if ($fmDate) {
+            $query->where('regist_date', '>=', $fmDate . ' 00:00:00');
+        }
+        if ($toDate) {
+            $query->where('regist_date', '<=', $toDate . ' 23:59:59');
         }
 
-        $goods = $query->orderBy('regist_date', 'desc')->paginate(20);
+        // Sorting (Effective)
+        switch ($sort) {
+            case 'price_asc':
+                $query->select('fm_goods.*')
+                      ->leftJoin('fm_goods_option', 'fm_goods.goods_seq', '=', 'fm_goods_option.goods_seq')
+                      ->orderBy('fm_goods_option.price', 'asc')
+                      ->distinct();
+                break;
+            case 'price_desc':
+                $query->select('fm_goods.*')
+                      ->leftJoin('fm_goods_option', 'fm_goods.goods_seq', '=', 'fm_goods_option.goods_seq')
+                      ->orderBy('fm_goods_option.price', 'desc')
+                      ->distinct();
+                break;
+            case 'popular': 
+                // AI inference 'popular' maps to hit count widely
+                $query->orderBy('hit', 'desc');
+                break;
+            case 'popular_sales': 
+                $query->orderBy('runout_type', 'asc')->orderBy('hit', 'desc'); 
+                break;
+            case 'accuracy':
+                if ($keyword) {
+                    $query->orderByRaw("
+                        CASE 
+                            WHEN goods_name = ? THEN 1 
+                            WHEN goods_name LIKE ? THEN 2 
+                            WHEN goods_name LIKE ? THEN 3 
+                            WHEN keyword LIKE ? THEN 4
+                            ELSE 5 
+                        END
+                    ", [$keyword, $keyword.'%', '%'.$keyword.'%', '%'.$keyword.'%']);
+                }
+                $query->orderBy('regist_date', 'desc');
+                break;
+            case 'new':
+            default:
+                $query->orderBy('regist_date', 'desc');
+                break;
+        }
 
-        // Append query strings to pagination links
-        $goods->appends($request->all());
+        // 5. Execute Query
+        $goods = $query->paginate(20)->appends($request->all());
 
-        $categoryCode = 'Search Results';
+        // 6. View Data Preparation (Price Ranges, Date Ranges for UI)
+        $priceList = [
+            ['title'=>'~1만원', 'min'=>0, 'max'=>10000],
+            ['title'=>'1~5만원', 'min'=>10000, 'max'=>50000],
+            ['title'=>'5~15만원', 'min'=>50000, 'max'=>150000],
+            ['title'=>'15~30만원', 'min'=>150000, 'max'=>300000],
+            ['title'=>'30만원~', 'min'=>300000, 'max'=>null],
+        ];
 
-        return view('front.goods.search', compact('categories', 'goods', 'categoryCode', 'keyword', 'aiAnalysis'));
+        $today = date('Y-m-d');
+        $yesterday = date("Y-m-d", strtotime("-1 day"));
+        $week_start = date("Y-m-d", strtotime("-1 week"));
+        $month_start = date("Y-m-d", strtotime("-1 month"));
+
+        $dayList = [
+            ['title'=>'오늘', 'from'=>$today, 'to'=>$today],
+            ['title'=>'어제', 'from'=>$yesterday, 'to'=>$yesterday],
+            ['title'=>'일주일', 'from'=>$week_start, 'to'=>$today],
+            ['title'=>'이번달', 'from'=>date("Y-m-01"), 'to'=>$today],
+            ['title'=>'지난달', 'from'=>date("Y-m-01", strtotime("-1 month")), 'to'=>date("Y-m-t", strtotime("-1 month"))],
+        ];
+
+        $categoryCode = '상품검색';
+
+        return view('front.goods.search', compact(
+            'categories', 'goods', 'categoryCode', 'keyword', 
+            'aiAnalysis', 'priceList', 'dayList', 'sort'
+        ));
     }
 }

@@ -14,36 +14,69 @@ class MockSearchIntentionService implements SearchIntentionInterface
             'sort' => null
         ];
 
-        // 1. Simulate Tokenization (Simple Space Split)
-        $tokens = explode(' ', $query);
+        // --- Mock Logic for Demonstration ---
 
-        foreach ($tokens as $token) {
-            // Simulate Entity Extraction
-            if (strpos($token, '만원') !== false) {
-                // Price Filter
-                $price = (int) str_replace(['만원', '이하', '대'], '', $token);
-                if ($price > 0) {
-                    $result['filters']['price_max'] = $price * 10000;
-                }
-            } elseif (in_array($token, ['빨간색', '레드', 'red'])) {
-                // Color Filter (Assuming DB has logic for this, or just keyword expansion)
-                $result['keywords'][] = 'red'; // Add English keyword
-                $result['keywords'][] = '빨강';
-            } elseif (in_array($token, ['크리스마스', '성탄절'])) {
-                // Synonym Expansion
-                $result['keywords'][] = '크리스마스';
-                $result['keywords'][] = '트리';
-                $result['keywords'][] = '산타';
-                $result['keywords'][] = 'X-MAS';
-            } else {
-                // General Keyword
-                $result['keywords'][] = $token;
+        // 1. Price Range Pattern: "1만원대" -> 10000 ~ 19999
+        if (preg_match('/(\d+)만원대/', $query, $matches)) {
+            $base = (int)$matches[1] * 10000;
+            $result['filters']['price_min'] = $base;
+            $result['filters']['price_max'] = $base + 9999;
+            $query = str_replace($matches[0], '', $query); // Remove from query
+        }
+
+        // 2. Max Price Pattern: "5000원 이하", "3만원 이하"
+        if (preg_match('/(\d+)원\s*이하/', $query, $matches)) {
+            $result['filters']['price_max'] = (int)$matches[1];
+            $query = str_replace($matches[0], '', $query);
+        }
+        if (preg_match('/(\d+)만원\s*이하/', $query, $matches)) {
+            $result['filters']['price_max'] = (int)$matches[1] * 10000;
+            $query = str_replace($matches[0], '', $query);
+        }
+
+        // 3. Sort Patterns
+        if (strpos($query, '저렴한') !== false || strpos($query, '싼') !== false) {
+            $result['sort'] = 'price_asc';
+            $query = str_replace(['저렴한', '싼'], '', $query);
+        }
+        elseif (strpos($query, '비싼') !== false || strpos($query, '고급') !== false) {
+            $result['sort'] = 'price_desc';
+            $query = str_replace(['비싼', '고급'], '', $query);
+        }
+        elseif (strpos($query, '인기') !== false) {
+            $result['sort'] = 'popular';
+            $query = str_replace(['인기'], '', $query);
+        }
+
+        // 4. Color/Pattern Expansion (Mock)
+        $colors = [
+            '빨간' => ['red'], '파란' => ['blue'], '검정' => ['black'], '흰' => ['white']
+        ];
+        foreach ($colors as $k => $vals) {
+            if (strpos($query, $k) !== false) {
+                // Add synonyms
+                foreach ($vals as $v) $result['keywords'][] = $v;
             }
         }
 
-        // Default Sort Fallback
-        if (strpos($query, '저렴') !== false || strpos($query, '싼') !== false) {
-            $result['sort'] = 'price_asc';
+        // 5. Remaining tokens are Keywords
+        $tokens = explode(' ', trim($query));
+        foreach ($tokens as $token) {
+            if (empty($token)) continue;
+            $result['keywords'][] = $token;
+            
+            // Mock Synonym Injection
+            if ($token == '볼펜') {
+                $result['keywords'][] = '펜';
+                $result['keywords'][] = 'pen';
+            }
+            if ($token == '텀블러') {
+                $result['keywords'][] = '물병';
+                $result['keywords'][] = '보틀';
+            }
+            if ($token == '삼성') {
+                 $result['keywords'][] = 'SAMSUNG';
+            }
         }
 
         return $result;

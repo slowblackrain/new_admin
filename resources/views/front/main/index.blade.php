@@ -739,68 +739,8 @@
             </style>
             
             <!-- 왼쪽 main_section -->
-            <div id="leftCate">
-                <div class="catelist">
-                    @foreach($categories as $cat)
-                        <div class="list">
-                            <a href="{{ route('goods.catalog', ['code' => $cat->category_code]) }}">
-                                <span>
-                                    @if($cat->main_category_image)
-                                        <img src="{{ $cat->main_category_image }}" loading="lazy"
-                                             style="max-width: 100%; max-height: 100%;"
-                                             onerror="this.src='{{ asset('images/no_image.gif') }}'"
-                                             @if($cat->main_category_over_image)
-                                             onmouseover="this.src='{{ $cat->main_category_over_image }}'"
-                                             onmouseout="this.src='{{ $cat->main_category_image }}'"
-                                             @endif
-                                        >
-                                    @endif
-                                </span>
-                                <h6>{{ $cat->title }}</h6>
-                                <p>{{ $cat->description ?? '' }}</p>
-                            </a>
-                            
-                            @if($cat->children && $cat->children->count() > 0)
-                                <div class="sub_catelist">
-                                    <div class="inner">
-                                        <ul class="list_wrap">
-                                            @foreach($cat->children as $index => $child)
-                                                <li><a href="{{ route('goods.catalog', ['code' => $child->category_code]) }}">{{ $child->title }}</a></li>
-                                                @if(($index + 1) % 16 == 0)
-                                                    </ul><ul class="list_wrap">
-                                                @endif
-                                            @endforeach
-                                        </ul>
-                                        @if($cat->main_category_detail_image)
-                                            <div class="list_wrap adbnr_wrap">
-                                                <a href="{{ route('goods.catalog', ['code' => $cat->category_code]) }}">
-                                                    <img src="{{ $cat->main_category_detail_image }}" alt="Hot Item" />
-                                                </a>
-                                            </div>
-                                        @endif
-                                    </div>
-                                </div>
-                            @endif
-                        </div>
-                    @endforeach
-                </div>
-
-                <!-- 고객만족센터 -->
-                <div class="side_bnr" style="margin-top: 20px;">
-                    <a href="/service/cs" style="display:block; margin-bottom:5px;">
-                        <img src="{{ asset('images/legacy/main/side_bnr_cs.jpg') }}" alt="고객만족센터,주문상담" style="width:100%;">
-                    </a>
-                    <a href="/board/?id=bulkorder" style="display:block; margin-bottom:5px;">
-                        <img src="{{ asset('images/legacy/main/side_bnr_b2b.jpg') }}" alt="배송문의" style="width:100%;">
-                    </a>
-                    <a href="https://shopon.biz/" target='_self' style="display:block; margin-bottom:5px;">
-                        <img src="{{ asset('images/legacy/main/side_bnr_aca.jpg') }}" title="샵온 가입상담" alt="샵온 가입상담" style="width:100%;">
-                    </a>
-                    <div>
-                        <img src="{{ asset('images/legacy/main/side_bnr_csInfo.jpg') }}" alt="고객센터 운영정보" style="width:100%;">
-                    </div>
-                </div>
-            </div>
+            <!-- 왼쪽 main_section -->
+            @include('front.layouts.sidebar')
 
             <!-- 우측 main_section -->
             <div class="goodsroll best" id="category_nav01">

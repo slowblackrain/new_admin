@@ -87,7 +87,8 @@
         @endif
     </dt>
 
-    {{-- Thumbnail List (Added) --}}
+    {{-- Thumbnail List (Hidden for Catalog Grid Parity) --}}
+    {{-- 
     <dd class="goodsDisplayThumbList">
         @if($product->images && $product->images->count() > 0)
             @foreach($product->images->take(4) as $img)
@@ -99,7 +100,8 @@
                 @endif
             @endforeach
         @endif
-    </dd>
+    </dd> 
+    --}}
 
     <dd class="goodsDisplayCode" style="text-align: center; margin-bottom: 5px;">
         <span style="font-weight: bold; color: #444; font-size: 12px;">{{ $product->goods_scode }}</span>

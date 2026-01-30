@@ -1,248 +1,261 @@
 @extends('layouts.front')
 
 @section('content')
-    <div class="location_wrap">
-        <div class="location_cont">
-            <em><a href="/" class="local_home">HOME</a> &gt; {{ $categoryCode }}</em>
-        </div>
-    </div>
-
-    <div id="goods_list" class="content_wrap">
-        <div class="sub_tit_area">
-            <h3>{{ $categoryCode }}</h3>
-        </div>
-
-        {{-- Category Navigation (Optional: Subcategories) --}}
-        {{-- TODO: Add subcategory list here --}}
-
-        <div class="goods_list_area">
-            @if($goods->isEmpty())
-                <div class="no_data">등록된 상품이 없습니다.</div>
-            @else
-                <ul class="goods_list_ul">
-                    @foreach($goods as $item)
-                        <li>
-                            <div class="goods_box">
-                                <a href="{{ route('goods.view', ['no' => $item->goods_seq]) }}">
-                                    <div class="img_area">
-                                        {{-- Display Image: Using list1 image driven by logic --}}
-                                        @php
-                                            $mainImage = $item->images->where('image_type', 'list1')->first();
-                                            $imgSrc = '/images/no_image.gif';
-                                            
-                                            $imagePath = $mainImage ? $mainImage->image : '';
-                                            if ($imagePath) {
-                                                if (Str::startsWith($imagePath, 'http')) {
-                                                    $imgSrc = $imagePath;
-                                                } elseif (strpos($imagePath, 'goods_img') !== false) {
-                                                    $suffix = substr($imagePath, strpos($imagePath, 'goods_img') + 9);
-                                                    $imgSrc = "https://dmtusr.vipweb.kr/goods_img" . $suffix;
-                                                } elseif (strpos($imagePath, '/data/goods/') === 0) {
-                                                    $imgSrc = "http://dometopia.com" . $imagePath;
-                                                } else {
-                                                    $imgSrc = "http://dometopia.com/data/goods/" . $imagePath;
-                                                }
-                                            }
-                                            
-                                            // Pre-calc option data for Quick Menu
-                                            $firstOption = $item->option->first();
-                                            $optionSeq = $firstOption ? $firstOption->option_seq : 0;
-                                            $hasMultiMatches = $item->option->count() > 1;
-                                            // If no options loaded, safer to assume multi or redirect
-                                            if ($item->option->isEmpty()) $hasMultiMatches = true; 
-                                        @endphp
-                                        <img src="{{ $imgSrc }}" alt="{{ $item->goods_name }}"
-                                            onerror="this.src='/images/no_image.gif'">
-                                    </div>
-                                    <div class="info_area">
-                                        <div class="goods_name">{{ $item->goods_name }}</div>
-                                        <div class="price_area">
-                                            {{-- Calculate price based on options if needed, here basic price --}}
-                                            @php
-                                                $price = optional($firstOption)->price ?? 0;
-                                                $consumerPrice = optional($firstOption)->consumer_price ?? 0;
-                                            @endphp
-                                            @if($consumerPrice > $price)
-                                                <span class="consumer_price">{{ number_format($consumerPrice) }}원</span>
-                                            @endif
-                                            <span class="price">{{ number_format($price) }}원</span>
-                                        </div>
-                                    </div>
-                                </a>
-
-                                {{-- Quick Menu Actions --}}
-                                <div class="goodsDisplayQuickMenu">
-                                    <div class="goodsDisplayQuickIcon">
-                                        <span class="goodsDisplayNew" onclick="alert('신상품 정렬 기능 준비중입니다.'); return false;"></span>
-                                        <div class="QuickIconComment">신상품</div>
-                                    </div>
-                                    <div class="goodsDisplayQuickIcon">
-                                        <span class="goodsDisplayCart" onclick="QuickMenu.cart({{ $item->goods_seq }}, {{ $optionSeq }}, {{ $hasMultiMatches ? 'true' : 'false' }}); return false;"></span>
-                                        <div class="QuickIconComment">장바구니</div>
-                                    </div>
-                                    <div class="goodsDisplayQuickIcon">
-                                        <span class="goodsDisplayCard" onclick="QuickMenu.buy({{ $item->goods_seq }}, {{ $optionSeq }}, {{ $hasMultiMatches ? 'true' : 'false' }}); return false;"></span>
-                                        <div class="QuickIconComment">바로구매</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </li>
-                    @endforeach
-                </ul>
-
-                <div class="paging_area">
-                    {{ $goods->withQueryString()->links() }}
+    <div id="main-wrap" class="clearbox mb70" style="padding-top: 20px; width: 1200px; margin: 0 auto;">
+        
+        <div class="goodsroll" style="width: 100%;">
+            <div class="location_wrap">
+                <div class="location_cont" style="text-align: right; padding: 10px 0; border-bottom: 1px solid #eee;">
+                    <em style="font-style: normal; font-size: 11px; color: #888; font-family: 'Dotum', sans-serif;">
+                        <a href="/" class="local_home" style="color: #888; text-decoration: none;">HOME</a> 
+                        &gt; 
+                        <span style="color: #333; font-weight: bold;">{{ $categoryCode }}</span>
+                    </em>
                 </div>
-            @endif
+            </div>
+
+            <div id="goods_list" class="content_wrap">
+                <div class="sub_tit_area" style="border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px;">
+                    <h3 style="font-size: 24px; font-weight: bold; color: #333;">{{ $categoryCode }}</h3>
+                </div>
+
+                @if(isset($currentCategory) && $currentCategory->top_html)
+                     <div class="category_top_html">
+                         {!! $currentCategory->top_html !!}
+                     </div>
+                @endif
+
+                {{-- Sub Category Nav --}}
+                @if(isset($childCategories) && $childCategories->count() > 0)
+                    <div class="sub_category_nav">
+                        <ul>
+                            <li class="{{ request('code') == substr(request('code'),0,4) ? '' : '' }}">
+                                 {{-- Parent or 'All' link could go here if needed --}}
+                            </li>
+                            @foreach($childCategories as $child)
+                                <li class="{{ request('code') == $child->category_code ? 'on' : '' }}">
+                                    <a href="{{ route('goods.catalog', ['code' => $child->category_code]) }}">{{ $child->title }}</a>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
+                {{-- Sort Bar --}}
+                 <div class="sort_area">
+                    <ul>
+                        <li class="{{ $sort == '' || $sort == 'new' ? 'on' : '' }}"><a href="{{ route('goods.catalog', array_merge(request()->all(), ['sort' => 'new'])) }}">신상품순</a></li>
+                        <li class="{{ $sort == 'price_asc' ? 'on' : '' }}"><a href="{{ route('goods.catalog', array_merge(request()->all(), ['sort' => 'price_asc'])) }}">낮은가격순</a></li>
+                        <li class="{{ $sort == 'price_desc' ? 'on' : '' }}"><a href="{{ route('goods.catalog', array_merge(request()->all(), ['sort' => 'price_desc'])) }}">높은가격순</a></li>
+                        <li class="{{ $sort == 'A' ? 'on' : '' }}"><a href="{{ route('goods.catalog', array_merge(request()->all(), ['sort' => 'A'])) }}">박스상품</a></li>
+                        <li class="{{ $sort == 'G' ? 'on' : '' }}"><a href="{{ route('goods.catalog', array_merge(request()->all(), ['sort' => 'G'])) }}">낱개상품</a></li>
+                    </ul>
+                </div>
+
+                <div class="goods_list_area">
+                    @if($goods->isEmpty())
+                        <div class="no_data">등록된 상품이 없습니다.</div>
+                    @else
+                        {{-- Legacy Grid Wrapper --}}
+                        <div class="goods_list_legacy_wrapper">
+                            <ul class="goods_list_ul">
+                                @foreach($goods as $product)
+                                    <li>
+                                        @include('front.goods.component.legacy_product_item', ['product' => $product])
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+
+                        <div class="paging_area">
+                            {{ $goods->links() }}
+                        </div>
+                    @endif
+                </div>
+            </div>
         </div>
     </div>
+
+    <script src="{{ asset('js/quick_menu.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if(typeof QuickMenu !== 'undefined') {
+                QuickMenu.init('{{ csrf_token() }}');
+            }
+        });
+
+        // Wrapper to bridge Legacy-style calls to Local QuickMenu
+        function add_to_cart(goodsSeq, type) {
+            // Check if QuickMenu is available
+            if(typeof QuickMenu !== 'undefined') {
+                if(type === 'direct') {
+                    // Try to buy immediately (redirects to view if options needed)
+                    QuickMenu.buy(goodsSeq, null, true); 
+                } else {
+                    // Add to cart
+                    QuickMenu.cart(goodsSeq, null, true);
+                }
+            } else {
+                alert('쇼핑몰 기능 로딩 중입니다. 잠시 후 다시 시도해 주세요.');
+            }
+        }
+    </script>
 
     <style>
-        /* Basic styling based on legacy */
-        .goods_list_ul {
-            overflow: hidden;
-            margin-top: 20px;
+        /* Legacy CSS extraction from goods_display_doto_goods_list.html */
+        .goods_list_legacy_wrapper .goodsDisplayItemWrap {
+            border: 2px solid #fff;
+            margin-bottom: 20px;
+            overflow: hidden !important;
+            padding-bottom: 20px;
+            width: 100%; /* Fill the li */
+            background: #fff;
+            position: relative;
+            text-align: center;
+            box-sizing: border-box;
         }
+        .goods_list_legacy_wrapper .goodsDisplayItemWrap:hover {
+            border: 2px solid #fc824c;
+            box-shadow: 0px 0px 25px 3px rgba(0,0,0,0.15);
+            z-index: 10;
+        }
+        .goods_list_legacy_wrapper .goodsDisplayItemWrap dd { margin: 0; padding: 0; }
+        .goods_list_legacy_wrapper .goodsDisplayImageWrap { display: inline-block; position: relative; }
+        .goods_list_legacy_wrapper .goodsDisplayImageWrap > a > img { 
+            transform: scale(1); overflow: hidden !important; transition: all 0.6s; 
+            max-width: 100%; height: auto;
+        }
+        .goods_list_legacy_wrapper .goodsDisplayImageWrap:hover > a > img { transform: scale(1.1); }
+        
+        /* Quick Menu */
+        .goods_list_legacy_wrapper .goodsDisplayQuickMenu {
+            width: 216px; height: 25px; 
+            font-size: 15px; color: #444; 
+            border-bottom: 1px solid #f2f3f4; 
+            margin-bottom: 8px; text-align: center; 
+            position: absolute; bottom: -20px; 
+            background: rgba(255,255,255,0.95);
+            transition: all .3s; left: 0; right: 0; margin: auto; 
+            opacity: 0;
+        }
+        .goods_list_legacy_wrapper .goodsDisplayImageWrap:hover .goodsDisplayQuickMenu { bottom: 0px; opacity: 1; z-index: 2; }
+        
+        .goods_list_legacy_wrapper .goodsDisplayQuickIcon { position: relative; width: 50px; display: inline-block; vertical-align: middle; }
+        .goods_list_legacy_wrapper .goodsDisplayQuickIcon:after { 
+            content: ""; width: 1px; height: 14px; background: #f2f3f4; 
+            display: inline-block; vertical-align: middle; 
+            position: absolute; right: 0; top: 5px; 
+        }
+        .goods_list_legacy_wrapper .goodsDisplayQuickIcon:last-child:after { display: none; }
+        
+        /* Icons */
+        .goods_list_legacy_wrapper .goodsDisplayNew { 
+            display: inline-block; width: 47px; height: 24px; opacity: 0.6; cursor: pointer;
+            background: url(/images/legacy/icon/goodsDisplayNew.png) no-repeat center; /* Adjust path */
+        }
+        .goods_list_legacy_wrapper .goodsDisplayCart { 
+            display: inline-block; width: 47px; height: 24px; opacity: 0.6; cursor: pointer;
+            background: url(/images/legacy/icon/goodsDisplayCart.png) no-repeat center; /* Adjust path */
+        }
+        .goods_list_legacy_wrapper .goodsDisplayCard { 
+            display: inline-block; width: 47px; height: 24px; opacity: 0.6; cursor: pointer;
+            background: url(/images/legacy/icon/goodsDisplayCard.png) no-repeat center; /* Adjust path */
+        }
+        .goods_list_legacy_wrapper .goodsDisplayQuickIcon:hover > span { opacity: 1; }
+        
+        .goods_list_legacy_wrapper .QuickIconComment {
+            position: absolute; background: #FFF; border: 1px solid #cfd5da; 
+            top: -25px; left: 0px; font-size: 11px; color: #9eabbb; 
+            display: none; height: 18px; width: 50px; line-height: 18px;
+        }
+        .goods_list_legacy_wrapper .goodsDisplayQuickIcon:hover .QuickIconComment { display: block; }
+        
+        /* Info Area */
+        .goods_list_legacy_wrapper .goodsDisplayCode { 
+            padding: 9px 8px 0px; font-size: 12px; line-height: 12px; font-weight: bold; 
+            color: #3ba0ff; display: block; position: relative; text-align: left;
+        }
+        .goods_list_legacy_wrapper .goodsDisplayTitle { padding: 0 10px; margin-bottom: 10px; text-align: left;}
+        .goods_list_legacy_wrapper .goodsDisplayTitle h6 {
+            font-size: 13px !important; line-height: 15px; font-weight: normal; 
+            color: #333; margin: 0; padding-top: 5px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        
+        /* Price Table */
+        .goods_list_legacy_wrapper .goodsDisplaySalePrice { padding: 0 10px; }
+        .goods_list_legacy_wrapper .goodsDisplaySalePrice table td { height: 22px; font-size: 12px; }
+        .goods_list_legacy_wrapper .price_txt { padding-left: 2px; color: #666; font-size: 12px; text-align: left; }
+        .goods_list_legacy_wrapper .price_num { font-size: 12px; text-align: right; padding-right: 2px; }
+        .goods_list_legacy_wrapper .price_txt_HL2 { background-color: #FFDFC0; font-size: 14px; font-weight: bold; color: #2e4aef; padding-bottom: 2px; text-align: left;}
+        .goods_list_legacy_wrapper .price_num_HL2 { background-color: #FFDFC0; font-size: 14px; font-weight: bold; text-align: right; color: #2e4aef; padding-right: 2px; padding-bottom: 2px; }
 
+        .goods_list_legacy_wrapper .goodsDisplayIcon { 
+            margin-top: 5px; padding: 5px 10px 0; font-size: 15px; 
+            color: #0033ff; border-top: solid 1px #f7f8f9; text-align: left;
+        }
+        
+        /* Grid Layout */
+        .goods_list_ul {
+            overflow: hidden; margin-top: 20px; display: flex; flex-wrap: wrap; 
+            list-style: none; padding: 0; margin: 0;
+        }
         .goods_list_ul li {
-            float: left;
-            width: 25%;
+            width: 20%; /* Desktop: 5 cols (Legacy Parity) */
             padding: 10px;
             box-sizing: border-box;
         }
-
-        .goods_box {
-            border: 1px solid #eee;
-            padding: 10px;
-            text-align: center;
-            position: relative; /* Context for absolute QuickMenu */
-            transition: border-color 0.3s;
-        }
         
-        .goods_box:hover {
-            border: 2px solid #ff5400; /* Active Border */
-        }
+        /* Previous Styles for SubCategory and Sort (Keep them) */
+        .sub_category_nav { margin-bottom: 20px; border: 1px solid #ddd; padding: 15px; background: #f9f9f9; }
+        .sub_category_nav ul { overflow: hidden; list-style: none; padding: 0; margin: 0; }
+        .sub_category_nav li { float: left; margin-right: 15px; margin-bottom: 5px; }
+        .sub_category_nav li a { color: #555; font-size: 14px; text-decoration: none; }
+        .sub_category_nav li.on a { font-weight: bold; color: #d00; }
 
-        .goods_box .img_area img {
-            width: 100%;
-            height: auto;
-        }
-
-        .goods_name {
-            margin: 10px 0;
-            font-size: 14px;
-            color: #333;
-            height: 40px;
-            overflow: hidden;
-        }
-
-        .price_area .price {
-            font-weight: bold;
-            color: #d00;
-            font-size: 16px;
-        }
-
-        .price_area .consumer_price {
-            text-decoration: line-through;
-            color: #999;
-            font-size: 12px;
-            margin-right: 5px;
-        }
-
+        .sort_area { text-align: right; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .sort_area ul { display: inline-block; list-style: none; padding: 0; margin: 0; }
+        .sort_area li { float: left; margin-left: 10px; padding-left: 10px; border-left: 1px solid #ddd; }
+        .sort_area li:first-child { border-left: none; }
+        .sort_area li.on a { font-weight: bold; color: #333; }
+        .sort_area li a { color: #888; font-size: 12px; text-decoration: none; }
+        /* Pagination (Legacy Style Match) */
         .paging_area {
             text-align: center;
             margin-top: 30px;
+            margin-bottom: 50px;
         }
-
-        /* Quick Menu Styles (Ported) */
-        .goodsDisplayQuickMenu {
-            width: 100%;
-            height: 40px; /* Slight increase for clickable area */
-            background: rgba(255, 255, 255, 0.95);
-            border-top: 1px solid #f2f3f4;
-            position: absolute;
-            bottom: -40px; /* Hidden by default */
-            left: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            opacity: 0;
-            transition: all 0.3s;
-            z-index: 10;
-        }
-
-        /* Show on hover */
-        .goods_box:hover .goodsDisplayQuickMenu {
-            bottom: 0;
-            opacity: 1;
-        }
-
-        .goodsDisplayQuickIcon {
-            position: relative;
-            width: 50px;
-            text-align: center;
-        }
-
-        .goodsDisplayQuickIcon:after {
-            content: "";
-            width: 1px;
-            height: 14px;
-            background: #f2f3f4;
+        .paging_area nav {
             display: inline-block;
-            vertical-align: middle;
-            position: absolute;
-            right: 0;
-            top: 50%;
-            transform: translateY(-50%);
         }
-        .goodsDisplayQuickIcon:last-child:after {
-            display: none;
+        .paging_area .relative { 
+            display: inline-flex; 
         }
-        
-        .goodsDisplayQuickIcon > span {
+        /* Hide the huge SVG/Tailwind default arrows if they appear unstyled */
+        .paging_area svg {
+            width: 15px; height: 15px; display: inline-block; vertical-align: middle;
+            color: #555;
+        }
+        /* Style links */
+        .paging_area a, .paging_area span {
             display: inline-block;
-            width: 47px;
-            height: 24px;
-            opacity: 0.6;
-            cursor: pointer;
-            margin-top: 8px; /* Vertical center align */
+            padding: 5px 10px;
+            margin: 0 2px;
+            border: 1px solid #ddd;
+            color: #666;
+            text-decoration: none;
+            font-size: 12px;
+            border-radius: 0; /* Legacy square style */
         }
-        .goodsDisplayQuickIcon:hover > span {
-            opacity: 1;
+        .paging_area span[aria-current="page"], .paging_area .active {
+            background-color: #444;
+            color: #fff;
+            border: 1px solid #444;
+            font-weight: bold;
         }
-
-        /* Icons using asset() helper */
-        .goodsDisplayNew { background: url('{{ asset("images/legacy/icon/goodsDisplayNew.png") }}') no-repeat center; }
-        .goodsDisplayCart { background: url('{{ asset("images/legacy/icon/goodsDisplayCart.png") }}') no-repeat center; }
-        .goodsDisplayCard { background: url('{{ asset("images/legacy/icon/goodsDisplayCard.png") }}') no-repeat center; }
-
-        /* Tooltip */
-        .QuickIconComment {
-            position: absolute;
-            background: #FFF;
-            border: 1px solid #cfd5da;
-            top: -30px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 11px;
-            color: #9eabbb;
-            display: none;
-            padding: 2px 5px;
-            white-space: nowrap;
-            z-index: 20;
-        }
-        .goodsDisplayQuickIcon:hover .QuickIconComment {
-            display: block;
-        }
-
-        @media (max-width: 768px) {
-            .goods_list_ul li {
-                width: 50% !important;
-            }
-            /* Hide QuickMenu on mobile as per design */
-            .goodsDisplayQuickMenu {
-                display: none !important;
-            }
+        .paging_area a:hover {
+            border-color: #888;
+            color: #333;
         }
     </style>
 @endsection

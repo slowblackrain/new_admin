@@ -47,7 +47,12 @@ class Goods extends Model
 
     public function inputs()
     {
-        return $this->hasMany(GoodsInput::class, 'goods_seq', 'goods_seq');
+        return $this->hasMany(GoodsInput::class, 'goods_seq', 'goods_seq')->orderBy('input_seq', 'asc');
+    }
+
+    public function subOptions()
+    {
+        return $this->hasMany(SubOption::class, 'goods_seq', 'goods_seq')->orderBy('suboption_seq');
     }
 
     public function defaultOption()

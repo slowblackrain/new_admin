@@ -34,6 +34,8 @@
         @yield('content')
     </main>
 
+    @include('front.layouts.quick_menu')
+
     <x-layout.footer />
 
     @stack('scripts')

@@ -124,6 +124,26 @@ return [
             // 'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'false'),
         ],
 
+        'production' => [
+            'driver' => 'mysql',
+            'host' => env('DB_PROD_HOST'),
+            'port' => env('DB_PROD_PORT'),
+            'database' => env('DB_PROD_DATABASE'),
+            'username' => env('DB_PROD_USERNAME'),
+            'password' => env('DB_PROD_PASSWORD'),
+            'unix_socket' => env('DB_SOCKET', ''),
+            'charset' => 'utf8',
+            'collation' => 'utf8_general_ci',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => false,
+            'engine' => null,
+            'options' => extension_loaded('pdo_mysql') ? array_filter([
+                (PHP_VERSION_ID >= 80500 ? \Pdo\Mysql::ATTR_SSL_CA : \PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
+                \PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true,
+            ]) : [],
+        ],
+
     ],
 
     /*
