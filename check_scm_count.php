@@ -6,7 +6,5 @@ $kernel->bootstrap();
 
 use Illuminate\Support\Facades\DB;
 
-$cols = DB::select('DESCRIBE fm_goods');
-foreach($cols as $c) {
-    echo $c->Field . ' (' . $c->Type . ') ' . $c->Key . "\n";
-}
+$count = DB::table('fm_scm_location_link')->count();
+echo "SCM Location Link Count: " . $count . "\n";

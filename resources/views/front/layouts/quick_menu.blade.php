@@ -1,7 +1,10 @@
 
 <style type="text/css">
 /* Ported from Legacy right.html & Refined for Consistency */
-#rightScrollLayer { position: absolute; left: 50%; margin-left: 620px; top: 280px; z-index: 90; }
+#rightScrollLayer { position: absolute; left: 50%; margin-left: 620px; top: 180px; z-index: 90; }
+@media (max-width: 1210px) {
+    #rightScrollLayer { display: none !important; }
+}
 .rightQuickMenuWrap { margin-top:0px; } /* Removed negative margin */
 
 /* Standardize Width */
@@ -214,7 +217,7 @@ $(document).ready(function() {
                 // Restore absolute position
                 scrollLayerObj.css({
                     'position' : 'absolute',
-                    'top' : '280px', // Original top
+                    'top' : '180px', // Original top
                     'left' : '50%',
                     'margin-left' : defaultMarginLeft + 'px'
                 });
@@ -256,7 +259,7 @@ function setRightMenu() {
     getRightItemTotal('right_item_cart');
     // getRightItemTotal('right_item_wish'); // Not yet implemented fully
     getRightItemTotal('right_item_recent'); // Get count first
-    setRightClickBtn("right_item_recent", 1);
+    getRightItemTotal('right_item_recent'); // Get count first, then it triggers list load
 }
 
 function setRightClickBtn(type, page, act){
@@ -319,9 +322,9 @@ function getRightItemTotal(type) {
         'data' : { type: type },
         'success' : function(total){
             objCnt.text(total);
-            // If recent, re-calc paging if needed
+            // If recent, trigger list load now that we have the count
              if (type=="right_item_recent") {
-                 // setRightClickBtn checks text() so it will pick up new total next call
+                 setRightClickBtn("right_item_recent", 1);
              }
         }
     });

@@ -72,6 +72,8 @@ class OrderController extends Controller
 
     public function store(Request $request)
     {
+        file_put_contents('c:/dometopia/new_admin/debug_order.txt', "Store Called at " . now() . "\n", FILE_APPEND);
+        
         // 1. Validate
         $request->validate([
             'cart_seq' => 'required|array',
@@ -377,12 +379,29 @@ class OrderController extends Controller
                         DB::table('fm_goods_supply')
                             ->where('supply_seq', $supply->supply_seq)
                             ->decrement('stock', $ea);
+
+                        // SCM Stock Deduction (wh_seq = 1)
+                        DB::table('fm_scm_location_link')
+                            ->where('option_seq', $matchedOption->option_seq)
+                            ->where('wh_seq', 1)
+                            ->decrement('ea', $ea);
                     }
                 } else {
                     DB::table('fm_goods_supply')
                         ->where('goods_seq', $goods->goods_seq)
                         ->decrement('stock', $ea);
+
+                    // SCM Stock Deduction (wh_seq = 1)
+                    DB::table('fm_scm_location_link')
+                        ->where('goods_seq', $goods->goods_seq)
+                        ->where('wh_seq', 1)
+                        ->decrement('ea', $ea);
                 }
+
+                // Total Stock Deduction
+                DB::table('fm_goods')
+                    ->where('goods_seq', $goods->goods_seq)
+                    ->decrement('tot_stock', $ea);
             }
 
             // Delete from Cart

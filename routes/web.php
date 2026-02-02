@@ -53,6 +53,13 @@ Route::prefix('member')->name('member.')->group(function () {
     Route::get('/register', [MemberController::class, 'register'])->name('register');
     Route::post('/register', [MemberController::class, 'register_process'])->name('register_process');
     Route::post('/check_id', [MemberController::class, 'check_id'])->name('check_id');
+
+    // ID/PW Find
+    Route::get('/find_id', [MemberController::class, 'find_id'])->name('find_id');
+    Route::post('/find_id', [MemberController::class, 'find_id_result'])->name('find_id_result');
+
+    Route::get('/find_pw', [MemberController::class, 'find_pw'])->name('find_pw');
+    Route::post('/find_pw', [MemberController::class, 'find_pw_result'])->name('find_pw_result');
 });
 
 Route::prefix('order/cart')->name('cart.')->group(function () {

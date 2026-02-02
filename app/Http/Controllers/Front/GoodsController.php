@@ -40,11 +40,35 @@ class GoodsController extends Controller
         // 3. Build Goods Query
         $query = Goods::active()->with(['option', 'images']);
 
+        // [Parity] Filter private/ATS goods
+        // Legacy logic: if member_seq is set, show (ATS=0 OR ATS=me). If guest, show ATS=0 only.
+        $memberSeq = auth()->check() ? auth()->user()->member_seq : 0;
+        if ($memberSeq) {
+            $query->where(function ($q) use ($memberSeq) {
+                $q->where('ATS_member_seq', 0)
+                  ->orWhere('ATS_member_seq', $memberSeq);
+            });
+        } else {
+            $query->where('ATS_member_seq', 0);
+        }
+
         if ($code) {
             $query->whereHas('categories', function ($q) use ($code) {
                 $q->where('fm_category.category_code', 'like', $code . '%');
             });
         }
+
+        // [New] Search within Category
+        $keyword = $request->input('search_text');
+        if ($keyword) {
+            $query->where(function ($q) use ($keyword) {
+                $q->where('goods_name', 'like', "%{$keyword}%")
+                  ->orWhere('goods_code', 'like', "%{$keyword}%")
+                  ->orWhere('goods_scode', 'like', "%{$keyword}%");
+            });
+        }
+
+
 
         // 4. Apply Sorting (Legacy Logic)
         $sort = $request->input('sort', '');
@@ -73,7 +97,7 @@ class GoodsController extends Controller
                 $query->orderBy('regist_date', 'desc');
                 break;
             default:
-                $query->orderBy('regist_date', 'desc');
+                $query->orderBy('goods_seq', 'desc');
                 break;
         }
 
@@ -85,7 +109,8 @@ class GoodsController extends Controller
             'categoryCode', 
             'currentCategory', 
             'childCategories',
-            'sort'
+            'sort',
+            'keyword'
         ));
     }
 
@@ -226,6 +251,17 @@ class GoodsController extends Controller
         // 5. Build Query (on Production)
         // Use default connection which handles environment automatically
         $query = Goods::active()->with(['option', 'images']);
+
+        // [Parity] Filter private/ATS goods (Same as catalog)
+        $memberSeq = auth()->check() ? auth()->user()->member_seq : 0;
+        if ($memberSeq) {
+            $query->where(function ($q) use ($memberSeq) {
+                $q->where('ATS_member_seq', 0)
+                  ->orWhere('ATS_member_seq', $memberSeq);
+            });
+        } else {
+            $query->where('ATS_member_seq', 0);
+        }
 
         // Keyword Search (Main)
         if ($keyword) {

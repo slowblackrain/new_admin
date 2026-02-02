@@ -8,7 +8,7 @@ use App\Models\Goods;
 use App\Models\Cart; 
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\DB;
-use Auth;
+use Illuminate\Support\Facades\Auth;
 
 class CommonController extends Controller
 {
@@ -23,13 +23,20 @@ class CommonController extends Controller
         $limit = $request->input('limit', 5);
 
         if ($type === 'right_item_recent') {
+            // 1. Get Cookie Data
             $todayGoods = json_decode($request->cookie('goods_today', '[]'), true);
+            
+            // Legacy / Serialization Fallback
             if (!is_array($todayGoods)) {
-                $todayGoods = [];
+                 $unserialized = @unserialize($request->cookie('goods_today'));
+                 if ($unserialized !== false) {
+                     $todayGoods = $unserialized;
+                 } else {
+                     $todayGoods = [];
+                 }
             }
 
-            // Slice for pagination
-            // Page 1: 0 to limit-1
+            // 2. Pagination
             $offset = ($page - 1) * $limit;
             $slicedIds = array_slice($todayGoods, $offset, $limit);
 
@@ -37,13 +44,13 @@ class CommonController extends Controller
                 return ''; 
             }
 
-            // Fetch goods details
-            // Order by FIELD to maintain the "Recent" order
+            // 3. Fetch Data with Eager Loading
             $orderStr = implode(',', $slicedIds);
             if (empty($orderStr)) {
                  $goodsList = collect([]);
             } else {
                 $goodsList = Goods::whereIn('goods_seq', $slicedIds)
+                ->with('images') 
                 ->orderByRaw("FIELD(goods_seq, $orderStr)")
                 ->get();
             }
@@ -51,9 +58,7 @@ class CommonController extends Controller
             return view('front.layouts.quick_item_list', compact('goodsList'));
         }
 
-        // Other types (Wishlist, Cart) can be implemented here if needed for the list view
-        // But legacy primarily used this for 'Recent Items'
-        
+        // Other types (Wishlist, Cart)
         return '';
     }
 

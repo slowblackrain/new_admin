@@ -42,6 +42,26 @@
                      alt="{{ $product->goods_name }}" />
             </a>
             
+@php
+    // Option Logic for Quick Menu (Single vs Multi)
+    $optionSeq = 0;
+    $hasMultipleOptions = true;
+    
+    // Check if options exist
+    if ($product->option && $product->option->isNotEmpty()) {
+        // If only 1 option and it looks like a default/single option
+        if ($product->option->count() === 1) {
+             // You might strictly check if title is 'default' or similar if needed, 
+             // but usually count=1 implies single choice.
+             $opt = $product->option->first();
+             $optionSeq = $opt->option_seq;
+             $hasMultipleOptions = false; 
+        } else {
+             // > 1 options
+             $hasMultipleOptions = true;
+        }
+    }
+ @endphp
             {{-- Quick Menu --}}
             <div class="goodsDisplayQuickMenu">
                 <span class="goodsDisplayQuickIcon">
@@ -49,11 +69,11 @@
                     <span class="QuickIconComment">새창보기</span>
                 </span>
                 <span class="goodsDisplayQuickIcon">
-                    <span class="goodsDisplayCart" onclick="add_to_cart('{{ $product->goods_seq }}');"></span>
+                    <span class="goodsDisplayCart" onclick="add_to_cart('{{ $product->goods_seq }}', 'cart', '{{ $optionSeq }}', {{ $hasMultipleOptions ? 'true' : 'false' }});"></span>
                     <span class="QuickIconComment">장바구니</span>
                 </span>
                 <span class="goodsDisplayQuickIcon">
-                    <span class="goodsDisplayCard" onclick="add_to_cart('{{ $product->goods_seq }}', 'direct');"></span>
+                    <span class="goodsDisplayCard" onclick="add_to_cart('{{ $product->goods_seq }}', 'direct', '{{ $optionSeq }}', {{ $hasMultipleOptions ? 'true' : 'false' }});"></span>
                     <span class="QuickIconComment">바로구매</span>
                 </span>
             </div>
@@ -78,11 +98,18 @@
     {{-- Badges Row --}}
     <dd class="goodsDisplayIcon" style="min-height: 20px; padding: 0 5px;">
         @if($product->goods_status == 'runout')
-            <img src="{{ asset('images/legacy/icon/goods_status/icon_list_soldout.gif') }}" />
+            <img src="{{ asset('images/legacy/icon/goods_status/icon_list_soldout.gif') }}" alt="품절" />
         @endif
-        {{-- Static Placeholders for Visual Parity (Logic needs real data) --}}
-        <span style="display:inline-block; border:1px solid #dcdcdc; color:#5d5d5d; padding:0 3px; font-size:11px; margin-right:3px;">낱개</span>
-        <span style="display:inline-block; border:1px solid #2e8b57; color:#2e8b57; padding:0 3px; font-size:11px;">무료배송</span>
+        
+        {{-- Single Unit Badge (G*) --}}
+        @if(Str::startsWith($product->goods_scode, 'G'))
+             <span style="display:inline-block; border:1px solid #dcdcdc; color:#5d5d5d; padding:0 3px; font-size:11px; margin-right:3px;">낱개</span>
+        @endif
+
+        {{-- Free Shipping Badge --}}
+        @if($product->shipping_policy == 'free')
+            <span style="display:inline-block; border:1px solid #2e8b57; color:#2e8b57; padding:0 3px; font-size:11px;">무료배송</span>
+        @endif
     </dd>
 
     {{-- Checkbox + Code --}}

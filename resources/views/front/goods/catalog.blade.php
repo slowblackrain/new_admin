@@ -41,6 +41,15 @@
                     </div>
                 @endif
 
+                {{-- Search Within Category --}}
+                <div class="result_search_area" style="text-align:right; margin-bottom:10px;">
+                    <form name="frmListSearch" method="get" action="{{ url()->current() }}">
+                        <input type="hidden" name="code" value="{{ request('code') }}">
+                        <input type="text" name="search_text" value="{{ $keyword ?? '' }}" placeholder="결과 내 검색" style="border:1px solid #ddd; height:24px; padding:0 5px; font-size:12px;">
+                        <button type="submit" style="background:#555; color:#fff; border:none; height:26px; padding:0 10px; cursor:pointer; font-size:12px;">검색</button>
+                    </form>
+                </div>
+
                 {{-- Sort Bar --}}
                  <div class="sort_area">
                     <ul>
@@ -85,15 +94,15 @@
         });
 
         // Wrapper to bridge Legacy-style calls to Local QuickMenu
-        function add_to_cart(goodsSeq, type) {
+        function add_to_cart(goodsSeq, type, optionSeq, hasMultipleOptions) {
             // Check if QuickMenu is available
             if(typeof QuickMenu !== 'undefined') {
                 if(type === 'direct') {
-                    // Try to buy immediately (redirects to view if options needed)
-                    QuickMenu.buy(goodsSeq, null, true); 
+                    // Buy Now
+                    QuickMenu.buy(goodsSeq, optionSeq, hasMultipleOptions); 
                 } else {
                     // Add to cart
-                    QuickMenu.cart(goodsSeq, null, true);
+                    QuickMenu.cart(goodsSeq, optionSeq, hasMultipleOptions);
                 }
             } else {
                 alert('쇼핑몰 기능 로딩 중입니다. 잠시 후 다시 시도해 주세요.');

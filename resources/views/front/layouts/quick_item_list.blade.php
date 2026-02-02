@@ -3,14 +3,30 @@
         <div class="right_quick_goods_box">
              <div class="right_quick_goods">
                 <a href="{{ route('goods.view', ['no' => $item->goods_seq]) }}">
-                    {{-- Use helper or direct path for image. Assuming legacy path structure or helper exists --}}
+                    {{-- Parity Image Logic: Check thumbScroll (cut=1) > thumbScroll > list1 (cut=1) > list1 > first --}}
                     @php
-                        $imgSrc = $item->image[0]->image ?? '/images/legacy/common/noimage.gif';
-                        if (!str_starts_with($imgSrc, 'http') && !str_starts_with($imgSrc, '/')) {
+                        $imgSrc = '/images/legacy/common/noimage.gif';
+                        
+                        if ($item->images && $item->images->isNotEmpty()) {
+                            // Prioritize cut_number = 1
+                            $imgObj = $item->images->where('image_type', 'thumbScroll')->where('cut_number', 1)->first()
+                                   ?? $item->images->where('image_type', 'thumbScroll')->first()
+                                   ?? $item->images->where('image_type', 'list1')->where('cut_number', 1)->first()
+                                   ?? $item->images->where('image_type', 'list1')->first()
+                                   ?? $item->images->first();
+
+                            if ($imgObj && !empty($imgObj->image)) {
+                                $imgSrc = $imgObj->image;
+                            }
+                        }
+                        
+                        // Prefix path check
+                        if ($imgSrc !== '/images/legacy/common/noimage.gif' && !str_starts_with($imgSrc, 'http') && !str_starts_with($imgSrc, '/')) {
                              $imgSrc = '/data/goods/'.$imgSrc;
                         }
                     @endphp
-                    <img src="{{ $imgSrc }}" style="width: 40px; height: 60px;" />
+                    <img src="{{ $imgSrc }}" 
+                         onerror="this.src='/images/legacy/common/noimage.gif'" />
                 </a>
             </div>
             

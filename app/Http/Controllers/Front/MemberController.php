@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Member;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Str;
 
 class MemberController extends Controller
 {
@@ -149,5 +150,65 @@ class MemberController extends Controller
         } else {
             return response()->json(['result' => 'success', 'msg' => '사용 가능한 아이디입니다.']);
         }
+    }
+    public function find_id()
+    {
+        return view('front.member.find_id');
+    }
+
+    public function find_id_result(Request $request)
+    {
+        $request->validate([
+            'user_name' => 'required',
+            'email' => 'required|email',
+        ]);
+
+        $member = Member::where('user_name', $request->user_name)
+            ->where('email', $request->email)
+            ->first();
+
+        if (!$member) {
+            return back()->withErrors(['msg' => '일치하는 회원 정보를 찾을 수 없습니다.']);
+        }
+
+        // Mask ID (e.g., ab***)
+        $len = strlen($member->userid);
+        $visibleLen = $len > 3 ? 3 : 1;
+        $maskedId = substr($member->userid, 0, $visibleLen) . str_repeat('*', $len - $visibleLen);
+
+        return view('front.member.find_id_result', compact('maskedId', 'member'));
+    }
+
+    public function find_pw()
+    {
+        return view('front.member.find_pw');
+    }
+
+    public function find_pw_result(Request $request)
+    {
+        $request->validate([
+            'userid' => 'required',
+            'user_name' => 'required',
+            'email' => 'required|email',
+        ]);
+
+        $member = Member::where('userid', $request->userid)
+            ->where('user_name', $request->user_name)
+            ->where('email', $request->email)
+            ->first();
+
+        if (!$member) {
+            return back()->withErrors(['msg' => '일치하는 회원 정보를 찾을 수 없습니다.']);
+        }
+
+        // Generate Temp Password
+        $tempPw = Str::random(8);
+        $hashedPw = hash('sha256', $tempPw);
+
+        $member->password = $hashedPw;
+        $member->save();
+
+        // In production, send Email/SMS. For Dev, show it.
+        return view('front.member.find_pw_result', compact('tempPw', 'member'));
     }
 }

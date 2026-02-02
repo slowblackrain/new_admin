@@ -14,9 +14,7 @@ class DashboardController extends Controller
     {
         $seller = Auth::guard('seller')->user();
 
-        // Retrieve the linked member sequence for the provider
-        // Legacy: $member_seq = $this->providermodel->get_provider_member_seq($this->providerInfo['provider_seq']);
-        // Query: select M.member_seq, M.ATS_account from fm_provider as P left join fm_member as M on (P.userid = M.userid) where provider_seq=?
+        // retrieve member_seq
         $memberData = DB::table('fm_provider as P')
             ->leftJoin('fm_member as M', 'P.userid', '=', 'M.userid')
             ->where('P.provider_seq', $seller->provider_seq)
@@ -24,58 +22,153 @@ class DashboardController extends Controller
             ->first();
 
         $memberSeq = $memberData ? $memberData->member_seq : null;
-        $params = [
-            'member_seq' => $memberSeq,
-            // 'provider_seq' => $seller->provider_seq, // Unused in current logic but available
-        ];
 
-        // 1. Order Summary (Ready to Ship / Processing)
-        // Replicating legacy query logic from _print_main_order_summary
-        $orderSummary = [];
-        
-        if ($memberSeq) {
-            // "출고준비건" (Ready to Ship / Preparing)
-            // Steps: 25(Payment Confirmed?), 35, 40(Preparing), 50, 60, 70
-            $steps = ['25', '35', '40', '50', '60', '70'];
-            
-            $readyToShipCnt = DB::table('fm_order_item as b')
-                ->leftJoin('fm_order_item_option as c', 'b.item_seq', '=', 'c.item_seq')
-                ->leftJoin('fm_order_item_suboption as d', 'b.item_seq', '=', 'd.item_seq')
-                ->leftJoin('fm_order as e', 'b.order_seq', '=', 'e.order_seq')
-                ->where('e.member_seq', $memberSeq)
-                ->where(function($q) use ($steps) {
-                    $q->whereIn('c.step', $steps) // Check option step
-                      ->orWhereIn('d.step', $steps); // Check suboption step
-                })
-                ->distinct('b.order_seq') // group by b.order_seq and count
-                ->count('b.order_seq');
-                
-            $orderSummary['ready_to_ship'] = [
-                'title' => '출고준비건',
-                'count' => $readyToShipCnt,
-                'link'  => '/selleradmin/order_playauto/catalog?chk_step[25]=1&chk_step[35]=1&chk_step[40]=1&chk_step[50]=1&chk_step[60]=1&chk_step[70]=1'
-            ];
+        $assetSummary = $this->getAssetSummary($memberSeq);
+        $fulfillmentSummary = $this->getFulfillmentSummary($memberSeq);
+        $productSummary = $this->getATSProductSummary($seller->provider_seq);
+        $purchaseStats = $this->getPurchaseStatistics($memberSeq);
 
-            // Other statuses like Export/Delivery/Return require more complex joins with fm_goods_export.
-            // For this iteration, we focus on the main "Ready to Ship" metric as a proof of concept.
-            // We can add the others ( 배송준비중, 배송중, 반품진행중 ) iteratively.
-            
-            // NOTE: The legacy code calculates these using subqueries or complex joins. 
-            // We will implement them if requested or in the next iteration.
-        }
-
-        // 2. Seller Summary (Notices)
-        // Fetching "gs_seller_notice" - generic seller notices
-        // Using basic DB query for now instead of migrating the entire Board system models immediately
-        // 2. Seller Summary (Notices)
-        // Fetching "gs_seller_notice" - generic seller notices
+        // Notices (Keep existing logic)
         $notices = DB::table('fm_boarddata')
             ->where('boardid', 'gs_seller_notice')
-            ->orderBy('gid', 'asc') // Legacy: gid asc, m_date asc
+            ->orderBy('gid', 'asc') 
             ->orderBy('m_date', 'asc') 
             ->limit(5)
             ->get(); 
 
-        return view('seller.dashboard', compact('seller', 'memberData', 'orderSummary', 'notices'));
+        return view('seller.dashboard', compact('seller', 'memberData', 'assetSummary', 'fulfillmentSummary', 'productSummary', 'purchaseStats', 'notices'));
+    }
+
+    private function getAssetSummary($memberSeq)
+    {
+        if (!$memberSeq) return ['emoney' => 0, 'cash' => 0];
+
+        $member = DB::table('fm_member')
+            ->where('member_seq', $memberSeq)
+            ->select('emoney', 'cash')
+            ->first();
+
+        return [
+            'emoney' => $member->emoney ?? 0,
+            'cash' => $member->cash ?? 0,
+        ];
+    }
+
+    private function getFulfillmentSummary($memberSeq)
+    {
+        if (!$memberSeq) return [];
+
+        // Definition of Status Groups for Reseller Purchase Orders
+        // 15: Deposit Pending (Action Required)
+        // 25-45: Preparing (Processing by Dometopia)
+        // 55-65: Shipping (On the way to end customer)
+        // 75: Delivered
+        // Returns/Refunds: Checked via fm_order_return / fm_order_refund joined with order
+
+        $summary = [
+            'deposit_pending' => 0,
+            'preparing' => 0,
+            'shipping' => 0,
+            'completed' => 0,
+            'return_refund' => 0,
+        ];
+
+        // 1. Order Counts by Step
+        $orderCounts = DB::table('fm_order')
+            ->where('member_seq', $memberSeq)
+            ->select('step', DB::raw('count(*) as count'))
+            ->groupBy('step')
+            ->get()
+            ->pluck('count', 'step');
+
+        $summary['deposit_pending'] = $orderCounts->get('15', 0);
+        
+        // Processing (25, 35, 45)
+        $summary['preparing'] = ($orderCounts->get('25', 0) + $orderCounts->get('35', 0) + $orderCounts->get('45', 0));
+        
+        // Shipping (55, 65)
+        $summary['shipping'] = ($orderCounts->get('55', 0) + $orderCounts->get('65', 0));
+        
+        // Completed (75)
+        $summary['completed'] = $orderCounts->get('75', 0);
+
+        // 2. Return/Refund Counts (Simplified check for any active return/refund linked to orders)
+        // Ideally join fm_order_return -> fm_order where fm_order.member_seq = $memberSeq
+        $returnCount = DB::table('fm_order_return as r')
+            ->join('fm_order as o', 'r.order_seq', '=', 'o.order_seq')
+            ->where('o.member_seq', $memberSeq)
+            ->whereIn('r.status', ['request', 'ing'])
+            ->count();
+            
+        $refundCount = DB::table('fm_order_refund as r')
+             ->join('fm_order as o', 'r.order_seq', '=', 'o.order_seq')
+             ->where('o.member_seq', $memberSeq)
+             ->whereIn('r.status', ['request', 'ing'])
+             ->count();
+
+        $summary['return_refund'] = $returnCount + $refundCount;
+
+        return $summary;
+    }
+
+    private function getATSProductSummary($providerSeq)
+    {
+        // ATS Goods supplied to this provider
+        // fm_goods.provider_seq is the generic logic, but for ATS, goods are linked via category or registered directly.
+        // Assuming standard goods ownership or ATS link. 
+        // Based on ATSController, we check provider_seq in fm_goods.
+        
+        $stats = DB::table('fm_goods')
+            ->where('provider_seq', $providerSeq)
+            ->select('goods_status', DB::raw('count(*) as count'))
+            ->groupBy('goods_status')
+            ->get()
+            ->pluck('count', 'goods_status');
+
+        return [
+            'normal' => $stats->get('normal', 0),
+            'runout' => $stats->get('runout', 0),
+            'stop' => $stats->get('stop', 0),
+        ];
+    }
+
+    private function getPurchaseStatistics($memberSeq)
+    {
+        if (!$memberSeq) return [];
+
+        // Daily Purchase Amount (Deposit Confirmed) logic
+        // Past 7 days
+        $startDate = date('Y-m-d', strtotime('-6 days'));
+        $endDate = date('Y-m-d');
+
+        $dailyStats = DB::table('fm_order')
+            ->where('member_seq', $memberSeq)
+            ->where('deposit_yn', 'y') // Only confirmed purchases
+            ->whereBetween('deposit_date', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->select(
+                DB::raw('DATE(deposit_date) as date'),
+                DB::raw('sum(settleprice) as total_amount'),
+                DB::raw('count(*) as count')
+            )
+            ->groupBy(DB::raw('DATE(deposit_date)'))
+            ->orderBy('date', 'asc')
+            ->get()
+            ->keyBy('date');
+
+        // Fill empty days
+        $chartData = [];
+        $current = strtotime($startDate);
+        $end = strtotime($endDate);
+
+        while ($current <= $end) {
+            $dateStr = date('Y-m-d', $current);
+            $stat = $dailyStats->get($dateStr);
+            $chartData['dates'][] = date('m-d', $current);
+            $chartData['amounts'][] = $stat ? $stat->total_amount : 0;
+            $chartData['counts'][] = $stat ? $stat->count : 0;
+            $current = strtotime('+1 day', $current);
+        }
+
+        return $chartData;
     }
 }

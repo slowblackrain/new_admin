@@ -78,7 +78,7 @@
         justify-content: center;
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 1210px) {
         .mobile-bottom-nav {
             display: flex;
         }

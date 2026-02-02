@@ -102,9 +102,17 @@ class Goods extends Model
             });
     }
 
+    public function provider()
+    {
+        return $this->belongsTo(Provider::class, 'provider_seq', 'provider_seq');
+    }
+
     public function scopeActive($query)
     {
         return $query->where('goods_view', 'look')
-            ->where('goods_status', 'normal');
+            ->where('goods_status', 'normal')
+            ->whereHas('provider', function ($q) {
+                $q->where('provider_status', 'Y');
+            });
     }
 }
