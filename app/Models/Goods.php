@@ -115,4 +115,15 @@ class Goods extends Model
                 $q->where('provider_status', 'Y');
             });
     }
+
+    public function scopeExcludeHiddenCodes($query)
+    {
+        // Legacy hidden codes + MKS
+        $hiddenPrefixes = ['FFF', 'MTS', 'MXT', 'OOO', 'QQQ', 'MKS'];
+        return $query->where(function ($q) use ($hiddenPrefixes) {
+            foreach ($hiddenPrefixes as $prefix) {
+                $q->where('goods_scode', 'not like', $prefix . '%');
+            }
+        });
+    }
 }

@@ -44,6 +44,18 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             QuickMenu.init('{{ csrf_token() }}');
+
+            // Popup Logic
+            @if(isset($popups) && $popups->count() > 0)
+                @foreach($popups as $popup)
+                    var cookieName = "designPopup{{ $popup->popup_seq }}";
+                    if (document.cookie.indexOf(cookieName + "=done") < 0) {
+                        var popupUrl = "{{ route('popup.show', ['seq' => $popup->popup_seq]) }}";
+                        var option = "width={{ $popup->width }},height={{ $popup->height }},left={{ $popup->loc_left }},top={{ $popup->loc_top }},scrollbars=no,resizable=no";
+                        window.open(popupUrl, cookieName, option);
+                    }
+                @endforeach
+            @endif
         });
     </script>
 </body>

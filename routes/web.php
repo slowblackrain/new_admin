@@ -45,11 +45,14 @@ Route::prefix('common')->name('common.')->group(function () {
     Route::get('/get_right_total', [App\Http\Controllers\Front\CommonController::class, 'getRightTotal'])->name('get_right_total');
 });
 Route::post('/goods/goods_recent_del', [App\Http\Controllers\Front\CommonController::class, 'deleteRecentItem'])->name('goods.recent_del');
+Route::get('/popup/designpopup', [App\Http\Controllers\Front\PopupController::class, 'show'])->name('popup.show');
 
 Route::prefix('goods')->name('goods.')->group(function () {
     Route::get('/view', [GoodsController::class, 'view'])->name('view');
     Route::get('/catalog', [GoodsController::class, 'catalog'])->name('catalog');
     Route::get('/search', [GoodsController::class, 'search'])->name('search');
+    Route::get('/restock/register', [App\Http\Controllers\Front\RestockController::class, 'register'])->name('restock.register');
+    Route::post('/restock/store', [App\Http\Controllers\Front\RestockController::class, 'store'])->name('restock.store');
 });
 
 Route::prefix('member')->name('member.')->group(function () {
@@ -148,6 +151,11 @@ Route::prefix('service')->name('service.')->group(function () {
     Route::get('/privacy', [App\Http\Controllers\Front\ServiceController::class, 'privacy'])->name('privacy');
     Route::get('/guide', [App\Http\Controllers\Front\ServiceController::class, 'guide'])->name('guide');
     Route::get('/partnership', [App\Http\Controllers\Front\ServiceController::class, 'partnership'])->name('partnership');
+});
+
+Route::prefix('promotion')->name('promotion.')->group(function () {
+    Route::get('/', [App\Http\Controllers\Front\PromotionController::class, 'index'])->name('index');
+    Route::get('/view', [App\Http\Controllers\Front\PromotionController::class, 'view'])->name('view');
 });
 
 // Admin Routes
@@ -251,6 +259,14 @@ Route::prefix('admin')->name('admin.')->group(function () {
     // [통계] statistic
     Route::get('statistic_summary', [App\Http\Controllers\Admin\StatisticSummaryController::class, 'index'])->name('statistic_summary.index');
     Route::get('statistic_visitor', [App\Http\Controllers\Admin\StatisticSummaryController::class, 'visitor'])->name('statistic_visitor.index');
+});
+
+// Front Payment Routes
+Route::prefix('payment')->name('payment.')->group(function () {
+    Route::get('/request', [App\Http\Controllers\Front\PaymentController::class, 'request'])->name('request');
+    Route::any('/success', [App\Http\Controllers\Front\PaymentController::class, 'success'])->name('success');
+    Route::any('/fail', [App\Http\Controllers\Front\PaymentController::class, 'fail'])->name('fail');
+    Route::any('/pairing/receive', [App\Http\Controllers\Front\PaymentController::class, 'pairingReceive'])->name('pairing.receive');
 });
 
 /*

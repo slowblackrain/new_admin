@@ -19,7 +19,9 @@
     <a href="/order/cart" class="nav-item {{ Request::is('order/cart*') ? 'active' : '' }}">
         <div style="position: relative; display: inline-block;">
             <i class="fas fa-shopping-cart"></i>
-            {{-- <span class="badge">0</span> --}}
+            @if(isset($cartCount) && $cartCount > 0)
+                <span class="badge">{{ $cartCount }}</span>
+            @endif
         </div>
         <span>장바구니</span>
     </a>
@@ -78,7 +80,7 @@
         justify-content: center;
     }
 
-    @media (max-width: 1210px) {
+    @media (max-width: 1024px) {
         .mobile-bottom-nav {
             display: flex;
         }

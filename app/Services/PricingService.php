@@ -78,11 +78,15 @@ class PricingService
             'hundred_ea' => $hundredEa,
             'hundred_price' => $basePrice - $hundredDiscount,
 
-            // Additional legacy keys to prevent undefined index
-            'suip_price' => $product->suip_price ?? 0,
-            'domae_discount' => 0,
-            'domae_price' => $basePrice,
-            'somae_price' => $product->consumer_price ?? 0,
+            // Domain Terminology Mapping (User Defined)
+            'somae_price' => $basePrice, // Retail Price (price)
+            'domae_price' => $basePrice - $mtypeDiscount, // Wholesale Price (price - mtype_discount)
+            'domae_discount_price' => $fiftyEa > 0 ? $basePrice - $fiftyDiscount : 0, // Wholesale Discount (price - fifty_discount)
+            'suip_price' => $hundredEa > 0 ? $basePrice - $hundredDiscount : 0, // Import (price - hundred_discount)
+            
+            // Legacy keys for backward compatibility
+            'fifty_price' => $basePrice - $fiftyDiscount,
+            'hundred_price' => $basePrice - $hundredDiscount,
         ];
     }
 

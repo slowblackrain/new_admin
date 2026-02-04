@@ -53,31 +53,14 @@
                         @php $totalPrice = 0; @endphp
                         @forelse($cartItems as $item)
                             @php
+                                // Use Pre-calculated Pricing Info from Controller
                                 $goods = $item->goods;
-                                $option = $item->options->first();
-                                
-                                // Matches the correct option from Goods based on the saved strings
-                                // This ensures we get the real current price
-                                $price = 0;
-                                $matchedOption = null;
-                                
-                                if ($goods && $goods->option) {
-                                    $matchedOption = $goods->option->first(function($o) use ($option) {
-                                         return (string)$o->option1 == (string)$option->option1 &&
-                                                (string)$o->option2 == (string)$option->option2 &&
-                                                (string)$o->option3 == (string)$option->option3 &&
-                                                (string)$o->option4 == (string)$option->option4 &&
-                                                (string)$o->option5 == (string)$option->option5;
-                                    });
-                                }
-                                
-                                if ($matchedOption) {
-                                    $price = $matchedOption->price;
-                                } else {
-                                    // Fallback: If option not found (data changed), use first option price or 0
-                                    $price = $goods->option->first()->price ?? 0;
-                                }
+                                $pricing = $item->pricing_info;
+                                $price = $pricing['unit_price'];
+                                $itemPrice = $pricing['total_price'];
+                                $ea = $item->options->first()->ea ?? 1;
 
+                                $option = $item->options->first();
                                 $optionParts = [];
                                 if ($option->option1) $optionParts[] = $option->option1;
                                 if ($option->option2) $optionParts[] = $option->option2;
@@ -86,8 +69,6 @@
                                 if ($option->option5) $optionParts[] = $option->option5;
                                 $optionStr = implode(' / ', $optionParts);
 
-                                $ea = $option->ea ?? 1;
-                                $itemPrice = $price * $ea;
                                 $totalPrice += $itemPrice;
 
                                 $mainImage = $goods->images->where('image_type', 'thumbCart')->first() 
@@ -240,12 +221,23 @@
                         .then(res => res.json())
                         .then(data => {
                             if (data.status === 'success') {
-                                // Update row price
-                                const price = parseInt(tr.dataset.price);
-                                const itemPrice = price * ea;
-                                tr.querySelector('.price_cell').innerText = new Intl.NumberFormat().format(itemPrice) + '원';
+                                // Update row price with NEW unit price from server (reflects tiered discount)
+                                if (data.new_unit_price) {
+                                    tr.dataset.price = data.new_unit_price;
+                                    const itemPrice = data.new_total_price;
+                                    tr.querySelector('.price_cell').innerText = new Intl.NumberFormat().format(itemPrice) + '원';
+                                    // Also update unit price display if exists? (Currently only total is shown in UI)
+                                    // table cell 5 is unit price text: <td>{{ number_format($price) }}원</td>
+                                    tr.children[5].innerText = new Intl.NumberFormat().format(data.new_unit_price) + '원';
+                                } else {
+                                    // Fallback (shouldn't happen with updated controller)
+                                    const price = parseInt(tr.dataset.price);
+                                    const itemPrice = price * ea;
+                                    tr.querySelector('.price_cell').innerText = new Intl.NumberFormat().format(itemPrice) + '원';
+                                }
+                                
                                 calcTotal();
-                                alert(data.message);
+                                // alert(data.message); // Optional: Remove alert for smoother UX? User kept alert in code.
                             } else {
                                 alert(data.message);
                             }

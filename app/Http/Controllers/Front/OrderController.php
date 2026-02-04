@@ -15,13 +15,17 @@ use App\Models\CategoryLink;
 class OrderController extends Controller
 {
     protected $settlementService;
-
     protected AgencyProductService $agencyService;
+    protected \App\Services\PricingService $pricingService;
 
-    public function __construct(\App\Services\Agency\AgencySettlementService $settlementService, AgencyProductService $agencyService)
-    {
+    public function __construct(
+        \App\Services\Agency\AgencySettlementService $settlementService,
+        AgencyProductService $agencyService,
+        \App\Services\PricingService $pricingService
+    ) {
         $this->settlementService = $settlementService;
         $this->agencyService = $agencyService;
+        $this->pricingService = $pricingService;
     }
 
     public function index(Request $request)
@@ -50,10 +54,25 @@ class OrderController extends Controller
         // 4. Calculate Total (Initial calculation for verification, view will also Calc)
         $totalPrice = 0;
         foreach ($cartItems as $item) {
+            $goods = $item->goods;
             $option = $item->options->first();
-            $price = $item->goods->option->first()->price ?? 0;
             $ea = $option->ea ?? 1;
-            $totalPrice += ($price * $ea);
+
+            if ($goods && $goods->option) {
+                $matchedOption = $goods->option->first(function($o) use ($option) {
+                        return (string)$o->option1 == (string)$option->option1 &&
+                            (string)$o->option2 == (string)$option->option2 &&
+                            (string)$o->option3 == (string)$option->option3 &&
+                            (string)$o->option4 == (string)$option->option4 &&
+                            (string)$o->option5 == (string)$option->option5;
+                });
+                $calcOption = $matchedOption ?? $goods->option->first();
+            } else {
+                $calcOption = null;
+            }
+
+            $pricing = $this->pricingService->calculatePrice($goods, $calcOption, $ea);
+            $totalPrice += $pricing['total_price'];
         }
 
         $shippingCost = 3000;
@@ -125,12 +144,13 @@ class OrderController extends Controller
 
             // Calculate Total
             foreach ($cartItems as $cItem) {
-                // ... (Calculation Logic) ...
+                $goods = $cItem->goods;
                 $option = $cItem->options->first();
                 $ea = $option->ea ?? 1;
                 
                 $price = 0;
-                $goods = $cItem->goods;
+                // Price Logic using PricingService
+                $matchedOption = null;
                 if ($goods && $goods->option) {
                     $matchedOption = $goods->option->first(function($o) use ($option) {
                          return (string)$o->option1 == (string)$option->option1 &&
@@ -139,13 +159,15 @@ class OrderController extends Controller
                                 (string)$o->option4 == (string)$option->option4 &&
                                 (string)$o->option5 == (string)$option->option5;
                     });
-                    if ($matchedOption) {
-                        $price = $matchedOption->price;
-                    } else {
-                         $price = $goods->option->first()->price ?? 0;
-                    }
                 }
                 
+                // Fallback option if not matched (e.g. data sync issue)
+                $calcOption = $matchedOption ?? $goods->option->first();
+                
+                // Calculate Final Unit Price (Discounted)
+                $pricingInfo = $this->pricingService->calculatePrice($goods, $calcOption, $ea);
+                $price = $pricingInfo['unit_price'];
+
                 $totalPrice += ($price * $ea);
                 $totalEa += $ea;
                 $kinds++;
@@ -317,8 +339,9 @@ class OrderController extends Controller
                 $order->deposit_yn = 'n';
                 $order->bundle_yn = 'n';
             } else {
-                $order->step = \App\Models\Order::STEP_PAYMENT_CONFIRMED;
-                $order->deposit_yn = 'y'; 
+                // PG Payment - Wait for Confirmation
+                $order->step = \App\Models\Order::STEP_ORDER_RECEIVED;
+                $order->deposit_yn = 'n'; 
                 $order->bundle_yn = 'n';
             }
 
@@ -345,7 +368,7 @@ class OrderController extends Controller
                 $option = $cItem->options->first();
                 $ea = $option->ea ?? 1;
 
-                 // Price Logic Again
+                 // Price Logic Again using PricingService
                 $price = 0;
                 $matchedOption = null;
                 if ($goods && $goods->option) {
@@ -356,12 +379,11 @@ class OrderController extends Controller
                                 (string)$o->option4 == (string)$option->option4 &&
                                 (string)$o->option5 == (string)$option->option5;
                     });
-                     if ($matchedOption) {
-                        $price = $matchedOption->price;
-                    } else {
-                         $price = $goods->option->first()->price ?? 0;
-                    }
                 }
+                
+                $calcOption = $matchedOption ?? $goods->option->first();
+                $pricingInfo = $this->pricingService->calculatePrice($goods, $calcOption, $ea);
+                $price = $pricingInfo['unit_price'];
 
                 $orderItem = new \App\Models\OrderItem();
                 $orderItem->order_seq = $order->order_seq;
@@ -531,7 +553,11 @@ class OrderController extends Controller
 
             DB::commit();
 
-            return redirect()->route('order.complete', ['id' => $order->order_seq]);
+                        if ($request->payment == 'bank') {
+                return redirect()->route('order.complete', ['id' => $order->order_seq]);
+            } else {
+                return redirect()->route('payment.request', ['order_seq' => $order->order_seq]);
+            }
 
         } catch (\Exception $e) {
             DB::rollBack();

@@ -179,6 +179,14 @@
 </style>
 
 <script>
+    function Checkform(f) {
+        if (!f.search_text.value.trim()) {
+            alert('검색어를 입력하세요.');
+            return false;
+        }
+        return true;
+    }
+
     function toggleSidebar() {
         const sidebar = document.getElementById('mobile_sidebar');
         const overlay = document.getElementById('mobile_sidebar_overlay');

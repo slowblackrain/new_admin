@@ -11,6 +11,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->validateCsrfTokens(except: [
+            'payment/*',
+        ]);
+
         $middleware->redirectGuestsTo(function ($request) {
             if ($request->is('admin') || $request->is('admin/*')) {
                 return route('admin.login');

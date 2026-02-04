@@ -232,7 +232,7 @@
                                                                 <td
                                                                     style="padding:10px; border-bottom:1px solid #eee; border-right:1px solid #eee;">
                                                                     <span
-                                                                        class="price_blue">{{ number_format($priceInfo['domae_discount']) }}
+                                                                        class="price_blue">{{ number_format($priceInfo['domae_discount_price']) }}
                                                                         원</span>
                                                                 </td>
                                                                 <td
@@ -468,10 +468,10 @@
                                         <tr class="quanity_row" style="height:40px; border-bottom:1px solid #e9ecef; background-color:#f7f8f9;">
                                             <td class="option_text quantity_cell_sub" style="padding-left:10px;"> 구매금액</td>
                                             <td class="quantity_cell_sub" align="center">
-                                                <span class="first_label">1</span>개 X <span class="first_price">{{ number_format($product->price) }}</span>원
+                                                <span class="first_label">1</span>개 X <span class="first_price">{{ number_format($priceInfo['price']) }}</span>원
                                             </td>
                                             <td class="quantity_cell_sub_price" align="right" style="padding-right:10px;">
-                                                <strong class="first_totprice" style="font-size:14px; color:#d32f2f;">{{ number_format($product->price) }}</strong>원
+                                                <strong class="first_totprice" style="font-size:14px; color:#d32f2f;">{{ number_format($priceInfo['price']) }}</strong>원
                                             </td>
                                         </tr>
                                     </table>
@@ -481,8 +481,13 @@
 
                         {{-- Options Select --}}
                         @php
-                            $options = $product->option;
-                            $hasOptions = $options->count() > 1 || ($options->count() === 1 && trim($options->first()->option1) !== '');
+                            // Dedup options based on name and price
+                            $optionsRaw = $product->option;
+                            $options = $optionsRaw->unique(function ($item) {
+                                return $item->option1 . $item->option2 . $item->option3 . $item->option4 . $item->option5 . $item->price;
+                            });
+
+                            $hasOptions = $options->count() > 1; 
                             $defaultOption = $options->first();
                             $defaultSeq = $defaultOption ? $defaultOption->option_seq : '';
                         @endphp
@@ -972,107 +977,7 @@
             updateTotal();
         }
 
-        function updateTotal() {
-            let total = 0;
-            const hiddenContainer = document.getElementById('form_hidden_inputs');
-            hiddenContainer.innerHTML = '';
 
-            // Sync to Quick View
-            const quickDev = document.getElementById('quick_selected_dev');
-            quickDev.innerHTML = '';
-
-            // Calculate Suboptions Total First (to add to EACH main option? No, usually separate lines or added to total)
-            // In legacy, suboptions are seemingly independent items in the cart or attached to the main item.
-            // For simplicity in calculation, we sum them up. 
-            // However, visually they are usually shown.
-            
-            let subOptionsTotal = 0;
-            for (const [seq, item] of Object.entries(selectedSubOptions)) {
-                subOptionsTotal += (item.price * item.qty);
-                hiddenContainer.innerHTML += `<input type="hidden" name="suboption_seq[]" value="${seq}"><input type="hidden" name="suboption_ea[]" value="${item.qty}">`;
-                
-                quickDev.innerHTML += `
-                    <div class="quick-opt-row">
-                        <span style="width:40%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">[추가] ${item.name}</span>
-                        <div class="quick-qty-ctrl">
-                            <button type="button" onclick="changeQty('${seq}', -1, 'suboption')">-</button>
-                            <input type="text" value="${item.qty}" readonly>
-                            <button type="button" onclick="changeQty('${seq}', 1, 'suboption')">+</button>
-                        </div>
-                        <span style="font-size:11px;">${new Intl.NumberFormat('ko-KR').format(item.price * item.qty)}</span>
-                        <button type="button" onclick="removeOption('${seq}', 'suboption')" style="border:none; bg:none; cursor:pointer;">x</button>
-                    </div>`;
-            }
-
-
-            if (hasOptions) {
-                // Render Options
-                for (const [seq, item] of Object.entries(selectedOptions)) {
-                    let basePrice = item.price;
-                    let finalUnitPrice = basePrice;
-                    let qty = item.qty;
-
-                    if (hundredEa > 0 && qty >= hundredEa) {
-                        finalUnitPrice = basePrice - discount100;
-                    } else if (fiftyEa > 0 && qty >= fiftyEa) {
-                        finalUnitPrice = basePrice - discount50;
-                    } else {
-                        finalUnitPrice = basePrice - discountMtype;
-                    }
-
-                    total += finalUnitPrice * qty;
-                    hiddenContainer.innerHTML += `<input type="hidden" name="option_seq[]" value="${seq}"><input type="hidden" name="ea[]" value="${qty}">`;
-
-                    // Add Interactive Row to Quick View
-                    quickDev.innerHTML += `
-                        <div class="quick-opt-row">
-                            <span style="width:40%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.name}</span>
-                            <div class="quick-qty-ctrl">
-                                <button type="button" onclick="changeQty('${seq}', -1, 'option')">-</button>
-                                <input type="text" value="${item.qty}" readonly>
-                                <button type="button" onclick="changeQty('${seq}', 1, 'option')">+</button>
-                            </div>
-                            <span style="font-size:11px;">${new Intl.NumberFormat('ko-KR').format(finalUnitPrice * qty)}</span>
-                            <button type="button" onclick="removeOption('${seq}', 'option')" style="border:none; bg:none; cursor:pointer;">x</button>
-                        </div>`;
-                }
-            } else {
-                const qtyInput = document.getElementById('default_qty');
-                let qty = qtyInput ? parseInt(qtyInput.value) : 1;
-
-                let basePrice = priceInfo.ori_price || 0;
-                let finalUnitPrice = basePrice;
-
-                if (hundredEa > 0 && qty >= hundredEa) {
-                    finalUnitPrice = basePrice - discount100;
-                } else if (fiftyEa > 0 && qty >= fiftyEa) {
-                    finalUnitPrice = basePrice - discount50;
-                } else {
-                    finalUnitPrice = basePrice - discountMtype;
-                }
-
-                total = finalUnitPrice * qty;
-                hiddenContainer.innerHTML += `<input type="hidden" name="option_seq[]" value="${defaultSeq}"><input type="hidden" name="ea[]" value="${qty}">`;
-
-                // Sync for no-option:
-                quickDev.innerHTML += `
-                    <div class="quick-opt-row">
-                        <span>수량</span>
-                        <div class="quick-qty-ctrl">
-                            <button type="button" onclick="changeDefaultQty(-1)">-</button>
-                            <input type="text" value="${qty}" readonly>
-                            <button type="button" onclick="changeDefaultQty(1)">+</button>
-                        </div>
-                        <span>${new Intl.NumberFormat('ko-KR').format(total)}</span>
-                    </div>`;
-            }
-            
-            total += subOptionsTotal;
-
-            const formattedTotal = new Intl.NumberFormat('ko-KR').format(total) + '원';
-            document.getElementById('total_price').innerText = formattedTotal;
-            document.getElementById('quick_total_price').innerText = formattedTotal;
-        }
 
         // Helper for default quantity sync
         function changeDefaultQty(delta) {
@@ -1087,9 +992,9 @@
 
         function validateForm() {
             // Check options if exist
-            if (hasOptions && Object.keys(selectedOptions).length === 0) {
-                alert('옵션을 선택해주세요.'); return false;
-            }
+            // if (hasOptions && Object.keys(selectedOptions).length === 0) {
+                // alert('옵션을 선택해주세요.'); return false;
+
 
             // Text inputs validation (Scoped to goodsForm)
             const form = document.forms['goodsForm'];
@@ -1253,6 +1158,9 @@
             // Update Main Total
             document.getElementById('total_price').innerText = formattedTotal;
             document.getElementById('quick_total_price').innerText = formattedTotal;
+            
+
+
 
             // Update Purchase Amount Row
             const firstLabel = document.querySelector('.first_label');
@@ -1270,6 +1178,16 @@
                  firstPrice.innerText = '0';
             }
         }
+                    function processCart() {
+            if (!validateForm()) return;
+            
+            let form = document.forms['goodsForm'];
+            if (!form) form = document.getElementById('goodsForm');
+            if (!form) {
+                alert('주문 폼을 찾을 수 없습니다.');
+                return;
+            }
+
             const formData = new FormData(form);
 
             fetch("{{ route('cart.store') }}", {

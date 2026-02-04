@@ -13,14 +13,45 @@ use Illuminate\Support\Facades\DB;
 
 class CartController extends Controller
 {
+    protected $pricingService;
+
+    public function __construct(\App\Services\PricingService $pricingService)
+    {
+        $this->pricingService = $pricingService;
+    }
+
     public function index()
     {
         $cartItems = Cart::currentUser()
             ->with(['goods.images', 'goods.option', 'options', 'inputs'])
             ->orderBy('regist_date', 'desc')
             ->get();
+
+        // Calculate Pricing for each item
+        foreach ($cartItems as $item) {
+            $goods = $item->goods;
+            $option = $item->options->first();
+            $ea = $option->ea ?? 1;
+
+            if ($goods && $goods->option) {
+                $matchedOption = $goods->option->first(function($o) use ($option) {
+                        return (string)$o->option1 == (string)$option->option1 &&
+                            (string)$o->option2 == (string)$option->option2 &&
+                            (string)$o->option3 == (string)$option->option3 &&
+                            (string)$o->option4 == (string)$option->option4 &&
+                            (string)$o->option5 == (string)$option->option5;
+                });
+                $calcOption = $matchedOption ?? $goods->option->first();
+            } else {
+                $calcOption = null;
+            }
+
+            // Calculate
+            $pricing = $this->pricingService->calculatePrice($goods, $calcOption, $ea);
+            $item->pricing_info = $pricing;
+        }
             
-        // Valid Cart Seqs (placeholder if needed for logic, currently all)
+        // Valid Cart Seqs (placeholder)
         $validCartSeqs = $cartItems->pluck('cart_seq')->toArray();
 
         // Based on fm_provider_shipping (provider_seq 1, 3, etc.)
@@ -107,34 +138,84 @@ class CartController extends Controller
 
                 // 2. Check if item already exists in Cart (Same Goods + Same Options)
                 // Only merge if NO custom inputs are provided (inputs make items unique)
+                // 2. Check if item already exists in Cart (Same Goods + Same Options + Same Inputs)
+                // We verify both options and inputs (title/value) match exactly.
                 $existingCart = null;
-                if (empty($mappedInputs)) {
-                    $query = Cart::query()
-                        ->where('goods_seq', $goods_seq)
-                        ->where(function($q) use ($member_seq, $sessionId) {
-                            if ($member_seq > 0) {
-                                $q->where('member_seq', $member_seq);
-                            } else {
-                                $q->where('session_id', $sessionId);
-                            }
-                        });
-
-                    // Join with options to check strings
-                    // Optimization: Fetch candidate carts and compare in PHP to handle all 5 options easier
-                    $candidates = $query->with('options')->get();
-
-                    foreach ($candidates as $candidate) {
-                        $candOpt = $candidate->options->first();
-                        if ($candOpt && 
-                            (string)$candOpt->option1 === (string)$goodsOption->option1 &&
-                            (string)$candOpt->option2 === (string)$goodsOption->option2 &&
-                            (string)$candOpt->option3 === (string)$goodsOption->option3 &&
-                            (string)$candOpt->option4 === (string)$goodsOption->option4 &&
-                            (string)$candOpt->option5 === (string)$goodsOption->option5
-                        ) {
-                            $existingCart = $candidate;
-                            break;
+                
+                $query = Cart::query()
+                    ->where('goods_seq', $goods_seq)
+                    ->where(function($q) use ($member_seq, $sessionId) {
+                        if ($member_seq > 0) {
+                            $q->where('member_seq', $member_seq);
+                        } else {
+                            $q->where('session_id', $sessionId);
                         }
+                    });
+
+                // Eager load options AND inputs for comparison
+                $candidates = $query->with(['options', 'inputs'])->get();
+
+                foreach ($candidates as $candidate) {
+                    // A. Check Options
+                    $candOpt = $candidate->options->first();
+                    // If no option row, treat as mismatch or empty option? 
+                    // Usually goodsOption is present. If candidate has no option row, it's broken or basic.
+                    // For logic safety:
+                    $candOpt1 = $candOpt ? $candOpt->option1 : '';
+                    $candOpt2 = $candOpt ? $candOpt->option2 : '';
+                    $candOpt3 = $candOpt ? $candOpt->option3 : '';
+                    $candOpt4 = $candOpt ? $candOpt->option4 : '';
+                    $candOpt5 = $candOpt ? $candOpt->option5 : '';
+
+                    $targetOpt1 = $goodsOption->option1 ?? '';
+                    $targetOpt2 = $goodsOption->option2 ?? '';
+                    $targetOpt3 = $goodsOption->option3 ?? '';
+                    $targetOpt4 = $goodsOption->option4 ?? '';
+                    $targetOpt5 = $goodsOption->option5 ?? '';
+
+                    if (
+                        (string)$candOpt1 !== (string)$targetOpt1 ||
+                        (string)$candOpt2 !== (string)$targetOpt2 ||
+                        (string)$candOpt3 !== (string)$targetOpt3 ||
+                        (string)$candOpt4 !== (string)$targetOpt4 ||
+                        (string)$candOpt5 !== (string)$targetOpt5
+                    ) {
+                        continue; // Options mismatch
+                    }
+
+                    // B. Check Inputs
+                    // $mappedInputs: [seq => [type, title, value, ...], ...]
+                    // $candidate->inputs: Collection of CartInput objects
+                    
+                    if ($candidate->inputs->count() !== count($mappedInputs)) {
+                        continue; // Count mismatch
+                    }
+
+                    // If both empty, strict match confirmed by loop end
+                    // If not empty, check every value
+                    $allInputsMatch = true;
+                    if (!empty($mappedInputs)) {
+                        foreach ($mappedInputs as $mInput) {
+                            $tTitle = $mInput['title'];
+                            $tValue = $mInput['value'];
+                            
+                            // Find matching input in candidate
+                            $found = $candidate->inputs->first(function($ci) use ($tTitle, $tValue) {
+                                // Simple string comparison
+                                return (string)$ci->input_title === (string)$tTitle && 
+                                       (string)$ci->input_value === (string)$tValue;
+                            });
+
+                            if (!$found) {
+                                $allInputsMatch = false;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if ($allInputsMatch) {
+                        $existingCart = $candidate;
+                        break;
                     }
                 }
 
@@ -234,8 +315,31 @@ class CartController extends Controller
                 $option->save();
             }
 
-            // Start: Recalculate price for return (Optional but good for UI)
-            // End
+            // Recalculate price for return
+            $cart->load(['goods.option', 'options']);
+            $goods = $cart->goods;
+            $option = $cart->options->first(); // Reloaded with new EA? No, EA is in DB now.
+            
+            // Logic to match option again...
+            if ($goods && $goods->option) {
+                 $matchedOption = $goods->option->first(function($o) use ($option) {
+                        return (string)$o->option1 == (string)$option->option1 &&
+                            (string)$o->option2 == (string)$option->option2 &&
+                            (string)$o->option3 == (string)$option->option3 &&
+                            (string)$o->option4 == (string)$option->option4 &&
+                            (string)$o->option5 == (string)$option->option5;
+                });
+                $calcOption = $matchedOption ?? $goods->option->first();
+                
+                $pricing = $this->pricingService->calculatePrice($goods, $calcOption, $request->ea);
+                
+                return response()->json([
+                    'status' => 'success', 
+                    'message' => '수량이 변경되었습니다.',
+                    'new_unit_price' => $pricing['unit_price'],
+                    'new_total_price' => $pricing['total_price']
+                ]);
+            }
 
             return response()->json(['status' => 'success', 'message' => '수량이 변경되었습니다.']);
 

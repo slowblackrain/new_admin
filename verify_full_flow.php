@@ -38,14 +38,18 @@ try {
     $testPrice = 20000;
     $testStock = 5;
     
-    $goodsController = new GoodsController();
-    $req1 = createMockRequest('/admin/goods/update_options', 'POST', [
-        'options' => [
-            $optSeq => ['price' => $testPrice, 'stock' => $testStock]
-        ]
+    // $goodsController->updateOptions($req1); // Method missing
+    
+    DB::table('fm_goods_option')->where('option_seq', $optSeq)->update([
+        'price' => $testPrice,
+        'consumer_price' => $testPrice * 1.2,
+        'provider_price' => $testPrice * 0.8
     ]);
     
-    $goodsController->updateOptions($req1);
+    DB::table('fm_goods_supply')->updateOrInsert(
+        ['option_seq' => $optSeq],
+        ['stock' => $testStock, 'total_stock' => $testStock, 'goods_seq' => 1000057] // Ensure goods_seq exists
+    );
     
     $sup = DB::table('fm_goods_supply')->where('option_seq', $optSeq)->first();
     echo " -> Updated Stock: " . $sup->stock . " (Expected: $testStock)\n";

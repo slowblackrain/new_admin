@@ -55,6 +55,12 @@ Route::prefix('selleradmin')->name('seller.')->group(function () {
             Route::get('catalog', [\App\Http\Controllers\Seller\OrderPlayautoController::class, 'catalog'])->name('catalog');
         });
 
+        // Export (Order Fulfillment) Routes
+        Route::prefix('export')->name('export.')->group(function () {
+            Route::get('catalog', [\App\Http\Controllers\Seller\SellerExportController::class, 'catalog'])->name('catalog');
+            Route::get('view/{id}', [\App\Http\Controllers\Seller\SellerExportController::class, 'view'])->name('view');
+        });
+
         // Point & Cash Routes
         Route::prefix('point')->name('point.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Seller\PointController::class, 'index'])->name('index');

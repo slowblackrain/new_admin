@@ -9,7 +9,12 @@
     </div>
     <div class="header-right">
         <button type="button" class="btn_search" onclick="toggleSearch()"><i class="fas fa-search"></i></button>
-        <a href="/order/cart" class="btn_cart"><i class="fas fa-shopping-cart"></i></a>
+        <a href="/order/cart" class="btn_cart" style="position:relative;">
+            <i class="fas fa-shopping-cart"></i>
+            @if(isset($cartCount) && $cartCount > 0)
+                <span style="position:absolute; top:-5px; right:-5px; background:#eb6506; color:#fff; font-size:10px; border-radius:50%; width:15px; height:15px; display:flex; justify-content:center; align-items:center;">{{ $cartCount }}</span>
+            @endif
+        </a>
     </div>
 </div>
 
@@ -51,8 +56,8 @@
         text-decoration: none;
     }
 
-    /* Show only on mobile */
-    @media (max-width: 768px) {
+    /* Show only on mobile and tablet */
+    @media (max-width: 1024px) {
         .mobile-header {
             display: flex;
         }
