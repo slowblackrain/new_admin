@@ -47,6 +47,7 @@ Route::prefix('selleradmin')->name('seller.')->group(function () {
             Route::get('social_catalog', [ATSController::class, 'social_catalog'])->name('social_catalog');
             Route::get('settlement', [ATSController::class, 'settlement'])->name('settlement');
             Route::post('runout', [ATSController::class, 'requestRunout'])->name('runout');
+
         });
 
         // Linked Order (OrderPlayauto) Routes

@@ -26,6 +26,13 @@ require __DIR__.'/admin.php';
 |
 */
 
+Route::get('/test/force-login/{userid}', function ($userid) {
+    if (!app()->isLocal()) abort(404);
+    $user = \App\Models\Member::where('userid', $userid)->firstOrFail();
+    \Illuminate\Support\Facades\Auth::login($user);
+    return redirect()->route('home');
+});
+
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
 Route::get('/login', function () {
@@ -107,6 +114,7 @@ Route::middleware(['auth'])->prefix('mypage')->name('mypage.')->group(function (
     Route::post('/order/add-item', [\App\Http\Controllers\Admin\Order\OrderProcessController::class, 'addItem'])->name('order.addItem');
     Route::get('/order_catalog', [MypageController::class, 'orderList'])->name('order.catalog');
     Route::get('/order/view/{id}', [MypageController::class, 'orderView'])->name('order.view');
+    Route::post('/order/confirm/{orderSeq}', [MypageController::class, 'confirmPurchase'])->name('order.confirm');
 
     // Claim Routes
     Route::get('/claim/apply/{orderSeq}/{type}', [MypageController::class, 'claimApply'])->name('claim.apply');
@@ -189,9 +197,16 @@ Route::prefix('admin')->name('admin.')->group(function () {
     // SCM Order (Balju)
     Route::prefix('scm_order')->name('scm_order.')->group(function () {
         Route::get('auto', [App\Http\Controllers\Admin\Scm\ScmOrderController::class, 'auto_order'])->name('auto');
+        Route::get('create', [App\Http\Controllers\Admin\Scm\ScmOrderController::class, 'create_auto_order'])->name('create');
         Route::post('create', [App\Http\Controllers\Admin\Scm\ScmOrderController::class, 'create_auto_order'])->name('create');
         Route::get('list', [App\Http\Controllers\Admin\Scm\ScmOfferController::class, 'index'])->name('list');
+        Route::get('excel', [App\Http\Controllers\Admin\Scm\ScmOfferController::class, 'excel'])->name('excel'); // Added Route
         Route::post('update_status', [App\Http\Controllers\Admin\Scm\ScmOfferController::class, 'update_status'])->name('update_status');
+        Route::post('update_field', [App\Http\Controllers\Admin\Scm\ScmOfferController::class, 'updateField'])->name('update_field');
+        Route::get('detail', [App\Http\Controllers\Admin\Scm\ScmOfferController::class, 'detail'])->name('detail');
+        
+        // Failure Log (Super Admin)
+        Route::get('fail_log', [App\Http\Controllers\Admin\Scm\ScmOrderFailController::class, 'index'])->name('fail_log');
     });
 
     // SCM Manage
@@ -207,6 +222,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
     });
 
     // SCM Settlement
+    Route::prefix('scm_settlement')->name('scm_settlement.')->group(function () {
+        Route::get('index', [App\Http\Controllers\Admin\Scm\ScmSettlementController::class, 'index'])->name('index');
+        Route::put('{seq}', [App\Http\Controllers\Admin\Scm\ScmSettlementController::class, 'update'])->name('update');
+    });
+
     // Returns (반품)
     Route::prefix('returns')->name('returns.')->group(function () {
         Route::get('catalog', [App\Http\Controllers\Admin\ReturnsController::class, 'catalog'])->name('catalog');
@@ -267,12 +287,31 @@ Route::get('/test-icons', function () {
             echo "Icon: " . $icon->codecd . " | Start: " . $icon->start_date . " | End: " . $icon->end_date . "<br>";
         }
         
-        echo "<h3>Query Log:</h3>";
-        dd(DB::getQueryLog());
-    } else {
-        return "Icon exists for goods_seq " . $goodsSeq . " but product not found??";
     }
 });
+
+
+// Debug Schema
+Route::get('/debug/schema/{table}', function ($table) {
+    if (!Schema::hasTable($table)) return "Table not found";
+    return response()->json(Schema::getColumnListing($table));
+});
+
+Route::get('/debug/table/{table}', function ($table) {
+    if (!Schema::hasTable($table)) return "Table not found";
+    return response()->json(DB::table($table)->orderByDesc(Schema::hasColumn($table, 'sno') ? 'sno' : (Schema::hasColumn($table, 'seq') ? 'seq' : 'regist_date'))->limit(5)->get());
+});
+
+Route::get('/debug/describe/{table}', function ($table) {
+    return response()->json(DB::select("DESCRIBE $table"));
+});
+
+Route::get('/debug/index/{table}', function ($table) {
+    return response()->json(DB::select("SHOW INDEX FROM $table"));
+});
+
+
+
 
 // Legacy AJAX Route for Category Menu
 Route::any('/main/category_search_initial', function (\Illuminate\Http\Request $request) {
@@ -315,3 +354,4 @@ Route::any('/main/category_search_initial', function (\Illuminate\Http\Request $
 
     return view('front.main.category_list', ['categories' => $categories]);
 })->name('main.category_initial');
+

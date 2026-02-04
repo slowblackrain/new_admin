@@ -63,7 +63,7 @@
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-bordered table-striped table-hover text-center" style="font-size: 13px;">
+                        <table class="table table-bordered table-striped table-hover text-center text-nowrap" style="font-size: 13px;">
                             <thead>
                                 <tr>
                                     <th>번호</th>
@@ -108,15 +108,19 @@
                                             @endif
                                         </td>
                                         <td>
-                                            @if(strpos($item->goods_status_info ?? '', 'runout_order') === false)
-                                                <button type="button" class="btn btn-sm btn-danger btn-runout" data-seq="{{ $item->goods_seq }}">
-                                                    단종요청
-                                                </button>
-                                            @else
-                                                <button type="button" class="btn btn-sm btn-secondary" disabled>
-                                                    요청완료
-                                                </button>
-                                            @endif
+                                            <div class="btn-group-vertical">
+                                                @if(strpos($item->goods_status_info ?? '', 'runout_order') === false)
+                                                    <button type="button" class="btn btn-sm btn-danger btn-runout mb-1" data-seq="{{ $item->goods_seq }}">
+                                                        단종요청
+                                                    </button>
+                                                @else
+                                                    <button type="button" class="btn btn-sm btn-secondary mb-1" disabled>
+                                                        요청완료
+                                                    </button>
+                                                @endif
+
+                                                @endif
+                                            </div>
                                         </td>
                                     </tr>
                                 @empty
@@ -145,7 +149,7 @@
                 
                 const goodsSeq = this.dataset.seq;
 
-                fetch('{{ route('seller.ats.runout') }}', {
+                fetch("{{ route('seller.ats.runout') }}", {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -166,6 +170,9 @@
                     console.error('Error:', error);
                     alert('서버 통신 중 오류가 발생했습니다.');
                 });
+            });
+        });
+
             });
         });
     });

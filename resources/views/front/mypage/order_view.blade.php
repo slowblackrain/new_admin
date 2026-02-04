@@ -170,7 +170,15 @@
                     @endif
 
                     {{-- Return/Exchange: After Delivery Complete (75) --}}
-                    {{-- 55=Shipping, 65=Delivered, 75=Complete. Usually can return after 55 or 65. --}}
+                    {{-- 55=Shipping, 65=Delivered, 75=Complete. usually 75 is Confirm. --}}
+                    {{-- If status is Delivered (65) or Shipping (55), allow Confirm --}}
+                    @if($step >= 55 && $step < 75)
+                         <form action="{{ route('mypage.order.confirm', $order->order_seq) }}" method="POST" style="display:inline-block;" onsubmit="return confirm('구매확정 하시겠습니까? 포인트가 지급되며 반품이 불가합니다.');">
+                            @csrf
+                            <button type="submit" class="btn_list" style="background:#4c24ab; border:1px solid #4c24ab;">구매확정</button>
+                         </form>
+                    @endif
+
                     @if($step >= 55 && $step < 80)
                         <a href="{{ route('mypage.claim.apply', ['orderSeq' => $order->order_seq, 'type' => 'return']) }}" 
                            class="btn_list" style="background:#fff; color:#333; border:1px solid #333;">반품신청</a>

@@ -8,10 +8,16 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Models\Seller;
 
+use App\Services\Agency\AgencyProductService;
+use Exception;
+
 class ATSController extends Controller
 {
-    public function __construct()
+    protected AgencyProductService $agencyService;
+
+    public function __construct(AgencyProductService $agencyService)
     {
+        $this->agencyService = $agencyService;
         // Middleware is handled in routes/seller.php
     }
 
@@ -37,7 +43,7 @@ class ATSController extends Controller
     private function getMemberSeq($provider_id)
     {
         $member = DB::table('fm_member')->where('userid', $provider_id)->first();
-        return $member ? $member->member_seq : null;
+        return $member ? $member->member_seq : 0; // Return 0 if null, or handle error
     }
 
     private function getATSStats($member_seq)
@@ -281,4 +287,6 @@ class ATSController extends Controller
 
         return response()->json(['status' => 'success']);
     }
+
+
 }

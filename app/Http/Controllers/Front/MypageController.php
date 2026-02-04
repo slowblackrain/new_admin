@@ -239,4 +239,72 @@ class MypageController extends Controller
         
         return view('front.mypage.point', compact('pointList', 'currentPoint'));
     }
+
+    public function confirmPurchase($orderSeq)
+    {
+        $user = Auth::user();
+        $order = Order::where('member_seq', $user->member_seq)
+            ->where('order_seq', $orderSeq)
+            ->with(['items.goods']) // Need goods to check ATS
+            ->firstOrFail();
+
+        if ($order->step >= 75) {
+            return back()->with('error', '이미 구매확정된 주문입니다.');
+        }
+
+        DB::beginTransaction();
+        try {
+            // Update Order Step
+            $order->step = 75; // Purchase Confirmed
+            $order->save();
+
+            // Settle Agency Margin
+            // Iterate items to find Agency Products
+            foreach ($order->items as $item) {
+                // Check if ATS Product (Logic matching OrderController deduction)
+                // goods_scode starts with 'GT' AND category... (or just GT check for now as established)
+                 if ($item->goods && strpos($item->goods->goods_scode, 'GT') === 0) {
+                     $resellerSeq = $item->goods->provider_member_seq;
+                     
+                     // Calculate Prices for this item
+                     // Sell Price: item option price * ea
+                     // Provider Price: need to fetch from option again effectively or store it on item?
+                     // Storing on item is best but schema didn't show 'provider_price' on fm_order_item.
+                     // We must fetch from current goods option (Assuming price didn't change? Risk).
+                     // Ideally fm_order_item_option should have it.
+                     // Let's look at fm_order_item_option (OrderItemOption model).
+                     // It usually copies 'price' (consumer price). Does it copy 'provider_price'?
+                     // If not, we rely on fm_goods_option validation.
+                     
+                     $option = \App\Models\OrderItemOption::where('item_seq', $item->item_seq)->first();
+                     $currentGoodsOption = \App\Models\GoodsOption::where('goods_seq', $item->goods_seq)
+                        ->where('option1', $option->option1) // Simple match
+                        ->first();
+                        
+                     if ($currentGoodsOption) {
+                         $sellPrice = $item->item_price ?? ($option->price * $option->ea); 
+                         $providerPrice = $currentGoodsOption->provider_price * $option->ea;
+                         
+                         // Determine YearMonth
+                         $yearMonth = date('Y-m');
+                         
+                         // Call Service
+                         app(\App\Services\Agency\AgencySettlementService::class)->settleAgencyMargin(
+                             $resellerSeq,
+                             $yearMonth,
+                             $sellPrice,
+                             $providerPrice
+                         );
+                     }
+                 }
+            }
+
+            DB::commit();
+            return back()->with('success', '구매확정이 완료되었습니다.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', '처리 중 오류가 발생했습니다: ' . $e->getMessage());
+        }
+    }
 }

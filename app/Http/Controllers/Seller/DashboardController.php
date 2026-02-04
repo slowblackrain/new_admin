@@ -27,6 +27,7 @@ class DashboardController extends Controller
         $fulfillmentSummary = $this->getFulfillmentSummary($memberSeq);
         $productSummary = $this->getATSProductSummary($seller->provider_seq);
         $purchaseStats = $this->getPurchaseStatistics($memberSeq);
+        $settlementSummary = $this->getSettlementSummary($memberSeq);
 
         // Notices (Keep existing logic)
         $notices = DB::table('fm_boarddata')
@@ -35,8 +36,21 @@ class DashboardController extends Controller
             ->orderBy('m_date', 'asc') 
             ->limit(5)
             ->get(); 
+            
+        // Failure Alerts
+        $failureAlerts = DB::table('fm_scm_order_fail_log as L')
+            ->leftJoin('fm_goods as G', 'L.goods_seq', '=', 'G.goods_seq')
+            ->where('L.provider_seq', $memberSeq)
+            ->where('L.is_checked', 'N')
+            ->orderBy('L.regist_date', 'desc')
+            ->select('L.*', 'G.goods_name')
+            ->get();
 
-        return view('seller.dashboard', compact('seller', 'memberData', 'assetSummary', 'fulfillmentSummary', 'productSummary', 'purchaseStats', 'notices'));
+        return view('seller.dashboard', compact(
+            'seller', 'memberData', 'assetSummary', 'fulfillmentSummary', 
+            'productSummary', 'purchaseStats', 'notices', 'settlementSummary',
+            'failureAlerts'
+        ));
     }
 
     private function getAssetSummary($memberSeq)
@@ -54,19 +68,41 @@ class DashboardController extends Controller
         ];
     }
 
+    private function getSettlementSummary($memberSeq)
+    {
+        if (!$memberSeq) return ['margin' => 0, 'settle_amount' => 0, 'month' => date('m')];
+
+        $currentMonth = date('Y-m');
+        
+        $data = DB::table('fm_account_provider_ats')
+            ->where('member_seq', $memberSeq)
+            ->where('acc_date', $currentMonth)
+            ->first();
+
+        return [
+            'margin' => $data->margin ?? 0,
+            // Settle Amount usually means what they get Paid relative to sales, 
+            // but margin is their profit. Let's show Margin and Sales Volume.
+            'sales_volume' => $data->sell_price ?? 0, 
+            'month' => date('m')
+        ];
+    }
+
     private function getFulfillmentSummary($memberSeq)
     {
         if (!$memberSeq) return [];
 
         // Definition of Status Groups for Reseller Purchase Orders
         // 15: Deposit Pending (Action Required)
-        // 25-45: Preparing (Processing by Dometopia)
+        // 25: Payment Confirmed (Ready to work)
+        // 35-45: Preparing (Processing by Dometopia)
         // 55-65: Shipping (On the way to end customer)
         // 75: Delivered
         // Returns/Refunds: Checked via fm_order_return / fm_order_refund joined with order
 
         $summary = [
             'deposit_pending' => 0,
+            'payment_confirmed' => 0,
             'preparing' => 0,
             'shipping' => 0,
             'completed' => 0,
@@ -82,15 +118,20 @@ class DashboardController extends Controller
             ->pluck('count', 'step');
 
         $summary['deposit_pending'] = $orderCounts->get('15', 0);
+        $summary['payment_confirmed'] = $orderCounts->get('25', 0);
         
-        // Processing (25, 35, 45)
-        $summary['preparing'] = ($orderCounts->get('25', 0) + $orderCounts->get('35', 0) + $orderCounts->get('45', 0));
+        // Processing (35, 40, 45, 50)
+        $summary['preparing'] = ($orderCounts->get('35', 0) + $orderCounts->get('40', 0) + $orderCounts->get('45', 0) + $orderCounts->get('50', 0));
         
-        // Shipping (55, 65)
-        $summary['shipping'] = ($orderCounts->get('55', 0) + $orderCounts->get('65', 0));
+        // Shipping (55, 60, 65, 70)
+        $summary['shipping'] = ($orderCounts->get('55', 0) + $orderCounts->get('60', 0) + $orderCounts->get('65', 0) + $orderCounts->get('70', 0) - $orderCounts->get('75', 0)); // 70 might be delivered too depending on legacy. 
+        // Re-read Order Model: 70=Delivered? No, 75=PurchaseConfirm, 70=Delivered usually.
+        // Order Model: 55=Shipped, 65=InTransit, 70=Delivered(sometimes), 75=PurchaseConfirm.
+        // Let's stick to safe groups.
+        $summary['shipping'] = ($orderCounts->get('55', 0) + $orderCounts->get('60', 0) + $orderCounts->get('65', 0));
         
-        // Completed (75)
-        $summary['completed'] = $orderCounts->get('75', 0);
+        // Completed (70, 75)
+        $summary['completed'] = ($orderCounts->get('70', 0) + $orderCounts->get('75', 0));
 
         // 2. Return/Refund Counts (Simplified check for any active return/refund linked to orders)
         // Ideally join fm_order_return -> fm_order where fm_order.member_seq = $memberSeq

@@ -8,7 +8,28 @@
 @section('content')
 <div class="container-fluid">
     <!-- Top: Asset Summary (Emoney & Cash) -->
+    
+    @if(isset($failureAlerts) && count($failureAlerts) > 0)
     <div class="row mb-3">
+        <div class="col-12">
+            <div class="alert alert-danger alert-dismissible">
+                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                <h5><i class="icon fas fa-ban"></i> 자동발주 실패 알림!</h5>
+                <ul class="mb-0">
+                    @foreach($failureAlerts as $alert)
+                        <li>
+                            [{{ substr($alert->regist_date, 5, 11) }}]
+                            <strong>{{ $alert->goods_name }}</strong> : {{ $alert->fail_reason }}
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        </div>
+    </div>
+    @endif
+    
+    <div class="row mb-3">
+        <!-- Asset Summary -->
         <div class="col-12 col-sm-6 col-md-3">
             <div class="info-box mb-3">
                 <span class="info-box-icon bg-warning elevation-1"><i class="fas fa-coins"></i></span>
@@ -28,12 +49,25 @@
                 </div>
             </div>
         </div>
-        <div class="col-12 col-md-6">
-            <div class="alert alert-light border" role="alert">
-                <strong>Welcome, {{ Auth::guard('seller')->user()->provider_name }}!</strong>
-                (Member Seq: {{ $memberData->member_seq ?? 'N/A' }})
-                <br>
-                <small class="text-muted">도매토피아의 상품을 공급받아 판매하는 리셀러 전용 대시보드입니다.</small>
+
+        <!-- Settlement Summary (New) -->
+        <div class="col-12 col-sm-6 col-md-3">
+             <div class="info-box mb-3">
+                <span class="info-box-icon bg-info elevation-1"><i class="fas fa-file-invoice-dollar"></i></span>
+                <div class="info-box-content">
+                    <span class="info-box-text">이번 달 예상 마진</span>
+                    <span class="info-box-number">{{ number_format($settlementSummary['margin']) }} 원</span>
+                    <span class="text-xs text-muted">{{ $settlementSummary['month'] }}월 확정 건 기준</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-3">
+             <div class="info-box mb-3">
+                <span class="info-box-icon bg-purple elevation-1"><i class="fas fa-won-sign"></i></span>
+                <div class="info-box-content">
+                    <span class="info-box-text">이번 달 정산 매출</span>
+                    <span class="info-box-number">{{ number_format($settlementSummary['sales_volume']) }} 원</span>
+                </div>
             </div>
         </div>
     </div>
@@ -54,7 +88,13 @@
                         <li class="nav-item">
                             <a href="#" class="nav-link">
                                 입금대기 (Deposit Pending)
-                                <span class="float-right badge bg-danger">{{ number_format($fulfillmentSummary['deposit_pending']) }}</span>
+                                <span class="float-right badge bg-secondary">{{ number_format($fulfillmentSummary['deposit_pending']) }}</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link font-weight-bold">
+                                결제확인 (Payment Confirmed)
+                                <span class="float-right badge bg-danger">{{ number_format($fulfillmentSummary['payment_confirmed']) }}</span>
                             </a>
                         </li>
                         <li class="nav-item">

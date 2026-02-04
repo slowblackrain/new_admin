@@ -6,8 +6,17 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Scm\ScmTrader;
 
+use App\Services\Agency\AgencySettlementService;
+
 class ScmOrderController extends Controller
 {
+    protected $agencySettlementService;
+
+    public function __construct(AgencySettlementService $agencySettlementService)
+    {
+        $this->agencySettlementService = $agencySettlementService;
+    }
+
     // Auto Order List (Balju Request)
     public function auto_order(Request $request)
     {
@@ -99,31 +108,23 @@ class ScmOrderController extends Controller
                 }
 
                 // 2. Check Agency Validation (Provider Cache)
+                // [Modified] Double Charging Prevention:
+                // Agency Cash is already deducted at Front/OrderController when order is placed.
+                // Therefore, we DO NOT deduct again here at Auto-Order creation.
+                /*
                 if ($goods->provider_seq > 1) { // 1 is Admin, >1 is Seller
-                    $provider = DB::table('fm_member')->where('member_seq', $goods->provider_seq)->first();
-                    $total_cost = $supply_price * $qty;
-
-                    if ($provider->cash < $total_cost) {
-                        $fail_count++;
-                        $fail_messages[] = "{$goods->goods_name}: 예치금 부족 (필요: {$total_cost}, 보유: {$provider->cash})";
-                        continue; // Skip this item
+                    // ...
+                    try {
+                        $this->agencySettlementService->deductAgencyCash(
+                            $sorder_seq,
+                            $goods->provider_seq,
+                            $total_cost
+                        );
+                    } catch (\Exception $e) {
+                         // ...
                     }
-
-                    // Deduct Cash
-                    DB::table('fm_member')->where('member_seq', $goods->provider_seq)->decrement('cash', $total_cost);
-
-                    // Log Cash
-                    DB::table('fm_cash')->insert([
-                        'member_seq' => $goods->provider_seq,
-                        'type' => 'order',
-                        'ordno' => $sorder_seq, // Using Batch ID for now
-                        'gb' => 'minus',
-                        'cash' => $total_cost,
-                        'memo' => "자동발주 차감 ({$goods->goods_name} x {$qty})",
-                        'regist_date' => now(),
-                        'manager_seq' => 1 // Temporary Admin
-                    ]);
                 }
+                */
 
                 // 3. Create Offer (Balju)
                 DB::table('fm_offer')->insert([

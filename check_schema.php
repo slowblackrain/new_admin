@@ -1,12 +1,13 @@
 <?php
-require 'c:/dometopia/new_admin/vendor/autoload.php';
-$app = require_once 'c:/dometopia/new_admin/bootstrap/app.php';
-$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
-$kernel->bootstrap();
-
+require __DIR__.'/vendor/autoload.php';
+$app = require_once __DIR__.'/bootstrap/app.php';
+$kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
+$response = $kernel->handle(
+    $request = Illuminate\Http\Request::capture()
+);
 use Illuminate\Support\Facades\DB;
 
-$cols = DB::select('DESCRIBE fm_goods');
-foreach($cols as $c) {
-    echo $c->Field . ' (' . $c->Type . ') ' . $c->Key . "\n";
+$columns = DB::select('DESCRIBE fm_offer');
+foreach ($columns as $col) {
+    echo $col->Field . "\n";
 }
