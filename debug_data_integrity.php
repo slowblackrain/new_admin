@@ -27,7 +27,13 @@ foreach ($links as $link) {
     $exists = DB::table('fm_category')->where('category_code', $link->category_code)->exists();
     if (!$exists) {
         $missingInCat++;
-        echo " - [MISSING] code {$link->category_code} exists in Link but NOT in fm_category\n";
+        // Find which goods have this bad link
+        $goodsIds = DB::table('fm_category_link')
+            ->where('category_code', $link->category_code)
+            ->pluck('goods_seq')
+            ->toArray();
+        $goodsList = implode(', ', array_slice($goodsIds, 0, 5));
+        echo " - [MISSING] code {$link->category_code} (Goods: $goodsList...)\n";
     } else {
          echo " - [OK] code {$link->category_code}\n";
     }

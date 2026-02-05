@@ -6,7 +6,7 @@ $kernel->handle(Illuminate\Http\Request::capture());
 
 use Illuminate\Support\Facades\DB;
 
-$cols = DB::select('SHOW COLUMNS FROM fm_goods');
+$cols = DB::select('SHOW COLUMNS FROM fm_scm_location_link');
 foreach ($cols as $col) {
     echo "Field: {$col->Field}, Type: {$col->Type}\n";
 }

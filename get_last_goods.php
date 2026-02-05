@@ -6,9 +6,4 @@ $response = $kernel->handle(
     $request = Illuminate\Http\Request::capture()
 );
 use Illuminate\Support\Facades\DB;
-$row = DB::table('fm_order_item')->first();
-if ($row) {
-    print_r(array_keys((array)$row));
-} else {
-    echo "No rows in fm_order_item.";
-}
+echo DB::table('fm_goods')->where('goods_name', 'DetailTestItem')->orderBy('goods_seq', 'desc')->value('goods_seq');

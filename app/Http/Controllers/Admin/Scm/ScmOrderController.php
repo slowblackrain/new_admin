@@ -1,165 +1,151 @@
 <?php
+
 namespace App\Http\Controllers\Admin\Scm;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Services\Scm\ScmOrderService;
+use Exception;
 use Illuminate\Support\Facades\DB;
-use App\Models\Scm\ScmTrader;
-
-use App\Services\Agency\AgencySettlementService;
 
 class ScmOrderController extends Controller
 {
-    protected $agencySettlementService;
+    protected $scmOrderService;
 
-    public function __construct(AgencySettlementService $agencySettlementService)
+    public function __construct(ScmOrderService $scmOrderService)
     {
-        $this->agencySettlementService = $agencySettlementService;
+        $this->scmOrderService = $scmOrderService;
     }
 
-    // Auto Order List (Balju Request)
-    public function auto_order(Request $request)
+    /**
+     * List SCM Orders
+     * GET /admin/scm/order
+     */
+    public function index(Request $request)
     {
-        // 1. Calculate Required Quantity based on Orders
-        // Orders: Payment Confirmed (step >= 25) AND Not Shipped (step < 75)
-        // Corrected to sum from order_item_option
-        $required = DB::table('fm_order_item as item')
-            ->join('fm_order_item_option as opt', 'item.item_seq', '=', 'opt.item_seq')
-            ->join('fm_order as ord', 'item.order_seq', '=', 'ord.order_seq')
-            ->select(
-                'item.goods_seq',
-                DB::raw('SUM(opt.ea) as required_qty')
-            )
-            ->where('ord.step', '>=', 25) 
-            ->where('ord.step', '<', 75)
-            ->groupBy('item.goods_seq');
+        // Fetch orders for demonstration
+        $orders = DB::table('fm_scm_order')->orderByDesc('sorder_seq')->get();
+        return view('admin.scm.order.index', compact('orders'));
+    }
 
-        // 2. Join with Goods Info, Current Stock, and Supplier Info
-        // Using Left Join for Supplier because some might not be mapped
-        $query = DB::table('fm_goods as g')
-            ->joinSub($required, 'req', function ($join) {
-                $join->on('g.goods_seq', '=', 'req.goods_seq');
-            })
-            ->leftJoin('fm_goods_supply as sup', 'g.goods_seq', '=', 'sup.goods_seq')
-            ->leftJoin('fm_scm_order_defaultinfo as def', function($join){
-                $join->on('g.goods_seq', '=', 'def.goods_seq')
-                     ->where('def.main_trade_type', 'Y');
-            })
-            ->leftJoin('fm_scm_trader as t', 'def.trader_seq', '=', 't.trader_seq')
-            ->select(
-                'g.goods_seq',
-                'g.goods_name',
-                'g.goods_code',
-                'g.regist_date',
-                'g.provider_seq',
-                'req.required_qty',
-                DB::raw('IFNULL(sup.stock, 0) as current_stock'),
-                't.trader_name',
-                't.trader_seq'
+    /**
+     * Create Auto Order Draft (Replicates add_auto_order_goods)
+     * POST /admin/scm/auto-order
+     */
+    public function storeAutoOrder(Request $request)
+    {
+        $request->validate([
+            'goods_seq' => 'required|integer',
+            'order_ea' => 'required|integer',
+            'option_seq' => 'required|integer',
+        ]);
+
+        try {
+            // Emulate data structure required by Service
+            $goodsInfo = [
+                'goods_seq' => $request->goods_seq,
+                'goods_name' => $request->input('goods_name', ''),
+                'goods_code' => $request->input('goods_code', ''),
+            ];
+
+            $orderOption = [
+                'order_seq' => $request->input('order_seq', 0),
+                'order_ea' => $request->order_ea,
+            ];
+
+            $goodsOption = [
+                'option_seq' => $request->option_seq,
+                'option_type' => $request->input('option_type', 'option'),
+                'consumer_price' => $request->input('consumer_price', 0),
+                'price' => $request->input('price', 0),
+                'stock' => $request->input('stock', 0),
+                'badstock' => $request->input('badstock', 0),
+                'safe_stock' => $request->input('safe_stock', 0),
+                'reservation25' => $request->input('reservation25', 0),
+                'suboption_code' => $request->input('suboption_code', ''),
+                'suboption' => $request->input('suboption', ''),
+                // Add loop for option1..5 if needed, assumed empty for test if not provided
+            ];
+            for($i=1; $i<=5; $i++) {
+                $goodsOption['option'.$i] = $request->input('option'.$i, '');
+                $goodsOption['optioncode'.$i] = $request->input('optioncode'.$i, '');
+            }
+
+            $result = $this->scmOrderService->createAutoOrderDraft(
+                $goodsInfo, 
+                $orderOption, 
+                $goodsOption, 
+                $request->boolean('compulsion')
             );
 
-        // Apply Search Filters
-        if ($request->keyword) {
-            $query->where('g.goods_name', 'like', "%{$request->keyword}%");
-        }
-        if ($request->trader_seq) {
-            $query->where('t.trader_seq', $request->trader_seq);
-        }
+            if ($result) {
+                return response()->json(['success' => true, 'id' => $result, 'message' => 'Auto order draft created successfully.']);
+            } else {
+                return response()->json(['success' => false, 'message' => 'Auto order condition not met (Stock sufficient).'], 200);
+            }
 
-        $items = $query->paginate(50);
-        $traders = ScmTrader::where('trader_use', 'Y')->get();
-
-        return view('admin.scm.order.auto', compact('items', 'traders'));
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
     }
 
-    public function create_auto_order(Request $request)
+    /**
+     * Confirm selected Auto Orders (Draft -> Real Order)
+     * POST /admin/scm/order/confirm
+     */
+    public function confirm(Request $request)
     {
-        $orders = $request->input('orders'); // Array of [goods_seq => qty]
-        
-        if (!$orders || !is_array($orders)) {
-            return back()->with('error', '선택된 상품이 없습니다.');
-        }
+        $request->validate([
+            'aoo_seqs' => 'required|array',
+            'aoo_seqs.*' => 'integer'
+        ]);
 
-        DB::beginTransaction();
         try {
-            $sorder_seq = time(); // Simple Batch ID
-            $success_count = 0;
-            $fail_count = 0;
-            $fail_messages = [];
-
-            foreach ($orders as $goods_seq => $qty) {
-                if ($qty <= 0) continue;
-
-                $goods = DB::table('fm_goods')->where('goods_seq', $goods_seq)->first();
-                if (!$goods) continue;
-
-                // 1. Get Trader Info
-                $defaultInfo = DB::table('fm_scm_order_defaultinfo')
-                    ->where('goods_seq', $goods_seq)
-                    ->where('main_trade_type', 'Y')
-                    ->first();
-                $trader_seq = $defaultInfo ? $defaultInfo->trader_seq : 0;
-                $supply_price = $defaultInfo ? $defaultInfo->supply_price : 0;
-
-                // Fallback supply price if 0 (approx from consumer price)
-                if ($supply_price == 0) {
-                     $option = DB::table('fm_goods_option')->where('goods_seq', $goods_seq)->where('default_option', 'y')->first();
-                     if($option) $supply_price = $option->consumer_price * 0.9;
-                }
-
-                // 2. Check Agency Validation (Provider Cache)
-                // [Modified] Double Charging Prevention:
-                // Agency Cash is already deducted at Front/OrderController when order is placed.
-                // Therefore, we DO NOT deduct again here at Auto-Order creation.
-                /*
-                if ($goods->provider_seq > 1) { // 1 is Admin, >1 is Seller
-                    // ...
-                    try {
-                        $this->agencySettlementService->deductAgencyCash(
-                            $sorder_seq,
-                            $goods->provider_seq,
-                            $total_cost
-                        );
-                    } catch (\Exception $e) {
-                         // ...
-                    }
-                }
-                */
-
-                // 3. Create Offer (Balju)
-                DB::table('fm_offer')->insert([
-                    'sorder_seq' => $sorder_seq,
-                    'goods_seq' => $goods_seq,
-                    'trader_seq' => $trader_seq,
-                    'step' => 1, // Order Placed
-                    'ord_stock' => $qty,
-                    'ord_date' => now(), // Simple Date
-                    'order_date' => now(),
-                    'regist_date' => now(),
-                    'update_date' => now(),
-                    'offer_cn' => '', // Init
-                    'visitant' => 'Auto',
-                    'offer_box' => 0,
-                    'ord_total' => $qty . '|0|0', // Init format
-                    'provider_chk' => ($goods->provider_seq > 1) ? 'checked' : 'none'
-                ]);
-
-                $success_count++;
+            $createdIds = $this->scmOrderService->confirmAutoOrders($request->aoo_seqs);
+            
+            if (empty($createdIds)) {
+                return response()->json(['success' => false, 'message' => 'No orders created found.'], 404);
             }
 
-            DB::commit();
+            return response()->json([
+                'success' => true, 
+                'message' => count($createdIds) . ' Orders created successfully.',
+                'order_seqs' => $createdIds
+            ]);
 
-            $msg = "발주 $success_count 건 생성 완료.";
-            if ($fail_count > 0) {
-                $msg .= " 실패 $fail_count 건 (" . implode(", ", $fail_messages) . ")";
-                return redirect()->route('admin.scm_order.auto')->with('warning', $msg);
-            }
+        } catch (Exception $e) {
+             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
 
-            return redirect()->route('admin.scm_order.auto')->with('success', $msg);
+    /**
+     * Process Warehousing (Receive Goods)
+     * POST /admin/scm/order/receive
+     */
+    public function receive(Request $request)
+    {
+        $request->validate([
+            'sorder_seq' => 'required|integer',
+            'items' => 'required|array',
+            'items.*.goods_seq' => 'required|integer',
+            'items.*.option_seq' => 'required|integer',
+            'items.*.ea' => 'required|integer|min:1',
+        ]);
 
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->with('error', '발주 생성 중 오류가 발생했습니다: ' . $e->getMessage());
+        try {
+            $whsSeq = $this->scmOrderService->processWarehousing(
+                $request->sorder_seq,
+                $request->items
+            );
+            
+            return response()->json([
+                'success' => true, 
+                'message' => 'Warehousing successful.',
+                'whs_seq' => $whsSeq
+            ]);
+
+        } catch (Exception $e) {
+             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 }

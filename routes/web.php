@@ -11,6 +11,7 @@ use App\Http\Controllers\Front\OrderController;
 use App\Http\Controllers\Front\MypageController;
 use App\Http\Controllers\Front\BoardController;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use App\Models\Goods;
 require __DIR__.'/seller.php';
 require __DIR__.'/admin.php';
@@ -178,7 +179,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         // Bulk Operations
         Route::get('batch_modify', [App\Http\Controllers\Admin\Goods\GoodsBatchController::class, 'batch_modify'])->name('batch_modify');
+        Route::get('batch_modify', [App\Http\Controllers\Admin\Goods\GoodsBatchController::class, 'batch_modify'])->name('batch_modify');
         Route::post('batch_save', [App\Http\Controllers\Admin\Goods\GoodsBatchController::class, 'save_batch'])->name('batch_save');
+        
+        // SCM Goods Features
+        Route::get('excel_download', [App\Http\Controllers\Admin\Scm\ScmManageController::class, 'goods_excel_download'])->name('excel_download');
+        Route::get('excel', function() { return "Excel Batch Edit Pending"; })->name('excel');
     });
 
     // SCM Basic
@@ -222,11 +228,27 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('revision', [App\Http\Controllers\Admin\Scm\ScmManageController::class, 'revision'])->name('revision');
         Route::post('save_revision', [App\Http\Controllers\Admin\Scm\ScmManageController::class, 'save_revision'])->name('save_revision');
         Route::get('ledger', [App\Http\Controllers\Admin\Scm\ScmManageController::class, 'ledger'])->name('ledger');
+        
+        // Revision Excel
+        Route::get('revision/sample', [App\Http\Controllers\Admin\Scm\ScmManageController::class, 'revision_excel_sample'])->name('revision.sample');
+        Route::post('revision/excel', [App\Http\Controllers\Admin\Scm\ScmManageController::class, 'save_revision_excel'])->name('revision.excel');
+
+        // In/Out History
+        Route::get('inout_catalog', [App\Http\Controllers\Admin\Scm\ScmManageController::class, 'inout_catalog'])->name('inout_catalog');
+        Route::get('inout_catalog/excel', [App\Http\Controllers\Admin\Scm\ScmManageController::class, 'inout_catalog_excel'])->name('inout_catalog.excel');
 
         // Stock Move
         Route::get('stockmove', [App\Http\Controllers\Admin\Scm\ScmManageController::class, 'stockmove'])->name('stockmove');
-        Route::get('stockmove/regist', [App\Http\Controllers\Admin\Scm\ScmManageController::class, 'stockmove_regist'])->name('stockmove.regist');
-        Route::post('stockmove/save', [App\Http\Controllers\Admin\Scm\ScmManageController::class, 'stockmove_save'])->name('stockmove.save');
+        // Goods Process::get('stockmove_regist/{seq?}', [App\Http\Controllers\Admin\Scm\ScmManageController::class, 'stockmove_regist'])->name('stockmove_regist');
+        Route::post('save_stockmove', [App\Http\Controllers\Admin\Scm\ScmManageController::class, 'save_stockmove'])->name('save_stockmove');
+
+        // Ledger
+        Route::get('ledger', [App\Http\Controllers\Admin\Scm\ScmManageController::class, 'ledger'])->name('ledger');
+        Route::get('ledger_print', [App\Http\Controllers\Admin\Scm\ScmManageController::class, 'ledger_print'])->name('ledger_print');
+        Route::get('ledger_detail', [App\Http\Controllers\Admin\Scm\ScmManageController::class, 'ledger_detail'])->name('ledger_detail');
+        
+        // Goods Process
+        Route::post('process/auto_order', [App\Http\Controllers\Admin\Scm\ScmManageController::class, 'process_auto_order'])->name('process.auto_order');
     });
 
     // SCM Settlement

@@ -17,7 +17,9 @@ return [
     'scmmanage_group' => [
         'name' => '재고관리',
         'items' => [
-            ['name' => '재고조정', 'url' => '/admin/scm_manage/revision'],
+            ['name' => '재고조정', 'url' => '/admin/scm/manage/revision'],
+            ['name' => '상품 재고 관리', 'url' => '/admin/scm/manage/goods'],
+            ['name' => '기간별 수불부 집계', 'url' => '/admin/scm/manage/inout_catalog'],
         ]
     ],
     // [발주/입고] scmwarehousing

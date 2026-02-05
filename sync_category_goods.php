@@ -91,6 +91,11 @@ foreach ($cats as $cat) {
 }
 echo "Synced " . count($cats) . " categories.\n";
 
+// --- 1.5 Cache Valid Categories ---
+$validCategories = $localPdo->query("SELECT category_code FROM fm_category")->fetchAll(PDO::FETCH_COLUMN);
+$validCategoryMap = array_flip($validCategories);
+echo "Cached " . count($validCategories) . " valid local categories for integrity check.\n";
+
 // --- 2. Fetch Target Goods Seqs ---
 echo "Fetching 100 Goods Seqs for Category $targetCode...\n";
 // Get links first
@@ -136,10 +141,29 @@ foreach ($targetGoodsSeqs as $seq) {
     $stmt->execute([$seq]);
     $links = $stmt->fetchAll();
     $localPdo->prepare("DELETE FROM fm_category_link WHERE goods_seq = ?")->execute([$seq]);
-    foreach ($links as $link) upsert($localPdo, 'fm_category_link', $link, 'link_seq');
+    
+    $skippedLinks = 0;
+    foreach ($links as $link) {
+        if (!isset($validCategoryMap[$link['category_code']])) {
+            $skippedLinks++;
+            continue; // Skip orphan link
+        }
+        upsert($localPdo, 'fm_category_link', $link, 'link_seq');
+    }
+    if ($skippedLinks > 0) {
+        echo " - Goods $seq: Skipped $skippedLinks orphaned category links.\n";
+    }
 }
 
-// --- 4. Repair/Ensure Category 0001 Exists Locally ---
+// --- 4. Global Cleanup of Orphaned Links (0001%) ---
+echo "Performing final cleanup of orphaned links...\n";
+$siteCode = '0001';
+$deleted = $localPdo->exec("DELETE FROM fm_category_link WHERE category_code LIKE '{$siteCode}%' AND category_code NOT IN (SELECT category_code FROM fm_category WHERE category_code IS NOT NULL)");
+if ($deleted > 0) {
+    echo "Removed $deleted orphaned category links from the database.\n";
+}
+
+// --- 5. Repair/Ensure Category 0001 Exists Locally ---
 echo "Repairing local Category 0001...\n";
 $localPdo->exec("INSERT IGNORE INTO fm_category (category_code, title, parent_id, level, position, hide, hide_in_navigation) VALUES ('0001', 'Test Category (Synced)', 0, 1, 1, '0', '0')");
 

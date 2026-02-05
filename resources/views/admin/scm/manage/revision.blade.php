@@ -41,6 +41,37 @@
                         </div>
                     </form>
 
+                    <!-- Excel Upload Section -->
+                    <div class="card card-secondary collapsed-card mb-3">
+                        <div class="card-header">
+                            <h3 class="card-title">엑셀 일괄 조정 (Excel Bulk Revision)</h3>
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-plus"></i></button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <form action="{{ route('admin.scm_manage.revision.excel') }}" method="post" enctype="multipart/form-data" class="form-inline">
+                                @csrf
+                                <div class="form-group mr-2">
+                                    <a href="{{ route('admin.scm_manage.revision.sample') }}" class="btn btn-info btn-sm">
+                                        <i class="fas fa-download"></i> 샘플 양식 다운로드
+                                    </a>
+                                </div>
+                                <div class="form-group mr-2">
+                                    <label for="excelFile" class="mr-2">파일 선택:</label>
+                                    <input type="file" name="revision_excel_file" id="excelFile" class="form-control-file" required>
+                                </div>
+                                <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('일괄 조정을 진행하시겠습니까?');">
+                                    <i class="fas fa-file-upload"></i> 일괄 업로드
+                                </button>
+                                <small class="text-muted ml-3">
+                                    * A열: 시스템코드, B열: 상품코드(필수), C열: 목표수량(필수)<br>
+                                    * 목표수량과 현재수량의 차이만큼 자동 조정됩니다.
+                                </small>
+                            </form>
+                        </div>
+                    </div>
+
                     <table class="table table-bordered table-hover">
                         <thead>
                             <tr>

@@ -1,84 +1,175 @@
 @extends('admin.layouts.admin')
 
 @section('content')
-<div class="content-wrapper">
-    <div class="content-header">
-        <div class="container-fluid">
-            <h1 class="m-0">재고 수불부 (Stock Ledger)</h1>
+<div class="row">
+    <div class="col-12">
+        <h2 class="h3 mb-4 page-title">재고 수불부 (Stock Ledger)</h2>
+        
+        <!-- Search Filter -->
+        <div class="card shadow mb-4">
+            <div class="card-header">
+                <strong class="card-title">검색 조건</strong>
+            </div>
+            <div class="card-body">
+                <form action="{{ route('admin.scm_manage.ledger') }}" method="GET" class="form-inline">
+                    <div class="form-group mr-2">
+                        <label for="sc_sdate" class="mr-2">기간</label>
+                        <input type="date" class="form-control" id="sc_sdate" name="sc_sdate" value="{{ $filters['start_date'] }}">
+                        <span class="mx-2">~</span>
+                        <input type="date" class="form-control" id="sc_edate" name="sc_edate" value="{{ $filters['end_date'] }}">
+                    </div>
+
+                    <div class="form-group mx-2">
+                        <label for="wh_seq" class="mr-2">창고</label>
+                        <select class="form-control" id="wh_seq" name="wh_seq">
+                            <option value="">전체 창고</option>
+                            @foreach($warehouses as $wh)
+                                <option value="{{ $wh->wh_seq }}" {{ $filters['wh_seq'] == $wh->wh_seq ? 'selected' : '' }}>
+                                    {{ $wh->wh_name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="form-group mx-2">
+                        <label for="keyword" class="mr-2">검색어</label>
+                        <input type="text" class="form-control" id="keyword" name="keyword" value="{{ $filters['keyword'] }}" placeholder="상품명/코드">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary ml-2">검색</button>
+                    <a href="{{ route('admin.scm_manage.ledger') }}" class="btn btn-secondary ml-2">초기화</a>
+                </form>
+            </div>
+                </form>
+            </div>
+            <div class="card-footer clearfix text-right">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="openLedgerPrint();">
+                    <i class="fas fa-print"></i> 인쇄
+                </button>
+            </div>
         </div>
-    </div>
 
-    <section class="content">
-        <div class="container-fluid">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">재고 변동 이력 (입고/조정)</h3>
-                </div>
-                <div class="card-body">
-                    <!-- Search Form -->
-                    <form method="get" class="mb-3">
-                        <div class="row">
-                            <div class="col-md-5">
-                                <input type="text" name="keyword" class="form-control" placeholder="상품명/코드 검색" value="{{ request('keyword') }}">
-                            </div>
-                            <div class="col-md-2">
-                                <button type="submit" class="btn btn-primary">검색</button>
-                            </div>
-                        </div>
-                    </form>
-
-                    <table class="table table-bordered table-hover">
-                        <thead>
+        <!-- Ledger Table -->
+        <div class="card shadow">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover text-center">
+                        <thead class="thead-light">
                             <tr>
-                                <th style="width: 100px">구분</th>
-                                <th style="width: 180px">일자</th>
-                                <th>상품 정보</th>
-                                <th style="width: 120px">변동 수량</th>
-                                <th>비고 / 관련 코드</th>
+                                <th rowspan="2" style="vertical-align: middle;">일자</th>
+                                <th rowspan="2" style="vertical-align: middle;">상품명 / 코드 [카테고리]</th>
+                                <th colspan="3">기초 재고 (Previous)</th>
+                                <th colspan="3">입고 (In)</th>
+                                <th colspan="3">출고 (Out)</th>
+                                <th colspan="3">기말 재고 (Current)</th>
+                            </tr>
+                            <tr>
+                                <!-- Pre -->
+                                <th>수량</th>
+                                <th>단가</th>
+                                <th>금액</th>
+                                <!-- In -->
+                                <th>수량</th>
+                                <th>단가</th> <!-- Actually Total/Qty -->
+                                <th>금액</th>
+                                <!-- Out -->
+                                <th>수량</th>
+                                <th>단가</th> <!-- Avg Cost -->
+                                <th>금액</th>
+                                <!-- Cur -->
+                                <th>수량</th>
+                                <th>단가</th>
+                                <th>금액</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($logs as $log)
-                            <tr>
-                                <td class="text-center">
-                                    @if($log->type == '입고')
-                                        <span class="badge badge-success">입고</span>
-                                    @elseif($log->type == '조정')
-                                        <span class="badge badge-warning">조정</span>
-                                    @else
-                                        <span class="badge badge-secondary">{{ $log->type }}</span>
-                                    @endif
-                                </td>
-                                <td>{{ $log->date }}</td>
-                                <td>
-                                    <strong>{{ $log->goods_name }}</strong><br>
-                                    <small class="text-muted">{{ $log->goods_code }}</small>
-                                </td>
-                                <td class="text-right">
-                                    @if($log->qty > 0)
-                                        <span class="text-success">+{{ number_format($log->qty) }}</span>
-                                    @elseif($log->qty < 0)
-                                        <span class="text-danger">{{ number_format($log->qty) }}</span>
-                                    @else
-                                        <span class="text-muted">0</span>
-                                    @endif
-                                </td>
-                                <td>{{ $log->note }}</td>
-                            </tr>
+                                <tr>
+                                    <td>{{ $log->ldg_date }}</td>
+                                    <td class="text-left" onclick="sel_ledger('{{ $log->goods_seq }}', 'option', '{{ $log->option_seq ?? 0 }}', '{{ $log->calc_out_unit_price }}')" style="cursor:pointer; color:#007bff;">
+                                        <div class="font-weight-bold">{{ $log->goods_name }}</div>
+                                        <div class="small text-muted">{{ $log->goods_code }}</div>
+                                        @if($log->scm_category)
+                                            <span class="badge badge-light">{{ $log->scm_category }}</span>
+                                        @endif
+                                    </td>
+                                    
+                                    <!-- Pre -->
+                                    <td>{{ number_format($log->pre_ea) }}</td>
+                                    <td>{{ number_format($log->pre_supply_price) }}</td>
+                                    <td>{{ number_format($log->calc_pre_price) }}</td>
+
+                                    <!-- In -->
+                                    <td>{{ number_format($log->in_ea) }}</td>
+                                    <td>
+                                        @if($log->in_ea > 0)
+                                            {{ number_format($log->calc_in_price / $log->in_ea) }}
+                                        @else
+                                            0
+                                        @endif
+                                    </td>
+                                    <td>{{ number_format($log->calc_in_price) }}</td>
+
+                                    <!-- Out (Calculated Avg Cost) -->
+                                    <td>{{ number_format($log->out_ea) }}</td>
+                                    <td class="text-primary font-weight-bold">{{ number_format($log->calc_out_unit_price) }}</td>
+                                    <td>{{ number_format($log->calc_out_price) }}</td>
+
+                                    <!-- Cur -->
+                                    <td>{{ number_format($log->cur_ea) }}</td>
+                                    <td class="text-primary font-weight-bold">{{ number_format($log->calc_cur_unit_price) }}</td>
+                                    <td>{{ number_format($log->calc_cur_price) }}</td>
+                                </tr>
                             @empty
-                            <tr>
-                                <td colspan="5" class="text-center py-4">조회된 이력이 없습니다.</td>
-                            </tr>
+                                <tr>
+                                    <td colspan="14" class="text-center py-4">조회된 데이터가 없습니다.</td>
+                                </tr>
                             @endforelse
                         </tbody>
                     </table>
-                    
-                    <div class="mt-3">
-                        {{ $logs->links() }}
-                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    {{ $logs->appends($filters)->links() }}
                 </div>
             </div>
         </div>
-    </section>
+    </div>
 </div>
+@section('custom_js')
+<script>
+    function sel_ledger(goods_seq, option_type, option_seq, price) {
+        var sdate = document.getElementById('sc_sdate').value;
+        var edate = document.getElementById('sc_edate').value;
+        var wh_seq = document.getElementById('wh_seq').value;
+        
+        var url = "{{ route('admin.scm_manage.ledger_detail') }}";
+        url += "?goods_seq=" + goods_seq;
+        url += "&option_type=" + option_type;
+        url += "&option_seq=" + option_seq; // Pass option_seq for specific SKU history
+        url += "&out_supply_price=" + price;
+        url += "&sc_sdate=" + sdate;
+        url += "&sc_edate=" + edate;
+        url += "&wh_seq=" + wh_seq;
+
+        // Open popup
+        window.open(url, 'ledger_detail', 'width=1000,height=800,accumulate=yes,scrollbars=yes,resizable=yes');
+    }
+
+    function openLedgerPrint() {
+        var sdate = document.getElementById('sc_sdate').value;
+        var edate = document.getElementById('sc_edate').value;
+        var wh_seq = document.getElementById('wh_seq').value;
+        var keyword = document.getElementById('keyword').value;
+
+        var url = "{{ route('admin.scm_manage.ledger_print') }}";
+        url += "?sc_sdate=" + sdate;
+        url += "&sc_edate=" + edate;
+        url += "&wh_seq=" + wh_seq;
+        url += "&keyword=" + encodeURIComponent(keyword);
+
+        window.open(url, 'ledger_print', 'width=1000,height=800,accumulate=yes,scrollbars=yes,resizable=yes');
+    }
+</script>
+@endsection
 @endsection

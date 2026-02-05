@@ -152,6 +152,28 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
                 // Ledger
                 Route::get('ledger', [\App\Http\Controllers\Admin\Scm\ScmManageController::class, 'ledger'])->name('ledger');
+                
+                // Inventory Asset Report
+                Route::get('inven', [\App\Http\Controllers\Admin\Scm\ScmManageController::class, 'inven'])->name('inven');
+                
+                // Inventory In/Out History (Period Summary)
+                Route::get('inout_catalog', [\App\Http\Controllers\Admin\Scm\ScmManageController::class, 'inout_catalog'])->name('inout_catalog');
+                
+                // SCM Goods List
+                Route::get('goods', [\App\Http\Controllers\Admin\Scm\ScmManageController::class, 'goods'])->name('goods');
+
+                // Ledger Detail Logic
+                Route::get('ledger_detail', [\App\Http\Controllers\Admin\Scm\ScmManageController::class, 'ledger_detail'])->name('ledger_detail');
+            });
+
+            // Order
+            Route::prefix('order')->name('order.')->group(function() {
+                Route::get('list', [\App\Http\Controllers\Admin\Scm\ScmOrderController::class, 'index'])->name('list');
+                Route::post('auto-order', [\App\Http\Controllers\Admin\Scm\ScmOrderController::class, 'storeAutoOrder'])->name('store_auto_order');
+                Route::post('confirm', [\App\Http\Controllers\Admin\Scm\ScmOrderController::class, 'confirm'])->name('confirm');
+                Route::post('receive', [\App\Http\Controllers\Admin\Scm\ScmOrderController::class, 'receive'])->name('receive');
+                Route::post('carryingout', [\App\Http\Controllers\Admin\Scm\ScmCarryingOutController::class, 'store'])->name('store_carryingout');
+                Route::post('revision', [\App\Http\Controllers\Admin\Scm\ScmRevisionController::class, 'store'])->name('store_revision');
             });
         });
     });
