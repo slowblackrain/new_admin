@@ -16,6 +16,88 @@ class ScmOrderService
     {
         $this->ledgerService = $ledgerService;
     }
+
+    /**
+     * Get Order List with Filtering
+     */
+    public function getOrderList(array $filters)
+    {
+        $query = DB::table('fm_scm_order as o')
+            ->select('o.*', 't.trader_name')
+            ->leftJoin('fm_scm_trader as t', 'o.trader_seq', '=', 't.trader_seq');
+
+        // Date Filter
+        if (!empty($filters['sc_sdate']) && !empty($filters['sc_edate'])) {
+            $dateField = $filters['sc_date_fld'] ?? 'regist_date';
+            $query->whereBetween("o.{$dateField}", [$filters['sc_sdate'] . ' 00:00:00', $filters['sc_edate'] . ' 23:59:59']);
+        }
+
+        // Status Filter
+        if (isset($filters['sc_sorder_status']) && $filters['sc_sorder_status'] !== '') {
+            $query->where('o.sorder_status', $filters['sc_sorder_status']);
+        }
+
+        // Keyword Filter
+        if (!empty($filters['keyword'])) {
+             $keyword = $filters['keyword'];
+             $query->where(function($q) use ($keyword) {
+                 $q->where('o.sorder_code', 'like', "%{$keyword}%")
+                   ->orWhere('t.trader_name', 'like', "%{$keyword}%");
+             });
+        }
+        
+        return $query->orderByDesc('o.sorder_seq')->paginate($filters['per_page'] ?? 20);
+    }
+    /**
+     * Get Order Data with Items
+     */
+    public function getOrderData($sorderSeq)
+    {
+        $order = DB::table('fm_scm_order')->where('sorder_seq', $sorderSeq)->first();
+        if (!$order) return null;
+
+        $items = DB::table('fm_scm_order_goods')
+            ->where('sorder_seq', $sorderSeq)
+            ->get();
+
+        $order->items = $items;
+        return $order;
+    }
+
+    /**
+     * Get Auto Order Candidate List
+     * Listing items where Stock < Safe Stock
+     */
+    public function getAutoOrderList($filters)
+    {
+        // Logic similar to ScmGoodsService but focused on reordering
+        $query = DB::table('fm_goods as g')
+            ->join('fm_goods_option as o', 'g.goods_seq', '=', 'o.goods_seq')
+            ->join('fm_goods_supply as s', function($join) {
+                $join->on('g.goods_seq', '=', 's.goods_seq')
+                     ->on('o.option_seq', '=', 's.option_seq');
+            })
+            ->select(
+                'g.goods_seq', 'g.goods_name', 'g.goods_code',
+                'o.option_seq', 'o.option_name', 'o.option_code', 'o.consumer_price', 'o.price',
+                's.supply_price', 's.stock', 's.safe_stock', 's.badstock', 's.total_stock'
+            )
+            // Filtering for Auto Order Candidates
+            ->where('s.safe_stock', '>', 0) // Only items with safe stock set
+            ->whereRaw('(s.stock) < s.safe_stock'); // Condition: Current < Safe
+
+        // Keyword Filter
+        if (!empty($filters['keyword'])) {
+             $keyword = $filters['keyword'];
+             $query->where(function($q) use ($keyword) {
+                 $q->where('g.goods_name', 'like', "%{$keyword}%")
+                   ->orWhere('g.goods_code', 'like', "%{$keyword}%");
+             });
+        }
+        
+        return $query->paginate($filters['per_page'] ?? 50);
+    }
+
     /**
      * Confirm selected Auto Order Drafts and convert them to Real Orders (Sorders)
      * Groups by Trader and creates fm_scm_order + fm_scm_order_goods.
@@ -102,133 +184,7 @@ class ScmOrderService
         return $createdOrderSeqs;
     }
 
-    /**
-     * Process Warehousing (Receive Goods)
-     * Handles Stock Update, Warehousing History, and Order Status Update.
-     * Supports Partial Warehousing.
-     * 
-     * @param int $sorderSeq
-     * @param array $items Array of ['goods_seq', 'option_seq', 'ea', 'option_type']
-     * @return int Warehousing Header ID (whs_seq)
-     */
-    public function processWarehousing($sorderSeq, array $items)
-    {
-        if (empty($items)) throw new Exception("No items provided for warehousing.");
 
-        // Fetch Order Info
-        $order = DB::table('fm_scm_order')->where('sorder_seq', $sorderSeq)->first();
-        if (!$order) throw new Exception("Order not found.");
-
-        $whsSeq = 0;
-
-        DB::transaction(function() use ($sorderSeq, $items, $order, &$whsSeq) {
-            // 1. Create Warehousing Header
-            // Generate Code: WHS + Type(Manual:M/Auto:A?) + Date + Random
-            // Legacy uses 'E' for Exception/Manual, otherwise Standard. 
-            // Assuming Standard for Order Processing.
-            $whsCode = 'WHS' . 'S' . date('YmdHis') . rand(100,999);
-            
-            // Calculate Total Price for Header
-            $totalPrice = 0; 
-            // Fetch prices from items... simplifying by summing up supplied items for now 
-            // or we could fetch from DB. Let's calculate on the fly for history.
-
-            $totalPrice = 0; 
-            // Fetch prices from items... simplifying by summing up supplied items for now 
-            // or we could fetch from DB. Let's calculate on the fly for history.
-
-            $whsSeq = DB::table('fm_scm_warehousing')->insertGetId([
-                'whs_code' => $whsCode,
-                'whs_type' => 'S', // Standard
-                'whs_status' => '1', // Complete
-                'trader_seq' => $order->trader_seq,
-                'sorder_seq' => $sorderSeq,
-                'wh_seq' => 1, // Default to 1
-                'regist_date' => Carbon::now(),
-                'complete_date' => Carbon::now(), // Immediate complete
-            ]);
-
-            $ledgerTargets = [];
-
-            foreach ($items as $item) {
-                // Validate Item belongs to Order
-                $orderItem = DB::table('fm_scm_order_goods')
-                    ->where('sorder_seq', $sorderSeq)
-                    ->where('goods_seq', $item['goods_seq'])
-                    ->where('option_seq', $item['option_seq'])
-                    ->first();
-                
-                if (!$orderItem) continue; // Skip invalid
-
-                $ea = intval($item['ea']);
-                if ($ea <= 0) continue;
-
-                // 2. Insert Warehousing Goods History
-                // Need to fetch supply price from order item to record cost
-                DB::table('fm_scm_warehousing_goods')->insert([
-                    'whs_seq' => $whsSeq,
-                    'goods_seq' => $item['goods_seq'],
-                    'option_seq' => $item['option_seq'],
-                    'option_type' => $orderItem->option_type,
-                    'ea' => $ea,
-                    'supply_price' => $orderItem->supply_price,
-                    'krw_supply_price' => $orderItem->krw_supply_price, 
-                    'location_code' => '1-1-1', 
-                    'location_position' => '1-1-1',
-                ]);
-
-                // 3. Update Order Goods (Warehoused Qty)
-                DB::table('fm_scm_order_goods')
-                    ->where('sorder_seq', $sorderSeq)
-                    ->where('goods_seq', $item['goods_seq'])
-                    ->where('option_seq', $item['option_seq'])
-                    ->increment('whs_ea', $ea);
-
-                // 4. Update Stock (fm_goods_supply)
-                // Assuming we use Total Stock or specific option stock. 
-                // Defaulting to increasing 'stock' column.
-                // NOTE: Legacy change_store_stock is encrypted. 
-                // Standard logic: Update stock specific to option.
-                 DB::table('fm_goods_supply')
-                    ->where('goods_seq', $item['goods_seq'])
-                    ->where('option_seq', $item['option_seq'])
-                    ->increment('stock', $ea);
-
-                 // Also update total_stock? 
-                 // Legacy likely has triggers or manual update. 
-                 // Let's safe update total_stock if it exists and looks redundant
-                 DB::table('fm_goods_supply')
-                    ->where('goods_seq', $item['goods_seq'])
-                    ->where('option_seq', $item['option_seq'])
-                    ->increment('total_stock', $ea);
-                
-                // Collect for Ledger Update
-                $ledgerTargets[] = [
-                    'goods_seq' => $item['goods_seq'], 
-                    'option_seq' => $item['option_seq'],
-                    'option_type' => $orderItem->option_type
-                ];
-            }
-
-            // 5. Check Order Completion Status
-            // If all items (ea == whs_ea), set status to 2
-            $incompleteItems = DB::table('fm_scm_order_goods')
-                ->where('sorder_seq', $sorderSeq)
-                ->whereColumn('ea', '>', 'whs_ea')
-                ->exists();
-
-            if (!$incompleteItems) {
-                DB::table('fm_scm_order')->where('sorder_seq', $sorderSeq)->update(['sorder_status' => 2]);
-            }
-
-            // 6. Update Ledger
-            if (!empty($ledgerTargets)) {
-                $this->ledgerService->updateDailyLedger(1, $ledgerTargets); // wh_seq = 1
-            }
-        });
-
-        return $whsSeq;
-    }
 
     /**
      * Create Auto Order Draft (Replicates scmmodel->save_autosorder_goods)
@@ -399,5 +355,181 @@ class ScmOrderService
               ->orderByDesc('fsod.default_seq');
 
         return $query->get()->toArray();
+    }
+
+    /**
+     * SCM 발주 저장 (Legacy: save_sorder)
+     */
+    public function saveOrder(array $data, $sorderSeq = null)
+    {
+        DB::beginTransaction();
+        try {
+            // 1. 파라미터 정리 및 계산
+            $preparedData = $this->chkSorderParam($data, $sorderSeq);
+            $headerData = $preparedData['sorder'];
+            $itemsData = $preparedData['goodsData'];
+
+            // 2. 헤더 저장
+            $sorderSeq = $this->saveSorderHeader($headerData, $sorderSeq);
+
+            // 3. 상품 저장
+            if (!empty($itemsData)) {
+                $this->saveSorderGoods($sorderSeq, $itemsData);
+            }
+
+            // 4. 발주 완료 시 알림 (Legacy: sorder_draft_sender)
+            if (isset($headerData['sorder_status']) && $headerData['sorder_status'] == 1) {
+                // TODO: SMS/Email 발송 로직 (추후 구현)
+                // $this->sendDraftNotification($sorderSeq);
+            }
+
+            DB::commit();
+            return $sorderSeq;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * 발주 파라미터 체크 및 데이터 가공 (Legacy: chk_sorder_param)
+     */
+    private function chkSorderParam(array $data, $sorderSeq)
+    {
+        $sorderStatus = $data['sorder_status'] ?? 0;
+        $sorderType = $data['sorder_type'] ?? 'M';
+        $traderSeq = $data['trader_seq'] ?? null;
+        $adminMemo = $data['admin_memo'] ?? '';
+
+        $totalEa = 0;
+        $krwTotalSupplyPrice = 0;
+        $krwTotalSupplyTax = 0;
+        $krwTotalPrice = 0;
+        
+        $goodsData = [];
+        $optionSeqs = $data['item_option_seq'] ?? []; 
+
+        // 기존 정보 조회
+        $oldOrder = null;
+        if ($sorderSeq) {
+            $oldOrder = DB::table('fm_scm_order')->where('sorder_seq', $sorderSeq)->first();
+            if ($oldOrder && $oldOrder->sorder_status == 1) {
+                $sorderStatus = 1;
+            }
+        }
+
+        // 로그 생성
+        $managerId = session('manager_id', 'admin'); 
+        $logMsg = date('Y-m-d H:i:s') . " " . $managerId . "가 ";
+        if ($oldOrder && $oldOrder->sorder_status) {
+             $logMsg .= "발주서 관리메모를 수정하였습니다.";
+        } elseif ($sorderStatus) {
+             $logMsg .= "발주를 완료하였습니다.";
+        } elseif ($sorderSeq) {
+             $logMsg .= "발주를 수정하였습니다.";
+        } else {
+             $logMsg .= "발주를 등록대기하였습니다.";
+        }
+        $logMsg = '<div>' . $logMsg . ' (' . request()->ip() . ')</div>';
+
+        if (!$traderSeq) {
+            throw new \Exception("거래처를 선택해 주세요.");
+        }
+
+        // 상품 데이터 가공
+        if (is_array($optionSeqs)) {
+            foreach ($optionSeqs as $idx => $optSeq) {
+                $ea = (int)str_replace(',', '', $data['item_ea'][$idx] ?? 0);
+                if ($ea <= 0) continue;
+
+                $supplyPrice = (float)str_replace(',', '', $data['item_supply_price'][$idx] ?? 0);
+                $supplyTax = (float)str_replace(',', '', $data['item_supply_tax'][$idx] ?? 0);
+                
+                $krwSupplyPrice = $supplyPrice; 
+                $krwSupplyTax = $supplyTax;
+
+                $lineSupplyPrice = $supplyPrice * $ea;
+                $lineTax = $supplyTax * $ea;
+
+                $item = [
+                    'goods_seq' => $data['item_goods_seq'][$idx],
+                    'option_seq' => $optSeq,
+                    'option_type' => $data['item_option_type'][$idx] ?? 'option', 
+                    'goods_code' => $data['item_goods_code'][$idx] ?? '',
+                    'goods_name' => $data['item_goods_name'][$idx] ?? '',
+                    'option_name' => $data['item_option_name'][$idx] ?? '',
+                    'supply_goods_name' => $data['item_supply_goods_name'][$idx] ?? '',
+                    'ea' => $ea,
+                    'supply_price' => $supplyPrice,
+                    'supply_tax' => $supplyTax,
+                    'krw_supply_price' => $krwSupplyPrice,
+                    'krw_supply_tax' => $krwSupplyTax,
+                    'add_reason' => $data['item_add_reason'][$idx] ?? '수동',
+                ];
+
+                $goodsData[] = $item;
+
+                $totalEa += $ea;
+                $krwTotalSupplyPrice += $lineSupplyPrice;
+                $krwTotalSupplyTax += $lineTax;
+            }
+        }
+        $krwTotalPrice = $krwTotalSupplyPrice + $krwTotalSupplyTax;
+
+        if (empty($goodsData)) {
+            throw new \Exception("발주 상품을 선택해 주세요.");
+        }
+
+        $sorder = [
+            'sorder_status' => $sorderStatus,
+            'sorder_type' => $sorderType,
+            'trader_seq' => $traderSeq,
+            'total_ea' => $totalEa,
+            'admin_memo' => $adminMemo,
+            'krw_total_supply_price' => $krwTotalSupplyPrice,
+            'krw_total_supply_tax' => $krwTotalSupplyTax,
+            'krw_total_price' => $krwTotalPrice,
+            'chg_log' => $logMsg,
+            'complete_date' => ($sorderStatus == 1) ? date('Y-m-d H:i:s') : null,
+        ];
+
+        return ['sorder' => $sorder, 'goodsData' => $goodsData];
+    }
+
+    /**
+     * 발주 헤더 저장 (Legacy: save_sorder)
+     */
+    private function saveSorderHeader($data, $sorderSeq)
+    {
+        if ($sorderSeq) {
+            if (isset($data['chg_log'])) {
+                $log = $data['chg_log'];
+                unset($data['chg_log']);
+                DB::statement("UPDATE fm_scm_order SET chg_log = CONCAT(IFNULL(chg_log, ''), ?) WHERE sorder_seq = ?", [$log, $sorderSeq]);
+            }
+            DB::table('fm_scm_order')->where('sorder_seq', $sorderSeq)->update($data);
+        } else {
+            $data['regist_date'] = date('Y-m-d H:i:s');
+            $sorderSeq = DB::table('fm_scm_order')->insertGetId($data);
+
+            $codePrefix = ($data['sorder_type'] == 'A') ? 'RC' : 'OC';
+            $sorderCode = $codePrefix . date('YmdHis') . $sorderSeq;
+            
+            DB::table('fm_scm_order')->where('sorder_seq', $sorderSeq)->update(['sorder_code' => $sorderCode]);
+        }
+        return $sorderSeq;
+    }
+
+    /**
+     * 발주 상품 저장 (Legacy: save_sorder_goods)
+     */
+    private function saveSorderGoods($sorderSeq, $goodsData)
+    {
+        DB::table('fm_scm_order_goods')->where('sorder_seq', $sorderSeq)->delete();
+
+        foreach ($goodsData as $item) {
+            $item['sorder_seq'] = $sorderSeq;
+            DB::table('fm_scm_order_goods')->insert($item);
+        }
     }
 }

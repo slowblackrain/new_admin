@@ -23,8 +23,17 @@ class LoginController extends Controller
 
         $admin = Admin::where('manager_id', $credentials['manager_id'])->first();
 
-        // Legacy MD5 Password Check
+        // 1. Check Bcrypt (only if it looks like a hash to prevent runtime error)
+        if ($admin && str_starts_with($admin->mpasswd, '$2y$') && \Illuminate\Support\Facades\Hash::check($credentials['mpasswd'], $admin->mpasswd)) {
+            Auth::guard('admin')->login($admin);
+            return redirect()->intended(route('admin.dashboard'));
+        }
+
+        // 2. Legacy MD5 Check (and upgrade)
         if ($admin && md5($credentials['mpasswd']) === $admin->mpasswd) {
+            $admin->mpasswd = \Illuminate\Support\Facades\Hash::make($credentials['mpasswd']);
+            $admin->save();
+            
             Auth::guard('admin')->login($admin);
             return redirect()->intended(route('admin.dashboard'));
         }

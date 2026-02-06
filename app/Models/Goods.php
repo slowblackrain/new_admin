@@ -22,6 +22,18 @@ class Goods extends Model
 
     protected $guarded = [];
 
+    protected $appends = ['price', 'consumer_price'];
+
+    public function getPriceAttribute()
+    {
+        return $this->defaultOption->price ?? 0;
+    }
+
+    public function getConsumerPriceAttribute()
+    {
+        return $this->defaultOption->consumer_price ?? 0;
+    }
+
     // Relationship to Categories
     public function categories()
     {

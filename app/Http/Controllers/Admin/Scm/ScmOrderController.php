@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin\Scm;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Services\Scm\ScmOrderService;
-use Exception;
 use Illuminate\Support\Facades\DB;
 
 class ScmOrderController extends Controller
@@ -18,134 +17,147 @@ class ScmOrderController extends Controller
     }
 
     /**
-     * List SCM Orders
-     * GET /admin/scm/order
+     * Display Order List
      */
     public function index(Request $request)
     {
-        // Fetch orders for demonstration
-        $orders = DB::table('fm_scm_order')->orderByDesc('sorder_seq')->get();
-        return view('admin.scm.order.index', compact('orders'));
+        $filters = $request->all();
+        $filters['sc_sdate'] = $request->input('sc_sdate', date('Y-m-d'));
+        $filters['sc_edate'] = $request->input('sc_edate', date('Y-m-d'));
+
+        $orders = $this->scmOrderService->getOrderList($filters);
+        
+        return view('admin.scm.order.index', compact('orders', 'filters'));
     }
 
     /**
-     * Create Auto Order Draft (Replicates add_auto_order_goods)
-     * POST /admin/scm/auto-order
+     * Show Order Form (Create/Edit)
+     */
+    public function create(Request $request)
+    {
+        $sorderSeq = $request->input('sorder_seq');
+        $order = null;
+
+        if ($sorderSeq) {
+            $order = $this->scmOrderService->getOrderData($sorderSeq);
+        }
+
+        // Common Data
+        $traders = DB::table('fm_scm_trader')->orderBy('trader_name')->get();
+        // Currencies - Assuming standard
+        $currencies = ['KRW', 'USD', 'CNY', 'JPY', 'EUR'];
+
+        return view('admin.scm.order.form', compact('order', 'traders', 'currencies'));
+    }
+
+    /**
+     * Store Order (Insert/Update)
+     */
+    public function store(Request $request)
+    {
+        try {
+            $data = $request->all();
+            $sorderSeq = $request->input('sorder_seq');
+
+            $id = $this->scmOrderService->saveOrder($data, $sorderSeq);
+
+            return redirect()->route('admin.scm_order.create', ['sorder_seq' => $id])
+                             ->with('success', '발주가 저장되었습니다.');
+        } catch (\Exception $e) {
+            return back()->withInput()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Auto Order Candidate List
+     */
+    public function autoOrder(Request $request)
+    {
+        $filters = $request->all();
+        $candidates = $this->scmOrderService->getAutoOrderList($filters);
+
+        return view('admin.scm.order.auto_order', compact('candidates', 'filters'));
+    }
+
+    /**
+     * Store Auto Order Draft
      */
     public function storeAutoOrder(Request $request)
     {
-        $request->validate([
-            'goods_seq' => 'required|integer',
-            'order_ea' => 'required|integer',
-            'option_seq' => 'required|integer',
-        ]);
-
+        // Logic to create drafts in fm_scm_autoorder_order
+        // Replicates legacy add_auto_order_goods
         try {
-            // Emulate data structure required by Service
-            $goodsInfo = [
-                'goods_seq' => $request->goods_seq,
-                'goods_name' => $request->input('goods_name', ''),
-                'goods_code' => $request->input('goods_code', ''),
-            ];
+            $items = $request->input('items', []); // checked items
+            $orderEas = $request->input('order_ea', []); // ea array keyed by option_seq
 
-            $orderOption = [
-                'order_seq' => $request->input('order_seq', 0),
-                'order_ea' => $request->order_ea,
-            ];
-
-            $goodsOption = [
-                'option_seq' => $request->option_seq,
-                'option_type' => $request->input('option_type', 'option'),
-                'consumer_price' => $request->input('consumer_price', 0),
-                'price' => $request->input('price', 0),
-                'stock' => $request->input('stock', 0),
-                'badstock' => $request->input('badstock', 0),
-                'safe_stock' => $request->input('safe_stock', 0),
-                'reservation25' => $request->input('reservation25', 0),
-                'suboption_code' => $request->input('suboption_code', ''),
-                'suboption' => $request->input('suboption', ''),
-                // Add loop for option1..5 if needed, assumed empty for test if not provided
-            ];
-            for($i=1; $i<=5; $i++) {
-                $goodsOption['option'.$i] = $request->input('option'.$i, '');
-                $goodsOption['optioncode'.$i] = $request->input('optioncode'.$i, '');
+            if (empty($items)) {
+                return back()->with('error', '선택된 상품이 없습니다.');
             }
 
-            $result = $this->scmOrderService->createAutoOrderDraft(
-                $goodsInfo, 
-                $orderOption, 
-                $goodsOption, 
-                $request->boolean('compulsion')
-            );
+            $count = 0;
+            foreach ($items as $optionSeq) {
+                // Fetch necessary info to mimic legacy params
+                // We need goods_seq, option_seq, etc.
+                // Assuming items[] contains option_seq as per view
+                
+                $optionInfo = DB::table('fm_goods_option as o')
+                    ->join('fm_goods as g', 'o.goods_seq', '=', 'g.goods_seq')
+                    ->join('fm_goods_supply as s', function($join) {
+                        $join->on('g.goods_seq', '=', 's.goods_seq')
+                             ->on('o.option_seq', '=', 's.option_seq');
+                    })
+                    ->where('o.option_seq', $optionSeq)
+                    ->select(
+                        'g.goods_seq', 'g.goods_name', 'g.goods_code',
+                        'o.option_seq', 'o.consumer_price', 'o.price', 
+                        's.stock', 's.safe_stock', 's.badstock', 's.total_stock'
+                    )
+                    ->first();
 
-            if ($result) {
-                return response()->json(['success' => true, 'id' => $result, 'message' => 'Auto order draft created successfully.']);
+                if (!$optionInfo) continue;
+
+                $ea = $orderEas[$optionSeq] ?? 0;
+                if ($ea <= 0) continue;
+
+                $goodsInfo = [
+                    'goods_seq' => $optionInfo->goods_seq,
+                    'goods_name' => $optionInfo->goods_name,
+                    'goods_code' => $optionInfo->goods_code,
+                ];
+                $orderOption = [
+                    'order_seq' => 0, // Default 0 for draft
+                    'order_ea' => $ea,
+                ];
+                $goodsOption = [
+                    'option_seq' => $optionInfo->option_seq,
+                    'option_type' => 'option', // Assuming standard option for now
+                    'consumer_price' => $optionInfo->consumer_price,
+                    'price' => $optionInfo->price,
+                    'stock' => $optionInfo->stock,
+                    'badstock' => $optionInfo->badstock,
+                    'safe_stock' => $optionInfo->safe_stock,
+                    'option1' => '', // Standard options name logic if needed
+                ];
+
+                $this->scmOrderService->createAutoOrderDraft($goodsInfo, $orderOption, $goodsOption, true);
+                $count++;
+            }
+
+            if ($count > 0) {
+                return redirect()->route('admin.scm_order.auto_order')->with('success', "총 {$count}개의 상품이 자동발주상품에 등록되었습니다.");
             } else {
-                return response()->json(['success' => false, 'message' => 'Auto order condition not met (Stock sufficient).'], 200);
+                return back()->with('error', '등록된 자동발주상품이 없습니다.');
             }
 
-        } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
         }
     }
 
-    /**
-     * Confirm selected Auto Orders (Draft -> Real Order)
-     * POST /admin/scm/order/confirm
-     */
-    public function confirm(Request $request)
+    public function excel()
     {
-        $request->validate([
-            'aoo_seqs' => 'required|array',
-            'aoo_seqs.*' => 'integer'
-        ]);
-
-        try {
-            $createdIds = $this->scmOrderService->confirmAutoOrders($request->aoo_seqs);
-            
-            if (empty($createdIds)) {
-                return response()->json(['success' => false, 'message' => 'No orders created found.'], 404);
-            }
-
-            return response()->json([
-                'success' => true, 
-                'message' => count($createdIds) . ' Orders created successfully.',
-                'order_seqs' => $createdIds
-            ]);
-
-        } catch (Exception $e) {
-             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
-        }
-    }
-
-    /**
-     * Process Warehousing (Receive Goods)
-     * POST /admin/scm/order/receive
-     */
-    public function receive(Request $request)
-    {
-        $request->validate([
-            'sorder_seq' => 'required|integer',
-            'items' => 'required|array',
-            'items.*.goods_seq' => 'required|integer',
-            'items.*.option_seq' => 'required|integer',
-            'items.*.ea' => 'required|integer|min:1',
-        ]);
-
-        try {
-            $whsSeq = $this->scmOrderService->processWarehousing(
-                $request->sorder_seq,
-                $request->items
-            );
-            
-            return response()->json([
-                'success' => true, 
-                'message' => 'Warehousing successful.',
-                'whs_seq' => $whsSeq
-            ]);
-
-        } catch (Exception $e) {
-             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
-        }
+        // TODO: Implement Excel Download if required (C-1 task checklist has it unchecked/pending)
+        // Legacy analysis suggests no list excel download exists.
+        return back()->with('error', '기능 준비중입니다.'); 
     }
 }

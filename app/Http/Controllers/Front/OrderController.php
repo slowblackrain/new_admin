@@ -17,15 +17,18 @@ class OrderController extends Controller
     protected $settlementService;
     protected AgencyProductService $agencyService;
     protected \App\Services\PricingService $pricingService;
+    protected \App\Services\Admin\Goods\GoodsSetService $goodsSetService;
 
     public function __construct(
         \App\Services\Agency\AgencySettlementService $settlementService,
         AgencyProductService $agencyService,
-        \App\Services\PricingService $pricingService
+        \App\Services\PricingService $pricingService,
+        \App\Services\Admin\Goods\GoodsSetService $goodsSetService
     ) {
         $this->settlementService = $settlementService;
         $this->agencyService = $agencyService;
         $this->pricingService = $pricingService;
+        $this->goodsSetService = $goodsSetService;
     }
 
     public function index(Request $request)
@@ -439,6 +442,10 @@ class OrderController extends Controller
                 DB::table('fm_goods')
                     ->where('goods_seq', $goods->goods_seq)
                     ->decrement('tot_stock', $ea);
+
+                // --- Set Product Stock Deduction ---
+                // If this is a Set Product, deduct stock of components
+                $this->goodsSetService->deductStockForSet($order->order_seq, $goods->goods_seq, $orderItem->item_seq);
 
                 // --- Agency Service: Cash Deduction for ATS Product ---
                 // Check if it's an Agency Product (Reseller Copy)

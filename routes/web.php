@@ -185,6 +185,23 @@ Route::prefix('admin')->name('admin.')->group(function () {
         // SCM Goods Features
         Route::get('excel_download', [App\Http\Controllers\Admin\Scm\ScmManageController::class, 'goods_excel_download'])->name('excel_download');
         Route::get('excel', function() { return "Excel Batch Edit Pending"; })->name('excel');
+
+        // [Phase D-1] Goods Batch Modify
+        Route::get('batch', [App\Http\Controllers\Admin\Goods\BatchModifyController::class, 'index'])->name('batch.index');
+        Route::post('batch/update', [App\Http\Controllers\Admin\Goods\BatchModifyController::class, 'update'])->name('batch.update');
+
+        // [Phase D] Goods Set Products
+        Route::get('set', [App\Http\Controllers\Admin\Goods\GoodsSetController::class, 'index'])->name('set.index');
+        Route::post('set/detail', [App\Http\Controllers\Admin\Goods\GoodsSetController::class, 'detail'])->name('set.detail');
+        Route::post('set/search', [App\Http\Controllers\Admin\Goods\GoodsSetController::class, 'search'])->name('set.search');
+        Route::post('set/store', [App\Http\Controllers\Admin\Goods\GoodsSetController::class, 'store'])->name('set.store');
+        Route::post('set/destroy', [App\Http\Controllers\Admin\Goods\GoodsSetController::class, 'destroy'])->name('set.destroy');
+    });
+
+    // [Phase D-2] Invoice Excel Processing
+    Route::group(['prefix' => 'order/invoice', 'as' => 'order.invoice.'], function () {
+        Route::get('excel', [App\Http\Controllers\Admin\Order\InvoiceController::class, 'excel_index'])->name('excel');
+        Route::post('upload', [App\Http\Controllers\Admin\Order\InvoiceController::class, 'excel_upload'])->name('upload');
     });
 
     // SCM Basic
@@ -221,6 +238,49 @@ Route::prefix('admin')->name('admin.')->group(function () {
         
         // Failure Log (Super Admin)
         Route::get('fail_log', [App\Http\Controllers\Admin\Scm\ScmOrderFailController::class, 'index'])->name('fail_log');
+    });
+
+    // SCM Order (New) - Phase C
+    Route::prefix('scm_order')->name('scm_order.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\Scm\ScmOrderController::class, 'index'])->name('index');
+        Route::get('create', [App\Http\Controllers\Admin\Scm\ScmOrderController::class, 'create'])->name('create');
+        Route::post('store', [App\Http\Controllers\Admin\Scm\ScmOrderController::class, 'store'])->name('store');
+        Route::get('auto_order', [App\Http\Controllers\Admin\Scm\ScmOrderController::class, 'autoOrder'])->name('auto_order');
+        Route::get('excel', [App\Http\Controllers\Admin\Scm\ScmOrderController::class, 'excel'])->name('excel'); 
+    });
+
+    // SCM Warehousing (New) - Phase C-2
+    Route::prefix('scm_warehousing')->name('scm_warehousing.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\Scm\ScmWarehousingController::class, 'index'])->name('index');
+        Route::get('create', [App\Http\Controllers\Admin\Scm\ScmWarehousingController::class, 'create'])->name('create');
+        Route::post('store', [App\Http\Controllers\Admin\Scm\ScmWarehousingController::class, 'store'])->name('store');
+    });
+
+
+
+    // SCM CarryingOut (New) - Phase C-3
+    Route::prefix('scm_carryingout')->name('scm_carryingout.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\Scm\ScmCarryingOutController::class, 'index'])->name('index');
+        Route::get('create', [App\Http\Controllers\Admin\Scm\ScmCarryingOutController::class, 'create'])->name('create');
+        Route::post('store', [App\Http\Controllers\Admin\Scm\ScmCarryingOutController::class, 'store'])->name('store');
+        Route::post('delete', [App\Http\Controllers\Admin\Scm\ScmCarryingOutController::class, 'destroy'])->name('destroy');
+    });
+
+
+
+    // SCM Analysis (New) - Phase C-4
+    Route::prefix('scm_analysis')->name('scm_analysis.')->group(function () {
+        Route::get('monthly', [App\Http\Controllers\Admin\Scm\ScmAnalysisController::class, 'monthly'])->name('monthly');
+        Route::get('trader', [App\Http\Controllers\Admin\Scm\ScmAnalysisController::class, 'trader'])->name('trader');
+    });
+
+
+
+    // SCM Trader Account (New) - Phase C-5
+    Route::prefix('scm_trader_account')->name('scm_trader_account.')->group(function () {
+        Route::get('index', [App\Http\Controllers\Admin\Scm\ScmTraderAccountController::class, 'index'])->name('index');
+        Route::get('show/{traderSeq}', [App\Http\Controllers\Admin\Scm\ScmTraderAccountController::class, 'show'])->name('show');
+        Route::post('store', [App\Http\Controllers\Admin\Scm\ScmTraderAccountController::class, 'store'])->name('store');
     });
 
     // SCM Manage

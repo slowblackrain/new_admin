@@ -10,7 +10,7 @@ return [
             ['name' => '거래처', 'url' => '/admin/scm_basic/trader'],
             ['name' => '창고', 'url' => '/admin/scm_basic/warehouse'],
             ['name' => '쇼핑몰 창고', 'url' => '/admin/scm_basic/store'],
-            // ['name' => '기본단가요율설정', 'url' => '/admin/scm_basic/goods_int_set'], // TODO: Apply Access Control (Legacy: dmtadmin only) - Unlock later
+            ['name' => '기본단가요율설정', 'url' => '/admin/scm_basic/goods_int_set'],
         ]
     ],
     // [재고관리] scmmanage
@@ -42,9 +42,10 @@ return [
         'name' => '판매상품',
         'items' => [
             ['name' => '판매상품', 'url' => '/admin/goods/catalog'],
-            ['name' => '<실물> 상품', 'url' => '/admin/goods/catalog'],
-            ['name' => '세트 상품', 'url' => '/admin/goods/goods_set'],
-            ['name' => '일괄 업데이트', 'url' => '/admin/goods/batch_modify'],
+            ['name' => '카테고리 분류', 'url' => '/admin/goods/category'],
+            ['name' => '브랜드 분류', 'url' => '/admin/goods/brand'],
+            ['name' => '세트상품 관리', 'url' => '/admin/goods/set'],
+            ['name' => '상품일괄등록 (엑셀)', 'url' => '/admin/goods/batch_regist_excel'],
             ['name' => '카테고리', 'url' => '/admin/category/catalog'],
             ['name' => '지역', 'url' => '/admin/location/catalog'],
             ['name' => '진열번호관리', 'url' => '/admin/goods/sortcd_catalog'], // Placeholder
@@ -166,7 +167,10 @@ return [
             ['name' => '자동 발주 관리 (New)', 'url' => '/admin/scm_order/auto'],
             ['name' => '발주 현황 (New)', 'url' => '/admin/scm_order/list'],
             ['name' => '재고 수불부 (New)', 'url' => '/admin/scm_manage/ledger'],
-            ['name' => '월별 매입 정산 (New)', 'url' => '/admin/scm_settlement/trader_monthly'],
+            ['name' => '반출 관리 (C-3)', 'url' => '/admin/scm_carryingout/index'],
+            ['name' => '월별 매입 분석 (C-4)', 'url' => '/admin/scm_analysis/monthly'],
+            ['name' => '거래처별 매입 분석 (C-4)', 'url' => '/admin/scm_analysis/trader'],
+            ['name' => '정산 관리 (C-5)', 'url' => '/admin/scm_trader_account/index'],
         ]
     ],
 ];

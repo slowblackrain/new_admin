@@ -52,6 +52,14 @@ Route::prefix('admin')->name('admin.')->group(function () {
              Route::get('regist', [\App\Http\Controllers\Admin\GoodsController::class, 'create'])->name('regist');
              Route::post('regist', [\App\Http\Controllers\Admin\GoodsController::class, 'store'])->name('store');
              
+             // Brand Routes
+             Route::prefix('brand')->name('brand.')->group(function () {
+                 Route::get('/', [\App\Http\Controllers\Admin\Goods\BrandController::class, 'index'])->name('index');
+                 Route::any('tree', [\App\Http\Controllers\Admin\Goods\BrandController::class, 'tree'])->name('tree'); // Uses POST/GET
+                 Route::get('show/{code}', [\App\Http\Controllers\Admin\Goods\BrandController::class, 'show'])->name('show');
+                 Route::put('update/{id}', [\App\Http\Controllers\Admin\Goods\BrandController::class, 'update'])->name('update');
+             });
+
              // Batch & Excel Routes
              Route::prefix('batch')->name('batch.')->group(function () {
                  Route::post('modify', [\App\Http\Controllers\Admin\Goods\GoodsBatchController::class, 'batch_modify'])->name('modify');
