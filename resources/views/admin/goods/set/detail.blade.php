@@ -2,12 +2,12 @@
     @foreach($children as $child)
     <div class="item_box" style="cursor:default;">
         <div class="img">
-            <img src="{{ $child->goods->images->first()->image ?? '/images/no_img.gif' }}" width="50">
+            <img src="{{ optional($child->goods->images->first())->image ?? '/images/no_img.gif' }}" width="50">
         </div>
         <div class="info" style="flex-grow:1;">
-            <div class="scode">[{{ $child->goods->goods_scode }}]</div>
+            <div class="scode">[{{ optional($child->goods)->goods_scode ?? 'UNKNOWN' }}]</div>
             <div class="name">
-                {{ $child->goods->goods_name }} 
+                {{ optional($child->goods)->goods_name ?? '삭제된 상품' }} 
                 <span style="color:red; font-weight:bold;">({{ $child->goods_ea }}개)</span>
             </div>
         </div>

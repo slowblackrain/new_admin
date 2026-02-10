@@ -50,6 +50,7 @@ class GoodsSetService
     {
         return GoodsSet::with(['goods.defaultOption', 'goods.images'])
             ->where('main_seq', $parentGoodsSeq)
+            ->whereHas('goods') // Only retrieve if goods exist
             ->get();
     }
 

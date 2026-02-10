@@ -35,6 +35,9 @@ class InvoiceService
                 'sms' => isset($data[4]) ? trim($data[4]) : '',
             ];
 
+            // Normalize Legacy Code
+            $row['code'] = $this->mapLegacyCode($row['code']);
+
             if (empty($row['order_seq']) || empty($row['code']) || empty($row['delivery_number'])) {
                 $results['fail']++;
                 $results['errors'][] = "Row {$rowIndex}: Missing required fields.";
@@ -251,5 +254,23 @@ class InvoiceService
             // Validation: Check checking 'fm_scm_location_link' stock?
             // No, just logging out.
         }
+    }
+
+    protected function mapLegacyCode($code)
+    {
+        $code = strtolower(trim($code));
+        $map = [
+            'code0' => 'cj',
+            'code7' => 'epost',
+            'code9' => 'hanjin',
+            'code10' => 'lotte',
+            'code6' => 'logen',
+            'code3' => 'kdexp',
+            'code12' => 'daesin',
+            'code15' => 'chunil',
+            // Add more if found
+        ];
+
+        return $map[$code] ?? $code;
     }
 }

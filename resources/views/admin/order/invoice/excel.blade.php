@@ -1,108 +1,74 @@
 @extends('admin.layouts.admin')
 
-@section('title', '엑셀 송장처리')
-
 @section('content')
-<style type="text/css">
-    .upload-form { margin-bottom:30px; padding-left:35px; }
-    .upload-form .notice { color:red; margin-top:5px; }
-    .input-upload { margin-top:10px; }
-    .upload-log { margin-top:40px; width:100%; }
-    .upload-notice { margin-top:20px; width:100%; }
-    .td_css { text-align:center; height:20px; background-color:#EAEAEA; }
-    .page-title-bar { margin-bottom: 20px; }
-</style>
-
-<div class="row">
-    <div class="col-12">
-        <!-- Page Title -->
-        <div class="page-title-bar d-flex justify-content-between align-items-center">
-            <h2 class="page-title">엑셀 송장처리</h2>
-            <div class="page-buttons-right">
-                <button type="button" class="btn btn-warning" onclick="download_sample();">업로드 샘플파일 다운로드</button>
-            </div>
+<div class="col-md-12">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">송장 엑셀 처리</h3>
         </div>
+        <div class="card-body">
+            @if(session('alert'))
+                <div class="alert alert-info">
+                    {!! nl2br(session('alert')) !!}
+                </div>
+            @endif
 
-        <div class="card">
-            <div class="card-body">
-                <form name="excelUpload" id="excelUpload" method="post" action="{{ route('admin.order.invoice.upload') }}" enctype="multipart/form-data">
-                    @csrf
-                    <div class="item-title" style="text-align:left; font-weight:bold;">.CSV 형식으로 저장된 파일 업로드</div>
-                    
-                    <div class="notice" style="color:#000; margin-bottom: 10px;">
-                        <div style="text-align:left;">
-                            Excel 데이터 작성후 파일메뉴『다른이름으로 저장』, 파일형식『CSV(쉼표로분리)』 선택 저장하여 업로드 바랍니다.<br>
-                            단, 위 형식과 다를 시 처리가 불가합니다.
-                        </div>
+            <form action="{{ route('admin.order.invoice.upload') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                
+                <div class="form-group">
+                    <label>처리 모드</label>
+                    <div class="radio-list">
+                        <label class="radio-inline">
+                            <input type="radio" name="mode" value="all" checked> 
+                            <strong>송장전송 처리 (Step 55/65)</strong> 
+                            <span class="text-muted">- 송장번호 입력 및 출고완료 처리 (가장 많이 사용)</span>
+                        </label>
+                        <br/>
+                        <label class="radio-inline">
+                            <input type="radio" name="mode" value="insert"> 
+                            <strong>운송장번호 입력 (Step 45)</strong>
+                            <span class="text-muted">- 송장번호만 입력하고 '출고준비' 상태로 변경</span>
+                        </label>
+                        <br/>
+                        <label class="radio-inline">
+                            <input type="radio" name="mode" value="only"> 
+                            <strong>운송장번호 변경 (상태유지)</strong>
+                            <span class="text-muted">- 이미 입력된 송장번호만 수정 (주문상태 변경 없음)</span>
+                        </label>
                     </div>
+                </div>
 
-                    <div class="input-upload" style="text-align:left;">
-                        <input type="file" name="export_excel_file" id="export_excel_file" class="form-control d-inline-block" style="width: auto; height: auto;" />
-                        
-                        <div class="mt-2">
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="mode" id="mode_all" value="all" checked>
-                                <label class="form-check-label" for="mode_all">송장전송 처리(출고완료넘어감)</label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="mode" id="mode_only" value="only">
-                                <label class="form-check-label" for="mode_only">운송장번호 변경(상태변경없음)</label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="mode" id="mode_insert" value="insert">
-                                <label class="form-check-label" for="mode_insert">운송장번호 입력(출고준비로넘어감)</label>
-                            </div>
-                        </div>
+                <div class="form-group mt-3">
+                    <label>엑셀 파일 업로드 (CSV)</label>
+                    <input type="file" name="export_excel_file" class="form-control" accept=".csv, .txt">
+                    <small class="form-text text-muted">
+                        * 파일 형식: CSV (UTF-8 권장)<br/>
+                        * 컬럼 순서: <strong>주문번호(Seq), 택배사코드, 송장번호, [메모], [SMS]</strong><br/>
+                        * 첫 줄(헤더)은 자동으로 무시됩니다.
+                    </small>
+                </div>
 
-                        <button type="submit" class="btn btn-success mt-3">업로드</button>
-                    </div>
-
-                    <div class="notice mt-2" style="text-align:left;">[주의] <b>.csv</b> 확장자로 저장하셔야 합니다.</div>
-                </form>
-            </div>
+                <div class="form-group mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg">엑셀 업로드 및 처리</button>
+                    <a href="{{ route('admin.order.invoice.excel') }}" class="btn btn-default btn-lg">새로고침</a>
+                </div>
+            </form>
         </div>
-
-        <!-- Courier Codes Table -->
-        <div class="card mt-4">
-            <div class="card-header bg-warning">
-                <strong>택배사 코드 안내</strong>
-            </div>
-            <div class="card-body p-0">
-                <table class="table table-bordered table-sm text-center mb-0">
-                    <thead class="bg-light">
-                        <tr>
-                            <th>코드</th><th>택배사명</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr><td>code0</td><td>CJ대한통운</td></tr>
-                        <tr><td>code1</td><td>DHL코리아</td></tr>
-                        <tr><td>code2</td><td>KGB택배</td></tr>
-                        <tr><td>code3</td><td>경동택배</td></tr>
-                        <tr><td>code6</td><td>로젠택배</td></tr>
-                        <tr><td>code7</td><td>우체국택배</td></tr>
-                        <tr><td>code8</td><td>하나로택배</td></tr>
-                        <tr><td>code9</td><td>한진택배</td></tr>
-                        <tr><td>code10</td><td>롯데택배</td></tr>
-                        <tr><td>code11</td><td>동원택배</td></tr>
-                        <tr><td>code12</td><td>대신택배</td></tr>
-                    </tbody>
-                </table>
-            </div>
+        <div class="card-footer">
+            <h4>[택배사 코드 안내]</h4>
+            <ul>
+                <li><strong>CJ대한통운</strong>: code0 (cj)</li>
+                <li><strong>우체국택배</strong>: code7 (epost)</li>
+                <li><strong>한진택배</strong>: code9 (hanjin)</li>
+                <li><strong>롯데택배</strong>: code10 (lotte)</li>
+                <li><strong>로젠택배</strong>: code6 (logen)</li>
+                <li><strong>경동택배</strong>: code3 (kdexp)</li>
+                <li><strong>대신택배</strong>: code12 (daesin)</li>
+                <li><strong>천일택배</strong>: code15 (chunil)</li>
+                <li>* 엑셀 파일에는 <strong>code0, code7</strong> 형식으로 입력해주세요.</li>
+            </ul>
         </div>
-
     </div>
 </div>
-
-@section('custom_js')
-<script>
-    function download_sample(){
-        window.open('https://dometopia.com/data/export_sample.csv');
-    }
-
-    @if(session('alert'))
-        alert("{{ session('alert') }}");
-    @endif
-</script>
-@endsection
 @endsection

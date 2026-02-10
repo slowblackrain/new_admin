@@ -8,6 +8,7 @@ use App\Models\Cart;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Log;
 
 use App\Services\Agency\AgencyProductService;
 use App\Models\CategoryLink;
@@ -107,10 +108,10 @@ class OrderController extends Controller
 
     public function store(Request $request)
     {
-        file_put_contents('c:/dometopia/new_admin/debug_order.txt', "Store Called at " . now() . "\n", FILE_APPEND);
+
         
         // 1. Validate
-        $request->validate([
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
             'cart_seq' => 'required|array',
             'order_user_name' => 'required',
             'order_cellphone' => 'required',
@@ -122,6 +123,13 @@ class OrderController extends Controller
             'payment' => 'required',
         ]);
 
+        if ($validator->fails()) {
+    
+            return back()->withErrors($validator)->withInput();
+        }
+
+
+
         $cart_seqs = $request->input('cart_seq');
 
         // 2. Fetch Cart Items
@@ -130,16 +138,21 @@ class OrderController extends Controller
             ->with(['goods.images', 'goods.option', 'options', 'inputs'])
             ->get();
         
+
+
         // dd('Cart Items:', $cartItems->toArray());
 
         if ($cartItems->isEmpty()) {
+    
             return back()->withErrors(['msg' => '선택된 상품이 없습니다.']);
         }
 
         // 3. Process Order in Transaction
         DB::beginTransaction();
         try {
+    
             $user = Auth::user();
+    
             
             $totalPrice = 0;
             $totalEa = 0;
@@ -147,6 +160,7 @@ class OrderController extends Controller
 
             // Calculate Total
             foreach ($cartItems as $cItem) {
+        
                 $goods = $cItem->goods;
                 $option = $cItem->options->first();
                 $ea = $option->ea ?? 1;
@@ -156,6 +170,7 @@ class OrderController extends Controller
                 $matchedOption = null;
                 if ($goods && $goods->option) {
                     $matchedOption = $goods->option->first(function($o) use ($option) {
+                         // Simplify match logic for debug or trust existing
                          return (string)$o->option1 == (string)$option->option1 &&
                                 (string)$o->option2 == (string)$option->option2 &&
                                 (string)$o->option3 == (string)$option->option3 &&
@@ -182,6 +197,7 @@ class OrderController extends Controller
                         ->first();
                     $currentStock = $supply->stock ?? 0;
                     if ($currentStock < $ea) {
+                 
                         throw new \Exception("상품 '{$goods->goods_name}'의 선택된 옵션 재고가 부족합니다. (현재: {$currentStock}, 요청: {$ea})");
                     }
                 } else {
@@ -190,10 +206,13 @@ class OrderController extends Controller
                         ->first();
                     $currentStock = $supply->stock ?? 0;
                     if ($currentStock < $ea) {
+                
                         throw new \Exception("상품 '{$goods->goods_name}'의 재고가 부족합니다. (현재: {$currentStock}, 요청: {$ea})");
                     }
                 }
             }
+            
+    
 
             // Create Order Header
             $order = new \App\Models\Order();
@@ -356,19 +375,24 @@ class OrderController extends Controller
 
              try {
                 $order->save();
+        
             } catch (\Exception $e) {
                 if (strpos($e->getMessage(), 'virtual_date') !== false) {
                     $order->virtual_date = now();
                     $order->save();
+            
                 } else {
+            
                     throw $e;
                 }
             }
 
             // Create Order Items
             foreach ($cartItems as $cItem) {
+        
                 $goods = $cItem->goods;
                 $option = $cItem->options->first();
+
                 $ea = $option->ea ?? 1;
 
                  // Price Logic Again using PricingService
@@ -568,6 +592,7 @@ class OrderController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+    
 
             // Agency Deduction Failure Logging
             // We expect "AgencyDeductionFail:" or just standard error if string parsing matches
@@ -596,7 +621,9 @@ class OrderController extends Controller
                  }
             }
 
-            return back()->withErrors(['msg' => '주문 처리 중 오류 발생: ' . $msg]);
+            // return back()->withErrors(['msg' => '주문 처리 중 오류 발생: ' . $msg]);
+            echo "<script>alert('주문 처리 중 오류가 발생했습니다: " . addslashes($msg) . "');history.back();</script>";
+            return;
         }
     }
 

@@ -204,6 +204,19 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('upload', [App\Http\Controllers\Admin\Order\InvoiceController::class, 'excel_upload'])->name('upload');
     });
 
+    // Sales Proof
+    Route::prefix('order/sales')->name('order.sales.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\Order\SalesController::class, 'index'])->name('index');
+        Route::get('show/{id}', [App\Http\Controllers\Admin\Order\SalesController::class, 'show'])->name('show');
+        Route::post('log', [App\Http\Controllers\Admin\Order\SalesController::class, 'log'])->name('log');
+        Route::post('state', [App\Http\Controllers\Admin\Order\SalesController::class, 'state'])->name('state');
+        Route::post('dstate', [App\Http\Controllers\Admin\Order\SalesController::class, 'dstate'])->name('dstate');
+        Route::post('memo', [App\Http\Controllers\Admin\Order\SalesController::class, 'memo'])->name('memo');
+        Route::post('hiworks', [App\Http\Controllers\Admin\Order\SalesController::class, 'sendToHiworks'])->name('hiworks'); // tax_run
+        Route::post('tax_info', [App\Http\Controllers\Admin\Order\SalesController::class, 'taxInfo'])->name('tax_info'); // order_tax_info
+        Route::get('excel', [App\Http\Controllers\Admin\Order\SalesController::class, 'detailExcel'])->name('excel');
+    });
+
     // SCM Basic
     Route::prefix('scm_basic')->name('scm_basic.')->group(function () {
         Route::get('config', [App\Http\Controllers\Admin\Scm\ScmBasicController::class, 'config'])->name('config');
