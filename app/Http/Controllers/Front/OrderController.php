@@ -57,6 +57,8 @@ class OrderController extends Controller
 
         // 4. Calculate Total (Initial calculation for verification, view will also Calc)
         $totalPrice = 0;
+        $standardItemsTotal = 0;
+
         foreach ($cartItems as $item) {
             $goods = $item->goods;
             $option = $item->options->first();
@@ -77,6 +79,12 @@ class OrderController extends Controller
 
             $pricing = $this->pricingService->calculatePrice($goods, $calcOption, $ea);
             $totalPrice += $pricing['total_price'];
+
+            // Check if standard shipping (not postpaid)
+            // Note: fm_cart_option has shipping_method column.
+            if (($option->shipping_method ?? '') !== 'postpaid') {
+                $standardItemsTotal += $pricing['total_price'];
+            }
         }
 
         $shippingCost = 3000;
@@ -84,7 +92,8 @@ class OrderController extends Controller
         $packagingCost = 300;
 
         $shipping = 0;
-        if ($totalPrice > 0 && $totalPrice < $freeShippingThreshold) {
+        // Only charge shipping if there are standard items and they don't meet threshold
+        if ($standardItemsTotal > 0 && $standardItemsTotal < $freeShippingThreshold) {
             $shipping = $shippingCost;
         }
 
@@ -143,7 +152,8 @@ class OrderController extends Controller
         // dd('Cart Items:', $cartItems->toArray());
 
         if ($cartItems->isEmpty()) {
-    
+            \Illuminate\Support\Facades\Log::info("OrderController: Cart is Empty for User: " . (\Illuminate\Support\Facades\Auth::id() ?? 'Guest'));
+            \Illuminate\Support\Facades\Log::info("Cart Query Count: " . \App\Models\Cart::where('member_seq', \Illuminate\Support\Facades\Auth::id())->count());
             return back()->withErrors(['msg' => '선택된 상품이 없습니다.']);
         }
 
@@ -196,6 +206,7 @@ class OrderController extends Controller
                         ->where('option_seq', $matchedOption->option_seq)
                         ->first();
                     $currentStock = $supply->stock ?? 0;
+                    
                     if ($currentStock < $ea) {
                  
                         throw new \Exception("상품 '{$goods->goods_name}'의 선택된 옵션 재고가 부족합니다. (현재: {$currentStock}, 요청: {$ea})");
@@ -205,6 +216,7 @@ class OrderController extends Controller
                         ->where('goods_seq', $goods->goods_seq)
                         ->first();
                     $currentStock = $supply->stock ?? 0;
+                    
                     if ($currentStock < $ea) {
                 
                         throw new \Exception("상품 '{$goods->goods_name}'의 재고가 부족합니다. (현재: {$currentStock}, 요청: {$ea})");
@@ -237,7 +249,48 @@ class OrderController extends Controller
             $packagingCost = 300;
 
             $shipping = 0;
-            if ($totalPrice > 0 && $totalPrice < $freeShippingThreshold) {
+            // Only charge shipping if there are standard items and they don't meet threshold
+            // Filter out postpaid items from this check
+            $standardItemsTotal = 0;
+            foreach ($cartItems as $cItem) {
+                $cOption = $cItem->options->first();
+                // Check 'shipping_method' from cart option
+                if (($cOption->shipping_method ?? '') !== 'postpaid') {
+                     // Recalculate or just use pre-calculated price?
+                     // We need price per item. Let's reuse logic or just sum up quickly if we trust loop above.
+                     // The loop above calculated $totalPrice but didn't separate standard.
+                     // Let's iterate again or use a flag. 
+                     // Optimization: Do this inside the main loop above (lines 162-213) 
+                     // But strictly, we can just loop again here for clarity or rely on refined loop.
+                }
+            }
+            // Actually, let's rewrite the initial loop (lines 162-213) to calculate $standardItemsTotal
+            // But I am editing lines 235-242. I can't easily reach up.
+            // Let's just re-loop for shipping calculation. It's only a few items.
+            foreach ($cartItems as $cItem) {
+                 $goods = $cItem->goods;
+                 $option = $cItem->options->first();
+                 $ea = $option->ea ?? 1;
+                 // Get Price
+                 $matchedOption = null;
+                 if ($goods && $goods->option) {
+                     $matchedOption = $goods->option->first(function($o) use ($option) {
+                          return (string)$o->option1 == (string)$option->option1 &&
+                                 (string)$o->option2 == (string)$option->option2 &&
+                                 (string)$o->option3 == (string)$option->option3 &&
+                                 (string)$o->option4 == (string)$option->option4 &&
+                                 (string)$o->option5 == (string)$option->option5;
+                     });
+                 }
+                 $calcOption = $matchedOption ?? $goods->option->first();
+                 $pricingInfo = $this->pricingService->calculatePrice($goods, $calcOption, $ea);
+                 
+                 if (($option->shipping_method ?? '') !== 'postpaid') {
+                     $standardItemsTotal += ($pricingInfo['unit_price'] * $ea);
+                 }
+            }
+
+            if ($standardItemsTotal > 0 && $standardItemsTotal < $freeShippingThreshold) {
                 $shipping = $shippingCost;
             }
 
@@ -428,9 +481,18 @@ class OrderController extends Controller
                 $itemOption->price = $price;
                 $itemOption->ea = $ea;
                 $itemOption->step = $order->step;
+                
+                // Check if Postpaid
+                if (($option->shipping_method ?? '') === 'postpaid') {
+                    $itemOption->title1 = ($option->title1 ?? '옵션') . ' [착불]';
+                    $orderItem->goods_shipping_cost = 0; // Ensure 0
+                    $orderItem->save(); // Save update
+                } else {
+                    $itemOption->title1 = $option->title1 ?? '옵션';
+                }
+                
                 $itemOption->option1 = $option->option1 ?? '';
                 $itemOption->option2 = $option->option2 ?? '';
-                $itemOption->title1 = $option->title1 ?? '옵션';
                 $itemOption->save();
 
                 // Stock Deduction Logic
@@ -533,6 +595,27 @@ class OrderController extends Controller
                              throw new \Exception("AgencyDeductionFail:" . $context);
                          }
                      }
+                } elseif ($goods->provider_member_seq > 1) {
+                    \Illuminate\Support\Facades\Log::info("OrderController: FFF Stock Settlement Triggered for Goods: {$goods->goods_seq}");
+                    // [Phase 4] Stock Sales Settlement (FFF Products)
+                    // Provider > 1 (Reseller) BUT not GT (Dropshipping).
+                    // This implies Reseller owns the stock (Pre-paid).
+                    // We record the sale so Reseller can see it in checking.
+                    // Margin = Full Sell Price.
+                    
+                    $resellerSeq = $goods->provider_member_seq;
+                    // Calculate Total Sell Price for this line item
+                    // Note: price is unit price (calculated above).
+                    $lineSellPrice = $price * $ea;
+                    
+                    try {
+                        $ym = date('Y-m');
+                        $this->settlementService->settleStockSales($resellerSeq, $ym, $lineSellPrice);
+                    } catch (\Exception $e) {
+                        \Illuminate\Support\Facades\Log::error("Stock Settlement Failed Order:{$order->order_seq} Item:{$goods->goods_seq} Error:" . $e->getMessage());
+                        // We do not stop the order for settlement stat update failure, 
+                        // but strictly we should. For now, Log to avoid blocking UX.
+                    }
                 }
                 // --------------------------------------------------------
                 

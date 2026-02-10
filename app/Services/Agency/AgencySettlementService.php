@@ -115,6 +115,95 @@ class AgencySettlementService
         }
     }
 
+    /**
+     * Settle Stock Sales (FFF Products).
+     * Since the Reseller already bought the stock (Pre-paid), 
+     * the 'Offer Price' (Cost) for this specific sale is effectively 0 (or amortized).
+     * We treat the full Sell Price as Revenue (Margin) for this transaction record.
+     * 
+     * @param int $memberSeq Reseller Member Seq
+     * @param string $yearMonth 'YYYY-MM'
+     * @param int $sellPrice End user payment
+     * @return void
+     */
+    public function settleStockSales($memberSeq, $yearMonth, $sellPrice)
+    {
+        // Check if record exists
+        $record = DB::table('fm_account_provider_ats')
+            ->where('member_seq', $memberSeq)
+            ->where('acc_date', $yearMonth)
+            ->first();
+
+        // For Stock Sales:
+        // Offer Price (Cost to be deducted now) = 0
+        // Margin = Sell Price - 0 = Sell Price
+        $providerPrice = 0; 
+        $margin = $sellPrice;
+
+        if ($record) {
+            DB::table('fm_account_provider_ats')
+                ->where('seq', $record->seq)
+                ->update([
+                    'sell_price' => DB::raw("sell_price + {$sellPrice}"),
+                    'offer_price' => DB::raw("offer_price + {$providerPrice}"),
+                    'margin' => DB::raw("margin + {$margin}"),
+                    'sell_ea' => DB::raw("sell_ea + 1"),
+                ]);
+        } else {
+            DB::table('fm_account_provider_ats')->insert([
+                'acc_date' => $yearMonth,
+                'acc_status' => 'none',
+                'member_seq' => $memberSeq,
+                'sell_price' => $sellPrice,
+                'offer_price' => $providerPrice,
+                'margin' => $margin,
+                'sell_ea' => 1,
+                'regist_date' => now(),
+            ]);
+        }
+    }
+
+    /**
+     * Refund Stock Sales (FFF Products).
+     * Reverses the settlement recorded in settleStockSales.
+     * 
+     * @param int $memberSeq Reseller Member Seq
+     * @param string $yearMonth 'YYYY-MM'
+     * @param int $refundPrice Refund Amount (usually equal to Sell Price)
+     * @return void
+     */
+    public function refundStockSales($memberSeq, $yearMonth, $refundPrice)
+    {
+        // Check if record exists
+        $record = DB::table('fm_account_provider_ats')
+            ->where('member_seq', $memberSeq)
+            ->where('acc_date', $yearMonth)
+            ->first();
+
+        // For Stock Sales Refund:
+        // Offer Price (Cost) = 0
+        // Margin = Refund Price
+        $providerPrice = 0; 
+        $margin = $refundPrice;
+
+        if ($record) {
+            DB::table('fm_account_provider_ats')
+                ->where('seq', $record->seq)
+                ->update([
+                    'sell_price' => DB::raw("sell_price - {$refundPrice}"),
+                    'offer_price' => DB::raw("offer_price - {$providerPrice}"),
+                    'margin' => DB::raw("margin - {$margin}"),
+                    'sell_ea' => DB::raw("sell_ea - 1"),
+                ]);
+        }
+        // If no record exists, we probably shouldn't create a negative one without context, 
+        // but typically refunds happen after sales, so record should exist.
+        // Logging warning if not found might be good.
+        else {
+             \Illuminate\Support\Facades\Log::warning("AgencySettlementService: Refund attempted but no settlement record found. Member: {$memberSeq}, YM: {$yearMonth}");
+        }
+    }
+
     private function getCurrentCash($memberSeq)
     {
         // Get last remain cash

@@ -76,6 +76,7 @@ Route::prefix('member')->name('member.')->group(function () {
 Route::prefix('order/cart')->name('cart.')->group(function () {
     Route::get('/', [CartController::class, 'index'])->name('index');
     Route::post('/add', [CartController::class, 'store'])->name('store');
+    Route::post('/ats-batch', [CartController::class, 'addAtsBatch'])->name('ats-batch');
     Route::post('/update', [CartController::class, 'update'])->name('update');
     Route::post('/delete', [CartController::class, 'destroy'])->name('destroy');
 });

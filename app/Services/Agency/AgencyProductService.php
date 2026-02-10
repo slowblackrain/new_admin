@@ -4,180 +4,158 @@ namespace App\Services\Agency;
 
 use App\Models\Goods;
 use App\Models\GoodsOption;
+use App\Models\GoodsSupply;
 use App\Models\GoodsImage;
 use App\Models\CategoryLink;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Exception;
 
 class AgencyProductService
 {
-    protected AgencyPriceCalculator $priceCalculator;
-
-    public function __construct(AgencyPriceCalculator $priceCalculator)
+    /**
+     * Process an agency order (ATS purchase) by copying the product for the reseller.
+     *
+     * @param int $orderSeq
+     * @return void
+     */
+    public function processAgencyOrder($orderSeq)
     {
-        $this->priceCalculator = $priceCalculator;
+        // 1. Find order items that are potentially ATS products
+        // We look for items where the product hasn't been copied yet (old_goods_seq check on fm_goods is the indicator)
+        
+        $orderItems = DB::table('fm_order_item as i')
+            ->join('fm_order as o', 'i.order_seq', '=', 'o.order_seq')
+            ->select('i.goods_seq', 'o.member_seq', 'i.item_seq')
+            ->where('i.order_seq', $orderSeq)
+            ->get();
+
+        foreach ($orderItems as $item) {
+            // Check if this product has already been copied
+            $exists = Goods::where('old_goods_seq', $item->goods_seq)->exists();
+
+            if (!$exists) {
+                // Determine if it's an ATS product (optional check, but good for safety)
+                // For now, assuming standard flow where only ATS products hit this logic via trigger
+                $this->duplicateProduct($item->goods_seq, $item->member_seq);
+            }
+        }
     }
 
     /**
-     * Duplicate a product for Agency Sales (ATS -> GT).
+     * Copy an ATS product to a GTS product (Single Unit) for a specific reseller.
      *
-     * @param int $sourceGoodsSeq
+     * @param int $originalGoodsSeq
      * @param int $resellerMemberSeq
-     * @return Goods
-     * @throws Exception
+     * @return int New Goods Sequence
      */
-    public function duplicateProduct(int $sourceGoodsSeq, int $resellerMemberSeq): Goods
+    public function duplicateProduct($originalGoodsSeq, $resellerMemberSeq)
     {
-        return DB::transaction(function () use ($sourceGoodsSeq, $resellerMemberSeq) {
-            $sourceGoods = Goods::findOrFail($sourceGoodsSeq);
+        return DB::transaction(function () use ($originalGoodsSeq, $resellerMemberSeq) {
+            $original = Goods::findOrFail($originalGoodsSeq);
 
-            // 1. Generate new SCODE with GT prefix
-            $newScode = $this->generateGtScode($sourceGoods->goods_scode);
-
-            // 2. Clone Goods Record
-            $newGoods = $sourceGoods->replicate();
-            $newGoods->goods_scode = $newScode;
-            // Legacy consistency: goods_code (int) often mirrors seq or is just unique. 
-            // We set it to a temp random int to avoid unique key collision on insert.
-            $newGoods->goods_code = rand(10000000, 99999999); 
-            
-            $newGoods->goods_name = $sourceGoods->goods_name . '  가등록'; // Append temp tag
-            $newGoods->goods_view = 'notLook'; // Hidden
-            $newGoods->goods_status = 'unsold'; // Unsold initially
-            $newGoods->provider_seq = $this->getProviderSeq($resellerMemberSeq); 
+            // 1. Duplicate Main Goods
+            $newGoods = $original->replicate();
             $newGoods->regist_date = now();
             $newGoods->update_date = now();
             
-            // Stock Reset (For Drop-shipping model: Set to unlimited or high number)
-            $newGoods->tot_stock = 9999;
-            $newGoods->runout_policy = 'unlimited'; // Unlimited stock policy
+            // Handle Unique goods_code
+            // goods_code is int(10)
+            // Use time() as a temporary unique integer
+            $newGoods->goods_code = time();
+
+            // Legacy logic for 'FFF' prefix
+            // $N_goods_scode = "FFF".substr($oldScode, 3);
+            if (Str::startsWith($original->goods_scode, 'FFF')) {
+                 $newGoods->goods_scode = $original->goods_scode . '_COPY'; // Prevent infinite FFF loop if re-copying?
+            } else {
+                 $newGoods->goods_scode = 'FFF' . substr($original->goods_scode, 3);
+            }
             
-            // Remove Barcode (goods_contents2)
-            $newGoods->goods_contents2 = '';
-
+            $newGoods->provider_member_seq = $resellerMemberSeq;
+            $newGoods->old_goods_seq = $originalGoodsSeq;
+            
+            // Force Stock to 0 (Admin must confirm quantity later)
+            $newGoods->min_purchase_limit = 'unlimit';
+            $newGoods->min_purchase_ea = 0;
+            $newGoods->tot_stock = 0;
+            
+            // Admin Memo
+            $newGoods->admin_memo = "\n" . now() . " " . $original->goods_scode . " 판매대행상품으로 개발되었음.";
+            
             $newGoods->save();
+            $newGoodsSeq = $newGoods->goods_seq;
 
-            // Fix goods_code (int) collision by setting it to goods_seq
-            $newGoods->goods_code = $newGoods->goods_seq;
-            $newGoods->save();
+            // 2. Duplicate Related Data
+            $this->copyRelatedData($originalGoodsSeq, $newGoodsSeq);
 
-            // Link back to old goods for traceability
-            DB::table('fm_goods')->where('goods_seq', $newGoods->goods_seq)->update(['old_goods_seq' => $sourceGoodsSeq]);
+            // 3. Duplicate Options & Supply (Crucial for Stock)
+            $this->copyOptions($originalGoodsSeq, $newGoodsSeq);
 
+            // 4. Update Original Product (Mark as Sold Out/Unsold)
+            // Legacy: update fm_goods set goods_status = 'unsold', goods_view='notLook' ...
+            $original->goods_status = 'unsold';
+            $original->goods_view = 'notLook';
+            $original->runout_date = now();
+            // Append memo
+            $original->admin_memo .= "\n" . now() . " " . $newGoods->goods_scode . " 판매대행상품 등록으로 인한 품절이 되었습니다.";
+            $original->save();
 
-            // 3. Clone Options and Reset Stock
-            $this->cloneOptions($sourceGoodsSeq, $newGoods->goods_seq);
-
-            // 4. Clone Images
-            $this->cloneImages($sourceGoodsSeq, $newGoods->goods_seq);
-
-            // 5. Clone Categories
-            $this->cloneCategories($sourceGoodsSeq, $newGoods->goods_seq);
-
-            // 6. Suspend Source Product
-            $this->suspendSourceProduct($sourceGoods);
-
-            // 7. Create Offer (Incoming Logic Bypass)
-            $this->createOfferRecord($newGoods->goods_seq);
-
-            return $newGoods;
+            return $newGoodsSeq;
         });
     }
 
-    protected function generateGtScode(string $oldScode): string
+    protected function copyRelatedData($oldSeq, $newSeq)
     {
-        // Logic: Replace first 3 chars with GT if standard pattern
-        // Or if it matches known prefixes.
-        // Legacy: $N_goods_scode = "GT" . substr($oldScode, 3);
-        // We should ensure we don't break short codes.
-        if (strlen($oldScode) < 3) {
-            return 'GT' . $oldScode;
-        }
-        return 'GT' . substr($oldScode, 3);
-    }
-
-    protected function getProviderSeq(int $memberSeq): int
-    {
-        // Resolve provider_seq from member_seq via fm_provider
-        // Assuming 1:1 or 1:N but we take the first active one? 
-        // In legacy, many resellers are providers.
-        $provider = DB::table('fm_provider')->where('userid', function($query) use ($memberSeq) {
-            $query->select('userid')->from('fm_member')->where('member_seq', $memberSeq);
-        })->first();
-
-        return $provider ? $provider->provider_seq : 0; // Default to 0 or handle error
-    }
-
-    protected function cloneOptions(int $oldSeq, int $newSeq)
-    {
-        $options = GoodsOption::where('goods_seq', $oldSeq)->get();
-        foreach ($options as $option) {
-            $newOption = $option->replicate();
-            $newOption->goods_seq = $newSeq;
-            
-            // Recalculate Supply Price
-            // Fetch original supply price from fm_goods_supply
-            $sourceSupply = DB::table('fm_goods_supply')->where('option_seq', $option->option_seq)->first();
-            $originalSupplyPrice = $sourceSupply ? $sourceSupply->supply_price : 0;
-
-            // Legacy default is 10% margin addition
-            $newOption->provider_price = $this->priceCalculator->calculateSupplyPrice($originalSupplyPrice);
-            
-            // Commission calculation might actally happen here or depends on scheme.
-            // For parity, we set the initial prices.
-            
-            $newOption->save();
-
-            // Handle Stock (fm_goods_supply)
-            // Create new supply record with unlimited stock
-            DB::table('fm_goods_supply')->insert([
-                'goods_seq' => $newSeq,
-                'option_seq' => $newOption->option_seq, 
-                'supply_price' => $newOption->provider_price, // Sync supply price?
-                'stock' => 9999,
-                'badstock' => 0,
-                'safe_stock' => 0,
-                'total_stock' => 9999
-            ]);
-        }
-    }
-
-    protected function cloneImages(int $oldSeq, int $newSeq)
-    {
-        $images = GoodsImage::where('goods_seq', $oldSeq)->get();
-        foreach ($images as $image) {
-            $newImage = $image->replicate();
-            $newImage->goods_seq = $newSeq;
-            $newImage->save();
-        }
-    }
-
-    protected function cloneCategories(int $oldSeq, int $newSeq)
-    {
-        $links = CategoryLink::where('goods_seq', $oldSeq)->get();
-        foreach ($links as $link) {
+        // fm_category_link
+        $catLinks = CategoryLink::where('goods_seq', $oldSeq)->get();
+        foreach ($catLinks as $link) {
             $newLink = $link->replicate();
             $newLink->goods_seq = $newSeq;
             $newLink->save();
         }
+
+        // fm_goods_image
+        $images = GoodsImage::where('goods_seq', $oldSeq)->get();
+        foreach ($images as $img) {
+            $newImg = $img->replicate();
+            $newImg->goods_seq = $newSeq;
+            $newImg->save();
+        }
     }
 
-    protected function suspendSourceProduct(Goods $goods)
+    protected function copyOptions($oldSeq, $newSeq)
     {
-        $goods->goods_view = 'notLook';
-        $goods->goods_status = 'unsold';
-        $goods->save();
-    }
+        $options = GoodsOption::where('goods_seq', $oldSeq)->get();
+        foreach ($options as $opt) {
+            $newOpt = $opt->replicate();
+            $newOpt->goods_seq = $newSeq;
+            $newOpt->save();
+            
+            $newOptSeq = $newOpt->option_seq; // Assuming auto-increment
 
-    protected function createOfferRecord(int $goodsSeq)
-    {
-        // Bypass step 11 logic
-        DB::table('fm_offer')->insert([
-            'goods_seq' => $goodsSeq,
-            'step' => 11, // Hand-inwarehousing/One-time warehousing
-            'regist_date' => now(), 
-            // Add other mandatory fields based on schema if needed
-        ]);
+            // Copy Supply (Stock)
+            // Note: Option duplication usually implies new option_seq is generated.
+            // We need to fetch supply related to OLD option_seq and create new one for NEW option_seq.
+            
+            $supplies = GoodsSupply::where('goods_seq', $oldSeq)->where('option_seq', $opt->option_seq)->get();
+            foreach ($supplies as $supply) {
+                // Replicate supply logic
+                $newSupply = $supply->replicate();
+                $newSupply->goods_seq = $newSeq;
+                $newSupply->option_seq = $newOptSeq; // Link to new option
+                
+                // Force Stock 0
+                $newSupply->stock = 0;
+                $newSupply->reservation15 = 0;
+                $newSupply->reservation25 = 0;
+                $newSupply->total_stock = 0;
+                
+                $newSupply->save();
+            }
+        }
+        
+        // Remove 'Sample Purchase' option if exists logic
+        // For strict parity:
+        // DB::table('fm_goods_suboption')->where('goods_seq', $newSeq)->where('suboption_title', '샘플구매')->delete();
     }
 }

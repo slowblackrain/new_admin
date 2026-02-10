@@ -93,7 +93,7 @@
                                     }
                                 }
                             @endphp
-                            <tr data-cart-seq="{{ $item->cart_seq }}" data-price="{{ $price }}">
+                            <tr data-cart-seq="{{ $item->cart_seq }}" data-price="{{ $price }}" data-is-postpaid="{{ $item->is_postpaid ? 1 : 0 }}">
                                 <td><input type="checkbox" name="cart_seq[]" class="chk_item" value="{{ $item->cart_seq }}"
                                         checked></td>
                                 <td class="img_cell">
@@ -102,7 +102,12 @@
                                     </a>
                                 </td>
                                 <td class="info_cell">
-                                    <div class="g_name">{{ $goods->goods_name }}</div>
+                                    <div class="g_name">
+                                        {{ $goods->goods_name }}
+                                        @if($item->is_postpaid)
+                                            <span class="badge_postpaid" style="color:red; font-size:11px; border:1px solid red; padding:0 2px;">[착불]</span>
+                                        @endif
+                                    </div>
                                     @if($optionStr && $optionStr != '기본')
                                         <div class="g_opt">옵션: {{ $optionStr }}</div>
                                     @endif
@@ -139,7 +144,13 @@
                                     <button type="button" class="btn_qty_mod">변경</button>
                                 </td>
                                 <td>{{ number_format($price) }}원</td>
-                                <td>기본배송</td>
+                                <td>
+                                    @if($item->is_postpaid)
+                                        <span style="color:red; font-weight:bold;">착불</span>
+                                    @else
+                                        기본배송
+                                    @endif
+                                </td>
                                 <td class="price_cell price_bold">{{ number_format($itemPrice) }}원</td>
                                 <td>
                                     <button type="button" class="btn_del">삭제</button>
@@ -275,34 +286,49 @@
 
             // Calculate Total
             function calcTotal() {
-                let total = 0;
+                let total = 0; // Standard items total
+                let grandTotalGoods = 0; // All items goods total
+
                 document.querySelectorAll('.chk_item:checked').forEach(chk => {
                     const tr = chk.closest('tr');
                     const price = parseInt(tr.dataset.price);
                     const ea = parseInt(tr.querySelector('.qty_input').value);
-                    total += price * ea;
+                    const isPostpaid = tr.dataset.isPostpaid === "1";
+                    
+                    const itemTotal = price * ea;
+                    grandTotalGoods += itemTotal;
+
+                    if (!isPostpaid) {
+                        total += itemTotal;
+                    }
                 });
 
                 const shippingCost = {{ $shippingCost }};
                 const freeThreshold = {{ $freeShippingThreshold }};
                 const packagingCost = {{ $packagingCost }};
 
-                const tax = Math.floor(total * 0.1);
+                const tax = Math.floor(grandTotalGoods * 0.1);
                 let delivery = 0;
                 
+                // Calculate delivery based on STANDARD items total only
                 if (total > 0 && total < freeThreshold) {
                     delivery = shippingCost;
                 }
 
-                // Packaging cost is always added if there are items
+                // Packaging cost is always added if there are items (Assumption: even if only ATS?)
+                // ATS items are Boxes, maybe they don't need "Packaging Cost"?
+                // Legacy: packagingCost is usually "Box Fee" for repacking. 
+                // If ATS is already a Box, maybe no fee?
+                // For now, simpler to leave it as is.
+                
                 let finalPackaging = 0;
-                if (total > 0) {
+                if (grandTotalGoods > 0) {
                     finalPackaging = packagingCost;
                 }
 
-                const final = total + delivery + tax + finalPackaging;
+                const final = grandTotalGoods + delivery + tax + finalPackaging;
 
-                document.getElementById('total_goods_price').innerText = new Intl.NumberFormat().format(total) + '원';
+                document.getElementById('total_goods_price').innerText = new Intl.NumberFormat().format(grandTotalGoods) + '원';
                 document.getElementById('total_delivery_price').innerText = new Intl.NumberFormat().format(delivery) + '원';
                 document.getElementById('total_tax_price').innerText = new Intl.NumberFormat().format(tax) + '원';
                 document.getElementById('total_packaging_price').innerText = new Intl.NumberFormat().format(finalPackaging) + '원';

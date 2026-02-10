@@ -12,11 +12,16 @@ class ScmWarehousingController extends Controller
 {
     protected $scmWarehousingService;
     protected $scmOrderService;
+    protected $agencyProductService;
 
-    public function __construct(ScmWarehousingService $scmWarehousingService, ScmOrderService $scmOrderService)
-    {
+    public function __construct(
+        ScmWarehousingService $scmWarehousingService, 
+        ScmOrderService $scmOrderService,
+        \App\Services\Agency\AgencyProductService $agencyProductService
+    ) {
         $this->scmWarehousingService = $scmWarehousingService;
         $this->scmOrderService = $scmOrderService;
+        $this->agencyProductService = $agencyProductService;
     }
 
     /**
@@ -44,6 +49,8 @@ class ScmWarehousingController extends Controller
     {
         $whsSeq = $request->input('whs_seq');
         $sorderSeq = $request->input('sorder_seq');
+        $orderSeq = $request->input('order_seq'); // Frontend Order ID
+
         $whs = null;
         $order = null;
 
@@ -52,7 +59,15 @@ class ScmWarehousingController extends Controller
         } elseif ($sorderSeq) {
              // Load Data from Order for Standard Warehousing
              $order = $this->scmOrderService->getOrderData($sorderSeq);
-             // Transform order items to warehousing items structure if needed
+        } elseif ($orderSeq) {
+             // [ATS TRIGGER]
+             // When loading a Frontend Order for Warehousing (Registration),
+             // perform the ATS product check/copy first.
+             $this->agencyProductService->processAgencyOrder($orderSeq);
+
+             // TODO: Load Frontend Order Data for View (Box->Unit conversion display)
+             // For now, we rely on the backend copy having happened.
+             // We might need to populate $order with data for the view to render "1 Box -> 100 EA" hints.
         }
 
         $traders = DB::table('fm_scm_trader')->orderBy('trader_name')->get();

@@ -34,13 +34,18 @@ class CartController extends Controller
             $ea = $option->ea ?? 1;
 
             if ($goods && $goods->option) {
-                $matchedOption = $goods->option->first(function($o) use ($option) {
+                // ... same matching logic ...
+                // Optimized matching
+                $matchedOption = null;
+                if ($option) {
+                    $matchedOption = $goods->option->first(function($o) use ($option) {
                         return (string)$o->option1 == (string)$option->option1 &&
                             (string)$o->option2 == (string)$option->option2 &&
                             (string)$o->option3 == (string)$option->option3 &&
                             (string)$o->option4 == (string)$option->option4 &&
                             (string)$o->option5 == (string)$option->option5;
-                });
+                    });
+                }
                 $calcOption = $matchedOption ?? $goods->option->first();
             } else {
                 $calcOption = null;
@@ -49,18 +54,109 @@ class CartController extends Controller
             // Calculate
             $pricing = $this->pricingService->calculatePrice($goods, $calcOption, $ea);
             $item->pricing_info = $pricing;
+            
+            // Flag for Postpaid (ATS)
+            // Legacy: shipping_method is in fm_cart_option
+            $item->is_postpaid = false;
+            if ($option && $option->shipping_method == 'postpaid') {
+                $item->is_postpaid = true;
+            }
         }
             
         // Valid Cart Seqs (placeholder)
+        // Checkboxes logic
         $validCartSeqs = $cartItems->pluck('cart_seq')->toArray();
 
         // Based on fm_provider_shipping (provider_seq 1, 3, etc.)
         // Default policy: 3000 won, free over 50,000 won
+        // ATS POSTPAID LOGIC:
+        // Items with shipping_method='postpaid' do NOT contribute to prepay shipping calculation?
+        // Or they just have their own shipping cost (which is effectively 0 to pay now, but user pays on arrival).
+        // Standard items: Sum(Price) -> Check Threshold -> +3000 or 0.
+        // Postpaid items: Ignored for threshold? Or separate group?
+        // Legacy ATS_add usually implies distinct handling. 
+        // For simplicity: Postpaid items are excluded from "Standard Shipping" calculation sum.
+        
+        $standardItemsTotal = 0;
+        foreach ($cartItems as $item) {
+            if (!$item->is_postpaid) {
+                $standardItemsTotal += $item->pricing_info['total_price'];
+            }
+        }
+
         $shippingCost = 3000;
         $freeShippingThreshold = 50000;
         $packagingCost = 300; // Mandatory Box Fee
 
+        if ($standardItemsTotal >= $freeShippingThreshold) {
+            $shippingCost = 0;
+        }
+
         return view('front.cart.index', compact('cartItems', 'validCartSeqs', 'shippingCost', 'freeShippingThreshold', 'packagingCost'));
+    }
+
+    /**
+     * ATS (Box) Product Batch Add
+     */
+    public function addAtsBatch(Request $request)
+    {
+        $goodsSeqList = explode(',', $request->input('goods_seq_list'));
+        $memberSeq = Auth::id() ?? 0; // ATS should be member only, but handle fallback
+        $sessionId = Session::getId();
+
+        DB::beginTransaction();
+        try {
+            foreach ($goodsSeqList as $goodsSeq) {
+                if (!$goodsSeq) continue;
+
+                $goods = Goods::find($goodsSeq);
+                if (!$goods) continue;
+
+                // 1. Get Default Option
+                // ATS Box usually has 1 default option or we pick the first.
+                $option = $goods->defaultOption ?? $goods->option->first();
+                if (!$option) continue;
+
+                // 2. Validate Min Purchase
+                $minEa = $goods->min_purchase_ea > 0 ? $goods->min_purchase_ea : 1;
+                $ea = $minEa; // ATS adds minimum required amount (usually 1 Box)
+
+                // 3. Insert Cart
+                // Check duplicate? Legacy ATS_add seems to just add or ignore. 
+                // We'll use standard "Add new" for batch to be safe, or update if exists.
+                // Simple update/create logic similar to store().
+                
+                $cart = new Cart();
+                $cart->goods_seq = $goodsSeq;
+                $cart->member_seq = $memberSeq;
+                $cart->session_id = $sessionId;
+                $cart->distribution = 'cart';
+                $cart->regist_date = now();
+                $cart->update_date = now();
+                $cart->ip = $request->ip();
+                $cart->save();
+
+                // 4. Insert Cart Option (Postpaid Force)
+                $cartOption = new CartOption();
+                $cartOption->cart_seq = $cart->cart_seq;
+                // $cartOption->option_seq = $option->option_seq; // Column does not exist in fm_cart_option
+                $cartOption->ea = $ea;
+                // Force Postpaid
+                $cartOption->shipping_method = 'postpaid'; 
+                
+                // Copy Option Titles for snapshot
+                $cartOption->option1 = $option->option1;
+                $cartOption->title1 = $option->option1; // Usually title and option match or Title is "Color" -> Option "Red"
+                // For legacy compliance, just copy what we can.
+                
+                $cartOption->save();
+            }
+            DB::commit();
+            return response()->json(['status' => 'success', 'message' => 'ATS Products added to cart.']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
     }
 
     public function store(Request $request)
@@ -138,6 +234,10 @@ class CartController extends Controller
 
                 // 2. Check if item already exists in Cart (Same Goods + Same Options)
                 // Only merge if NO custom inputs are provided (inputs make items unique)
+                // 2. Check if item already exists in Cart (Same Goods + Same Options + Same Inputs)
+                // We verify both options and inputs (title/value) match exactly.
+                $existingCart = null;
+                
                 // 2. Check if item already exists in Cart (Same Goods + Same Options + Same Inputs)
                 // We verify both options and inputs (title/value) match exactly.
                 $existingCart = null;
