@@ -20,11 +20,13 @@ class BoardController extends Controller
 
     public function index(Request $request, $id)
     {
+        \Illuminate\Support\Facades\Log::info("Board Index Hit: " . $id);
         $seller = Auth::guard('seller')->user();
         
         // Define Board Types
         $boards = [
             'notice' => '공지사항',
+            'product_notice' => '상품 중요 공지',
             'gs_seller_notice' => '셀러 공지사항',
             'mbqna' => '1:1 문의',
         ];
@@ -68,6 +70,7 @@ class BoardController extends Controller
         // Define Board Types
         $boards = [
             'notice' => '공지사항',
+            'product_notice' => '상품 중요 공지',
             'gs_seller_notice' => '셀러 공지사항',
             'mbqna' => '1:1 문의',
         ];

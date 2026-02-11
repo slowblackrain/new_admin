@@ -11,13 +11,13 @@ use App\Http\Controllers\Seller\ATSController;
 | Seller Admin Routes
 |--------------------------------------------------------------------------
 |
-| Prefix: /selleradmin
+| Prefix: /seller
 | Name Prefix: seller.
 | Guard: seller
 |
 */
 
-Route::prefix('selleradmin')->name('seller.')->group(function () {
+Route::prefix('seller')->name('seller.')->group(function () {
     
     // Auth Routes
     Route::middleware('guest:seller')->group(function () {
@@ -52,8 +52,19 @@ Route::prefix('selleradmin')->name('seller.')->group(function () {
 
         // Linked Order (OrderPlayauto) Routes
         Route::prefix('order_playauto')->name('order.')->group(function () {
-            Route::get('catalog', [\App\Http\Controllers\Seller\OrderPlayautoController::class, 'catalog'])->name('catalog');
+			Route::get('catalog', [\App\Http\Controllers\Seller\OrderPlayautoController::class, 'catalog'])->name('catalog');
+            Route::get('excel_upload', [\App\Http\Controllers\Seller\OrderPlayautoController::class, 'excelupload'])->name('excel_upload');
+            Route::post('excel_upload', [\App\Http\Controllers\Seller\OrderPlayautoController::class, 'excelupload_process'])->name('excel_upload_process');
+            Route::post('excel_store', [\App\Http\Controllers\Seller\OrderPlayautoController::class, 'excelupload_store'])->name('excel_store');
         });
+
+    // Return & Refund
+    // Return & Refund
+    Route::get('/return', [App\Http\Controllers\Seller\SellerReturnController::class, 'index'])->name('return.index');
+    Route::get('/return/{id}', [App\Http\Controllers\Seller\SellerReturnController::class, 'show'])->name('return.show');
+    
+    Route::get('/refund', [App\Http\Controllers\Seller\SellerRefundController::class, 'index'])->name('refund.index');
+    Route::get('/refund/{id}', [App\Http\Controllers\Seller\SellerRefundController::class, 'show'])->name('refund.show');
 
         // Export (Order Fulfillment) Routes
         Route::prefix('export')->name('export.')->group(function () {
@@ -68,9 +79,13 @@ Route::prefix('selleradmin')->name('seller.')->group(function () {
             Route::get('cash', [\App\Http\Controllers\Seller\PointController::class, 'cash'])->name('cash');
         });
 
+
         // Statistics Routes
         Route::prefix('statistics')->name('statistics.')->group(function () {
-            Route::get('goods', [\App\Http\Controllers\Seller\StatisticController::class, 'index'])->name('goods');
+            Route::get('/', [\App\Http\Controllers\Seller\SellerStatisticController::class, 'index'])->name('index');
+            Route::get('/sales_monthly', [\App\Http\Controllers\Seller\SellerStatisticController::class, 'sales_monthly'])->name('sales_monthly');
+            Route::get('/sales_daily', [\App\Http\Controllers\Seller\SellerStatisticController::class, 'sales_daily'])->name('sales_daily');
+            Route::get('/goods', [\App\Http\Controllers\Seller\SellerStatisticController::class, 'goods'])->name('goods');
         });
 
         // Board Routes
@@ -79,7 +94,7 @@ Route::prefix('selleradmin')->name('seller.')->group(function () {
             Route::post('{id}/store', [\App\Http\Controllers\Seller\BoardController::class, 'store'])->name('store');
             Route::get('{id}/view/{seq}', [\App\Http\Controllers\Seller\BoardController::class, 'show'])->name('show');
             Route::get('{id}', [\App\Http\Controllers\Seller\BoardController::class, 'index'])->name('index');
-        });
+        })->where('id', '[a-zA-Z0-9_]+');
     });
 
     // Test Login Route (For Verification)

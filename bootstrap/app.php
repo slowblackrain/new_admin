@@ -19,7 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($request->is('admin') || $request->is('admin/*')) {
                 return route('admin.login');
             }
-            if ($request->is('selleradmin') || $request->is('selleradmin/*')) {
+            if ($request->is('seller') || $request->is('seller/*')) {
                 return route('seller.login');
             }
             return route('member.login');

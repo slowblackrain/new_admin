@@ -675,8 +675,8 @@ class OrderController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Order Store Failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
     
-
             // Agency Deduction Failure Logging
             // We expect "AgencyDeductionFail:" or just standard error if string parsing matches
             $msg = $e->getMessage();

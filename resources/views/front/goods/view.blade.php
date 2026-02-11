@@ -1175,30 +1175,7 @@
         }
 
         function processOrder() {
-            if (!validateForm()) return;
-            
-            let form = document.forms['goodsForm'];
-            if (!form) form = document.getElementById('goodsForm');
-            
-            // Change Action to Order Form (or direct to checkout)
-            // Legacy behavior: likely adds to cart then redirects? 
-            // Or Request Order Form directly.
-            // For now, let's assume it adds to cart with a flag or redirects.
-            // If direct order is "Cart -> Redirect", we can reuse cart store and then redirect.
-            
-            // Standard Flow: Add to Cart -> Redirect to Order Sheet
-            // We can add a hidden input 'redirect_to_order' or similar if backend supports it.
-            // Or just use the form action if it's different.
-            
-            // checking legacy behavior... usually form.action = '/order/order_form' or something.
-            // Let's set it to cart for now with a callback? 
-            // Actually, the button says "바로구매" (Buy Now).
-            // Let's implement a basic Buy Now that adds to cart and goes to cart page (or order sheet).
-            
-            // For this specific task (fixing Cart Button), I only strictly need validateForm.
-            // I'll leave processOrder as a placeholder or basic implementation.
-            
-            processCart(true); // Reuse processCart with a "buy now" flag?
+            processCart(true);
         }
 
         function processCart(isDirectOrder = false) {
@@ -1216,16 +1193,44 @@
             fetch("{{ route('cart.store') }}", {
                 method: "POST",
                 headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                credentials: 'include', // Ensure cookies are sent
+                credentials: 'include',
                 body: formData
             }).then(r => r.json()).then(data => {
                 if (data.status === 'success') {
                     if (isDirectOrder) {
-                        location.href = "{{ route('cart.index') }}";
+                        // Direct Order: Create dynamic form and submit to order.form
+                        const orderForm = document.createElement('form');
+                        orderForm.method = 'POST';
+                        orderForm.action = "{{ route('order.form') }}";
+                        
+                        const csrfToken = document.createElement('input');
+                        csrfToken.type = 'hidden';
+                        csrfToken.name = '_token';
+                        csrfToken.value = '{{ csrf_token() }}';
+                        orderForm.appendChild(csrfToken);
+
+                        if (data.cart_seqs && Array.isArray(data.cart_seqs)) {
+                            data.cart_seqs.forEach(seq => {
+                                const input = document.createElement('input');
+                                input.type = 'hidden';
+                                input.name = 'cart_seq[]';
+                                input.value = seq;
+                                orderForm.appendChild(input);
+                            });
+                        }
+                        
+                        document.body.appendChild(orderForm);
+                        orderForm.submit();
                     } else {
-                        // Show Custom Modal instead of confirm
+                        // Show Custom Modal
                         const modal = document.getElementById('cart_confirm_modal');
-                        modal.style.display = 'flex';
+                        if (modal) {
+                            modal.style.display = 'flex';
+                        } else {
+                            if(confirm('장바구니에 담겼습니다. 장바구니로 이동하시겠습니까?')) {
+                                location.href = "{{ route('cart.index') }}";
+                            }
+                        }
                     }
                 } else {
                     alert(data.message || 'Error');

@@ -10,10 +10,12 @@ use App\Models\Goods;
 
 class OrderPlayautoController extends Controller
 {
-    // public function __construct()
-    // {
-    //     // Middleware is handled in routes
-    // }
+    protected $excelService;
+
+    public function __construct(\App\Services\Order\OrderExcelService $excelService)
+    {
+        $this->excelService = $excelService;
+    }
 
     public function catalog(Request $request)
     {
@@ -33,6 +35,8 @@ class OrderPlayautoController extends Controller
         // Legacy: if param 'chk_step' is not set, it might default.
         // For now, let's show all relevant orders (step >= 25)
         // $query->where('step', '>=', 25); 
+        
+        $query->orderBy('regist_date', 'desc');
 
         // Search Filters
         if ($request->filled('keyword')) {
@@ -52,10 +56,44 @@ class OrderPlayautoController extends Controller
             ]);
         }
 
-        $orders = $query->orderBy('regist_date', 'desc')
-                        ->paginate(20)
-                        ->withQueryString();
+        $orders = $query->paginate(20)->withQueryString();
 
-        return view('seller.order.catalog', compact('orders'));
+        return view('seller.order_playauto.catalog', compact('orders'));
+    }
+
+    public function excelupload()
+    {
+        return view('seller.order_playauto.excelupload');
+    }
+
+    public function excelupload_process(Request $request)
+    {
+        $request->validate([
+            'csv_file' => 'required|file|mimes:csv,txt',
+        ]);
+
+        $file = $request->file('csv_file');
+        $path = $file->getRealPath();
+
+        list($orderData, $result_error) = $this->excelService->excel_upload($path, 'check');
+
+        return view('seller.order_playauto.excelupload', compact('orderData', 'result_error'));
+    }
+
+    public function excelupload_store(Request $request)
+    {
+        $orders = $request->input('orders');
+        if (!$orders || !is_array($orders)) {
+            return back()->with('error', '주문 데이터가 유효하지 않습니다.');
+        }
+
+        $seller = \Illuminate\Support\Facades\Auth::guard('seller')->user();
+        $result = $this->excelService->create_orders($orders, $seller);
+
+        if ($result['success']) {
+            return redirect()->route('seller.order.catalog')->with('success', $result['message']);
+        } else {
+            return back()->with('error', $result['message']);
+        }
     }
 }

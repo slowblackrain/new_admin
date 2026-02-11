@@ -97,7 +97,31 @@
                 <li class="nav-item">
                     <a href="{{ route('seller.order.catalog') }}" class="nav-link {{ request()->routeIs('seller.order.catalog') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-link"></i>
-                        <p>연동주문</p>
+                        <p>연동주문 (리스트)</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('seller.order.excel_upload') }}" class="nav-link {{ request()->routeIs('seller.order.excel_upload') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-file-excel"></i>
+                        <p>엑셀업로드</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('seller.export.catalog') }}" class="nav-link {{ request()->routeIs('seller.export.catalog') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-truck"></i>
+                        <p>출고리스트</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('seller.return.index') }}" class="nav-link {{ request()->routeIs('seller.return.*') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-undo"></i>
+                        <p>반품리스트</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('seller.refund.index') }}" class="nav-link {{ request()->routeIs('seller.refund.*') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-money-bill-wave"></i>
+                        <p>환불리스트</p>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -106,11 +130,34 @@
                         <p>포인트내역</p>
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a href="{{ route('seller.statistics.goods') }}" class="nav-link {{ request()->routeIs('seller.statistics.*') ? 'active' : '' }}">
+                <li class="nav-item {{ request()->routeIs('seller.statistics.*') ? 'menu-open' : '' }}">
+                    <a href="#" class="nav-link {{ request()->routeIs('seller.statistics.*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-chart-pie"></i>
-                        <p>통계</p>
+                        <p>
+                            통계
+                            <i class="fas fa-angle-left right"></i>
+                        </p>
                     </a>
+                    <ul class="nav nav-treeview">
+                         <li class="nav-item">
+                            <a href="{{ route('seller.statistics.sales_monthly') }}" class="nav-link {{ request()->routeIs('seller.statistics.sales_monthly') ? 'active' : '' }}">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>월별 매출통계</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ route('seller.statistics.sales_daily') }}" class="nav-link {{ request()->routeIs('seller.statistics.sales_daily') ? 'active' : '' }}">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>일별 매출통계</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ route('seller.statistics.goods') }}" class="nav-link {{ request()->routeIs('seller.statistics.goods') ? 'active' : '' }}">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>상품별 판매통계</p>
+                            </a>
+                        </li>
+                    </ul>
                 </li>
 
                 <li class="nav-header">게시판</li>
@@ -118,6 +165,12 @@
                     <a href="{{ route('seller.board.index', 'notice') }}" class="nav-link {{ request()->fullUrlIs(route('seller.board.index', 'notice')) ? 'active' : '' }}">
                         <i class="nav-icon fas fa-bullhorn"></i>
                         <p>공지사항</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('seller.board.index', 'product_notice') }}" class="nav-link {{ request()->fullUrlIs(route('seller.board.index', 'product_notice')) ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-exclamation-circle"></i>
+                        <p>상품 중요 공지</p>
                     </a>
                 </li>
                 <li class="nav-item">

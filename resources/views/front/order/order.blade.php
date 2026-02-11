@@ -111,7 +111,7 @@
                     </div>
                     <div class="total_row">
                         <span class="th">총 수량</span>
-                        <span class="td"><strong>{{ $cartItems->sum('ea') }}</strong></span>
+                        <span class="td"><strong>{{ $cartItems->sum(function($item){ return $item->options->first()->ea ?? 0; }) }}</strong></span>
                     </div>
                 </div>
                 <div class="total_right">
