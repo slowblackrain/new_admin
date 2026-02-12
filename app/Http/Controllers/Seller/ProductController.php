@@ -14,6 +14,38 @@ use App\Models\GoodsImage;
 
 class ProductController extends Controller
 {
+    public function index(Request $request)
+    {
+        $seller = Auth::guard('seller')->user();
+
+        $query = Goods::where('provider_seq', $seller->provider_seq);
+
+        // Filters
+        if ($request->filled('keyword')) {
+            $keyword = $request->keyword;
+            $query->where(function($q) use ($keyword) {
+                $q->where('goods_name', 'like', "%{$keyword}%")
+                  ->orWhere('goods_code', 'like', "%{$keyword}%");
+            });
+        }
+
+        if ($request->filled('category')) {
+             $categoryCode = $request->category;
+             // Assuming basic category link via subquery or join if needed.
+             // For now simplified direct or link check if implemented.
+             // Legacy usually joins fm_category_link.
+             $query->whereHas('categoryLink', function($q) use ($categoryCode) {
+                 $q->where('category_code', 'like', $categoryCode . '%');
+             });
+        }
+        
+        $query->orderBy('regist_date', 'desc');
+
+        $goods = $query->paginate(20)->withQueryString();
+
+        return view('seller.goods.index', compact('goods'));
+    }
+
     public function create()
     {
         $seller = Auth::guard('seller')->user();

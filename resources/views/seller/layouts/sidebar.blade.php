@@ -35,6 +35,13 @@
                     </a>
                 </li>
 
+                 <li class="nav-item">
+                    <a href="{{ route('seller.my.index') }}" class="nav-link {{ request()->routeIs('seller.my.*') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-user-cog"></i>
+                        <p>내 정보 관리</p>
+                    </a>
+                </li>
+
                 {{-- 상품투자 (ATS) - 조건부 --}}
                 @if($is_ats_provider)
                 <li class="nav-header">상품투자 (ATS)</li>
@@ -92,6 +99,15 @@
                 </li>
                 @endif
 
+                {{-- 상품 관리 메뉴 (일반 셀러용) --}}
+                <li class="nav-header">상품 관리</li>
+                <li class="nav-item">
+                    <a href="{{ route('seller.goods.index') }}" class="nav-link {{ request()->routeIs('seller.goods.index') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-boxes"></i>
+                        <p>상품 목록</p>
+                    </a>
+                </li>
+
                 {{-- 일반 공급사 메뉴 --}}
                 <li class="nav-header">매출/정산</li>
                 <li class="nav-item">
@@ -125,9 +141,21 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="{{ route('seller.point.emoney') }}" class="nav-link {{ request()->routeIs('seller.point.*') ? 'active' : '' }}">
+                    <a href="{{ route('seller.point.emoney') }}" class="nav-link {{ request()->routeIs('seller.point.emoney') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-coins"></i>
                         <p>포인트내역</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('seller.point.cash') }}" class="nav-link {{ request()->routeIs('seller.point.cash') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-money-bill"></i>
+                        <p>캐시내역</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('seller.account.index') }}" class="nav-link {{ request()->routeIs('seller.account.*') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-file-invoice-dollar"></i>
+                        <p>정산내역</p>
                     </a>
                 </li>
                 <li class="nav-item {{ request()->routeIs('seller.statistics.*') ? 'menu-open' : '' }}">

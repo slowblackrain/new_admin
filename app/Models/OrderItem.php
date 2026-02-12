@@ -29,4 +29,9 @@ class OrderItem extends Model
     {
         return $this->belongsTo(Goods::class, 'goods_seq', 'goods_seq');
     }
+
+    public function inputs()
+    {
+        return $this->hasMany(OrderItemInput::class, 'item_seq', 'item_seq');
+    }
 }

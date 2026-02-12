@@ -35,10 +35,28 @@ Route::prefix('seller')->name('seller.')->group(function () {
         
         Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+        // My Info
+        Route::prefix('my')->name('my.')->group(function () {
+            Route::get('info', [\App\Http\Controllers\Seller\SellerInfoController::class, 'index'])->name('index');
+            Route::post('info', [\App\Http\Controllers\Seller\SellerInfoController::class, 'update'])->name('update');
+        });
+
+        // Settlement (Account)
+        Route::prefix('account')->name('account.')->group(function () {
+             Route::get('list', [\App\Http\Controllers\Seller\SellerAccountController::class, 'index'])->name('index');
+        });
+
         // Goods (Product) Routes
         Route::prefix('goods')->name('goods.')->group(function () {
+            Route::get('catalog', [ProductController::class, 'index'])->name('index'); // catalog or index? Sidebar usually uses 'catalog' term for lists. Let's use 'index' as name but 'catalog' as URL to match others? Or just 'list'.
+            // task said 'seller.goods.index'.
+            Route::get('list', [ProductController::class, 'index'])->name('index'); 
             Route::get('regist', [ProductController::class, 'create'])->name('create');
             Route::post('regist', [ProductController::class, 'store'])->name('store');
+            Route::get('edit/{id}', [ProductController::class, 'edit'])->name('edit');
+            Route::post('edit/{id}', [ProductController::class, 'update'])->name('update'); // Using POST for update to avoid MethodNotAllowed if standard HTML form (though we can use @method('PUT')). Let's stick to POST or add @method('PUT') in form.
+            // I'll use POST in route for simplicity unless I put @method('PUT') in form. I didn't put @method('PUT') in form above.
+            // So Route::post is correct.
         });
 
         // ATS (Product Investment) Routes
@@ -56,6 +74,12 @@ Route::prefix('seller')->name('seller.')->group(function () {
             Route::get('excel_upload', [\App\Http\Controllers\Seller\OrderPlayautoController::class, 'excelupload'])->name('excel_upload');
             Route::post('excel_upload', [\App\Http\Controllers\Seller\OrderPlayautoController::class, 'excelupload_process'])->name('excel_upload_process');
             Route::post('excel_store', [\App\Http\Controllers\Seller\OrderPlayautoController::class, 'excelupload_store'])->name('excel_store');
+        });
+
+        // General Order Management (SellerOrderController)
+        Route::prefix('order')->name('order_mgmt.')->group(function () {
+             Route::get('catalog', [\App\Http\Controllers\Seller\SellerOrderController::class, 'index'])->name('catalog');
+             Route::get('view/{id}', [\App\Http\Controllers\Seller\SellerOrderController::class, 'show'])->name('view');
         });
 
     // Return & Refund

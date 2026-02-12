@@ -95,26 +95,25 @@ class SellerOrderController extends Controller
      */
     public function show($id)
     {
-        $provider = session('provider');
+        $seller = Auth::guard('seller')->user();
         
-        // Fallback for development
-        if (!$provider) {
-            $provider = DB::table('fm_provider')->where('provider_id', 'dometopia001')->first();
-            $provider = (array) $provider;
-
-            // Manually login for development
-            if ($provider) {
-                 $sellerModel = \App\Models\Seller::where('provider_id', 'dometopia001')->first();
-                 if($sellerModel) \Illuminate\Support\Facades\Auth::guard('seller')->login($sellerModel);
-            }
+        // Development Fallback
+        if (!$seller) {
+             $seller = \App\Models\Seller::where('provider_id', 'newjjang3')->first();
+             if ($seller) Auth::guard('seller')->login($seller);
         }
 
-        $member = Member::where('userid', $provider['userid'])->firstOrFail();
+        if (!$seller) {
+             return redirect()->route('seller.login')->with('error', 'Login required');
+        }
+
+        // Find linked member
+        $member = Member::where('userid', $seller->userid)->firstOrFail();
 
         // Ensure order owner matches
         $order = Order::where('order_seq', $id)
             ->where('member_seq', $member->member_seq)
-            ->with(['items', 'items.options', 'items.goods'])
+            ->with(['items', 'items.options', 'items.goods', 'items.inputs'])
             ->firstOrFail();
 
         return view('seller.order.view', compact('order'));

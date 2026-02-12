@@ -9,7 +9,7 @@
             </div>
             <div class="col-sm-6">
                 <ol class="breadcrumb float-sm-right">
-                    <li class="breadcrumb-item"><a href="{{ route('seller.index') }}">Home</a></li>
+                    <li class="breadcrumb-item"><a href="{{ route('seller.dashboard') }}">Home</a></li>
                     <li class="breadcrumb-item"><a href="{{ route('seller.order.catalog') }}">Order List</a></li>
                     <li class="breadcrumb-item active">{{ $order->order_seq }}</li>
                 </ol>
@@ -98,6 +98,43 @@
                                                 </div>
                                             @endforeach
                                         </td>
+                                        <td>
+                                            @foreach($item->options as $opt)
+                                                <div style="margin-bottom: 5px;">
+                                                    @if($opt->option1)
+                                                        <small>{{ $opt->title1 }}: {{ $opt->option1 }}</small>
+                                                    @endif
+                                                    @if($opt->option2)
+                                                         / <small>{{ $opt->title2 }}: {{ $opt->option2 }}</small>
+                                                    @endif
+                                                    @if(!$opt->option1)
+                                                        <small>기본옵션</small>
+                                                    @endif
+                                                </div>
+                                            @endforeach
+
+                                            {{-- Custom Inputs Display --}}
+                                            @if($item->inputs->count() > 0)
+                                                <div class="mt-2 p-2 bg-light rounded customer-input-section">
+                                                    <strong><i class="fas fa-pen-square"></i> 주문 입력 정보:</strong>
+                                                    @foreach($item->inputs as $input)
+                                                        <div class="mt-1">
+                                                            <small class="text-primary font-weight-bold">{{ $input->title }}:</small>
+                                                            @if($input->type == 'file')
+                                                                <a href="{{ asset('storage/' . $input->value) }}" target="_blank" class="btn btn-xs btn-outline-secondary">
+                                                                    <i class="fas fa-download"></i> 다운로드 ({{ basename($input->value) }})
+                                                                </a>
+                                                                @if(in_array(pathinfo($input->value, PATHINFO_EXTENSION), ['jpg','jpeg','png','gif','webp']))
+                                                                    <br>
+                                                                    <img src="{{ asset('storage/' . $input->value) }}" class="img-thumbnail mt-1" style="max-width: 100px;">
+                                                                @endif
+                                                            @else
+                                                                <small>{{ $input->value }}</small>
+                                                            @endif
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            @endif
                                         <td>
                                             @foreach($item->options as $opt)
                                                 <div style="margin-bottom: 5px;">{{ number_format($opt->ea) }}</div>

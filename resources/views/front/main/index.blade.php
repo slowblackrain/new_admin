@@ -400,9 +400,8 @@
         <div class="main_header" style="margin-top: 10px; border-bottom:0 !important;">
 
             <div class="" style="margin-right: 12px; float: left;">
-                <a href='/goods/catalog?code=00460009' target='_self'>
-                    <img src="{{ asset('images/legacy/main/main_top_left2.jpg') }}" alt="크리스마스 트리" title="크리스마스 트리"
-                        style="width: 196px; height: 400px;">
+                <a href='/goods/catalog?code=002000230008' target='_self'>
+                    <img src="{{ asset('images/legacy/main/main_top_left2.jpg') }}" alt="미니 가습기" title="미니 가습기">
                 </a>
             </div>
 
@@ -420,8 +419,13 @@
                             if ($banner instanceof \App\Models\DesignBannerItem) {
                                 // If it's a DB model, path is often relative to root or data/design
                                 // Inspection showed: "images/banner/11/images_1.jpg"
-                                // This might need a prefix if it's not starting with /
-                                if (!Str::startsWith($banner->image, '/')) {
+                                // Local file structure: public/images/legacy/main/banner/images_X.jpg
+                                // We need to map "images/banner/11/..." to "images/legacy/main/banner/..."
+                                
+                                if (Str::contains($banner->image, 'images/banner/11/')) {
+                                    $filename = basename($banner->image);
+                                    $imgUrl = asset('images/legacy/main/banner/' . $filename);
+                                } elseif (!Str::startsWith($banner->image, '/')) {
                                     $imgUrl = '/' . $banner->image;
                                 } else {
                                     $imgUrl = $banner->image;
@@ -429,7 +433,7 @@
                             }
                         @endphp
                         <div>
-                            <a href="{{ $banner->link }}">
+                            <a href="{{ $banner->link }}" target="{{ $banner->target ?? '_self' }}">
                                 <img src="{{ $imgUrl }}" style="width:100%; height: 400px; object-fit: cover;"
                                     onerror="this.src='{{ asset('images/legacy/main/banner/images_1.jpg') }}'">
                             </a>
@@ -470,6 +474,8 @@
                                     $targetPath = trim($targetPath);
                                     if (Str::startsWith($targetPath, 'http')) {
                                         $imgSrc = $targetPath;
+                                    } elseif (Str::startsWith($targetPath, 'images/legacy_synced/')) {
+                                        $imgSrc = asset($targetPath);
                                     } elseif (strpos($targetPath, 'goods_img') !== false) {
                                         $suffix = substr($targetPath, strpos($targetPath, 'goods_img') + 9);
                                         $imgSrc = "https://dmtusr.vipweb.kr/goods_img" . $suffix;
@@ -480,8 +486,8 @@
                             @endphp
                             <!-- Product {{ $loop->iteration }} -->
                             <div style="width: 32%; padding: 10px 6px;">
-                                <a href="/goods/view?no={{ $product->goods_seq }}">
-                                    <span class="best_ab" style="position: absolute; z-index: 1;"><img
+                                <a href="/goods/view?no={{ $product->goods_seq }}" style="display: block; position: relative;">
+                                    <span class="best_ab" style="position: absolute; z-index: 1; top: 0; left: 0;"><img
                                             src="{{ asset('images/legacy/main/best_c_icon.png') }}"></span>
                                     <img src="{{ $imgSrc }}"
                                         style="width: 100%; height: 80px; border-radius: 15%; object-fit: cover;"
@@ -520,6 +526,8 @@
                                             $targetPath = trim($targetPath);
                                             if (Str::startsWith($targetPath, 'http')) {
                                                 $imgSrc = $targetPath;
+                                            } elseif (Str::startsWith($targetPath, 'images/legacy_synced/')) {
+                                                $imgSrc = asset($targetPath);
                                             } elseif (strpos($targetPath, 'goods_img') !== false) {
                                                 $suffix = substr($targetPath, strpos($targetPath, 'goods_img') + 9);
                                                 $imgSrc = "https://dmtusr.vipweb.kr/goods_img" . $suffix;
@@ -545,15 +553,15 @@
                                                         </a>
                                                     </span>
                                                 </td>
-                                                <td>
-                                                    <div style="margin-left: 5px;">
-                                                        <p style="text-align: left; font-size: 11px; color: #666;">
-                                                            <a href="/goods/view?no={{ $product->goods_seq }}">{{ $product->goods_scode }}</a>
+                                                <td valign="top">
+                                                    <div style="margin-left: 5px; padding-right: 10px;">
+                                                        <p style="text-align: left; font-size: 12px; line-height: 12px; font-weight: bold; color: #444; display: block; margin-top: 0; margin-bottom: 5px; font-family: '맑은고딕','Malgun Gothic'; letter-spacing: -0.5px;">
+                                                            <a href="/goods/view?no={{ $product->goods_seq }}" style="color: #444; text-decoration: none;">{{ $product->goods_scode }}</a>
                                                         </p>
-                                                        <h6 style="margin: 5px 0; font-size: 12px; line-height: 1.2;">
-                                                            <a href="/goods/view?no={{ $product->goods_seq }}" style="color: #333;">{{ $product->goods_name }}</a>
+                                                        <h6 style="margin: 5px 0; font-size: 13px; line-height: 1.4; width: 100%; max-height: 2.8em; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; word-break: break-all; font-family: '맑은고딕','Malgun Gothic'; letter-spacing: -0.5px;">
+                                                            <a href="/goods/view?no={{ $product->goods_seq }}" style="color: #333; text-decoration: none;">{{ $product->goods_name }}</a>
                                                         </h6>
-                                                        <p style="font-size: 12px; color: #888;">
+                                                        <p style="font-size: 12px; color: #888; font-family: '맑은고딕','Malgun Gothic'; margin-top: 5px; margin-bottom: 0; letter-spacing: -0.5px;">
                                                             {{ $priceLabel }} <b style="color: #333; font-size: 14px;">{{ number_format($product->price) }}</b> 원
                                                         </p>
                                                     </div>
@@ -575,9 +583,8 @@
         
         @include('front.main.mobile_quick_menu')
 
-        <!-- 롤 배너2, 1200카테고리 배너 -->
-        <!-- 롤 배너2 (Main Middle Banners: B12 Left, B13 Right) -->
-        <!-- 롤 배너2 (Main Middle Banners: B12 Left, B13 Right) -->
+        <!-- 롤 배너2, 1200카테고리 배너 (Hidden to match Live Site) -->
+        {{--
         <!-- 롤 배너2 (Main Middle Banners: B12 Left, B13 Right) -->
         <div class="mt13 middle-banner-container" style="display: flex; justify-content: space-between; flex-wrap: wrap;">
             <!-- Left Banner (12) -->
@@ -621,6 +628,23 @@
                     </ul>
                 @endif
             </div>
+        </div>
+        --}}
+        <!-- 롤 배너2, 1200카테고리 배너 (Hidden by default, used for Middle Banners in Legacy) -->
+        <!-- Live site uses a specific 4-image banner section here instead of the dynamic middle banners -->
+        <div class="mt13" style="padding-top: 12px !important; display: flex; justify-content: space-between; margin-bottom: 20px;">
+            <a href="/goods/catalog?code=004200200001" target='_self'>
+                <img src="{{ asset('images/legacy/main/main_top_B1.jpg') }}" title="크리스마스 장식품" alt="크리스마스 장식품" style="width:100%;">
+            </a>
+            <a href="/goods/catalog?code=00420033" target='_self'>
+                <img src="{{ asset('images/legacy/main/main_top_B2.jpg') }}" title="산타복" alt="산타복" style="width:100%;">
+            </a>
+            <a href="/goods/search?search_text=칫솔" target='_self'>
+                <img src="{{ asset('images/legacy/main/main_top_B3.jpg') }}" title="수제 장식용 볼" alt="수제 장식용 볼" style="width:100%;">
+            </a>
+            <a href="/goods/catalog?code=0020002300010001" target='_self'>
+                <img src="{{ asset('images/legacy/main/main_top_B4.jpg') }}" title="LED 트리" alt="LED 트리" style="width:100%;">
+            </a>
         </div>
 
         <!-- 사업부 4가지 -->
@@ -897,7 +921,8 @@
                  controls: false,
                  autoHover: true,
                  maxSlides: 1,
-                 moveSlides: 1
+                 moveSlides: 1,
+                 slideWidth: 291
              });
          }
      });

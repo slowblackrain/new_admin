@@ -493,7 +493,22 @@ class OrderController extends Controller
                 
                 $itemOption->option1 = $option->option1 ?? '';
                 $itemOption->option2 = $option->option2 ?? '';
+                $itemOption->option2 = $option->option2 ?? '';
                 $itemOption->save();
+
+                // Save Order Item Inputs (from Cart Inputs)
+                if ($cItem->inputs && $cItem->inputs->count() > 0) {
+                    foreach ($cItem->inputs as $cInput) {
+                        $orderInput = new \App\Models\OrderItemInput();
+                        $orderInput->order_seq = $order->order_seq;
+                        $orderInput->item_seq = $orderItem->item_seq;
+                        $orderInput->item_option_seq = $itemOption->item_option_seq; // Assuming relation exists or 0
+                        $orderInput->type = $cInput->type;
+                        $orderInput->title = $cInput->input_title;
+                        $orderInput->value = $cInput->input_value;
+                        $orderInput->save();
+                    }
+                }
 
                 // Stock Deduction Logic
                 if ($matchedOption) {
