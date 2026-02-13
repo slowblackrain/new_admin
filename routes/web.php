@@ -56,6 +56,15 @@ Route::prefix('goods')->name('goods.')->group(function () {
     Route::post('/restock/store', [App\Http\Controllers\Front\RestockController::class, 'store'])->name('restock.store');
 });
 
+// Gift / Promotional Materials
+Route::get('/gift', [App\Http\Controllers\Front\GiftController::class, 'index'])->name('gift.index');
+
+Route::prefix('page')->name('page.')->group(function () {
+    Route::get('/academy', [App\Http\Controllers\Front\PageController::class, 'academy'])->name('academy');
+    Route::get('/ats', [App\Http\Controllers\Front\PageController::class, 'ats'])->name('ats');
+});
+
+
 Route::prefix('member')->name('member.')->group(function () {
     Route::get('/login', [MemberController::class, 'login'])->name('login');
     Route::post('/login', [MemberController::class, 'login_process'])->name('login_process');

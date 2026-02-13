@@ -238,7 +238,7 @@
                                     const itemPrice = data.new_total_price;
                                     tr.querySelector('.price_cell').innerText = new Intl.NumberFormat().format(itemPrice) + '원';
                                     // Also update unit price display if exists? (Currently only total is shown in UI)
-                                    // table cell 5 is unit price text: <td>{{ number_format($price) }}원</td>
+                                    // table cell 5 is unit price text
                                     tr.children[5].innerText = new Intl.NumberFormat().format(data.new_unit_price) + '원';
                                 } else {
                                     // Fallback (shouldn't happen with updated controller)

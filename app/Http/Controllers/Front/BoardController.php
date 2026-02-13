@@ -14,6 +14,10 @@ class BoardController extends Controller
     {
         $boardId = $request->query('id', 'notice'); // Default to notice
 
+        if ($boardId === 'bulkorder') {
+            return app(\App\Http\Controllers\Front\BulkOrderController::class)->index($request);
+        }
+
         // 1. Get Board Config
         $boardConfig = BoardManager::findById($boardId);
 
@@ -50,6 +54,10 @@ class BoardController extends Controller
         $seq = $request->query('seq');
         $boardId = $request->query('id'); // Should match
 
+        if ($boardId === 'bulkorder') {
+            return app(\App\Http\Controllers\Front\BulkOrderController::class)->view($request);
+        }
+
         $post = Board::where('seq', $seq)->firstOrFail();
 
         // Validation: Check if post belongs to board?
@@ -79,6 +87,10 @@ class BoardController extends Controller
         $boardId = $request->query('id');
         if (!$boardId) {
             abort(404, 'Board ID required');
+        }
+
+        if ($boardId === 'bulkorder') {
+            return app(\App\Http\Controllers\Front\BulkOrderController::class)->create($request);
         }
         
         // Check Permission (Simple Auth check for now, can be sophisticated based on BoardManager)

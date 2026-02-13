@@ -25,22 +25,44 @@
                      </div>
                 @endif
 
-                {{-- Sub Category Nav --}}
+                {{-- Sub Category Nav (Toggle Style) --}}
                 @if(isset($childCategories) && $childCategories->count() > 0)
-                    <div class="sub_category_nav">
-                        <ul>
-                            <li class="{{ request('code') == substr(request('code'),0,4) ? '' : '' }}">
-                                 {{-- Parent or 'All' link could go here if needed --}}
-                            </li>
-                            @foreach($childCategories as $child)
-                                <li class="{{ request('code') == $child->category_code ? 'on' : '' }}">
-                                    <a href="{{ route('goods.catalog', ['code' => $child->category_code]) }}">{{ $child->title }}</a>
+                    <div class="sub_category_nav_wrapper" style="position: relative; margin-bottom: 20px;">
+                        <button type="button" class="sub_category_btn" onclick="toggleSubCategory()" style="width: 100%; padding: 10px; background: #f9f9f9; border: 1px solid #ddd; text-align: left; font-weight: bold; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+                            <span>하위 카테고리 선택</span>
+                            <i id="sub_cate_arrow" class="fas fa-chevron-down"></i>
+                        </button>
+                        <div id="sub_category_list" class="sub_category_list" style="display: none; border: 1px solid #ddd; border-top: none; background: #fff; padding: 10px;">
+                            <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap;">
+                                <li style="width: 50%; padding: 5px; box-sizing: border-box;">
+                                    <a href="{{ route('goods.catalog', ['code' => substr($categoryCode, 0, 4)]) }}" style="text-decoration: none; color: #555; display: block;">전체보기</a>
                                 </li>
-                            @endforeach
-                        </ul>
+                                @foreach($childCategories as $child)
+                                    <li class="{{ request('code') == $child->category_code ? 'on' : '' }}" style="width: 50%; padding: 5px; box-sizing: border-box;">
+                                        <a href="{{ route('goods.catalog', ['code' => $child->category_code]) }}" style="text-decoration: none; color: {{ request('code') == $child->category_code ? '#d00' : '#555' }}; font-weight: {{ request('code') == $child->category_code ? 'bold' : 'normal' }}; display: block;">
+                                            {{ $child->title }}
+                                        </a>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
                     </div>
+                    <script>
+                        function toggleSubCategory() {
+                            var list = document.getElementById('sub_category_list');
+                            var arrow = document.getElementById('sub_cate_arrow');
+                            if (list.style.display === 'none') {
+                                list.style.display = 'block';
+                                arrow.classList.remove('fa-chevron-down');
+                                arrow.classList.add('fa-chevron-up');
+                            } else {
+                                list.style.display = 'none';
+                                arrow.classList.remove('fa-chevron-up');
+                                arrow.classList.add('fa-chevron-down');
+                            }
+                        }
+                    </script>
                 @endif
-
                 {{-- Search Within Category --}}
                 <div class="result_search_area" style="text-align:right; margin-bottom:10px;">
                     <form name="frmListSearch" method="get" action="{{ url()->current() }}">
@@ -265,6 +287,20 @@
         .paging_area a:hover {
             border-color: #888;
             color: #333;
+        }
+
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            .goods_list_ul li {
+                width: 50%; /* 2 cols on mobile */
+            }
+            .sub_tit_area, .location_wrap, .sort_area {
+                padding-left: 10px; padding-right: 10px;
+            }
+            #main-wrap {
+                width: 100% !important; /* Override fixed width */
+                box-sizing: border-box;
+            }
         }
     </style>
 @endsection

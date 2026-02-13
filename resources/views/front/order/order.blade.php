@@ -132,6 +132,11 @@
 
             <form name="orderForm" id="orderForm" method="post" action="{{ route('order.store') }}">
                 @csrf
+                @if(isset($cart_seqs))
+                    @foreach($cart_seqs as $seq)
+                        <input type="hidden" name="cart_seq[]" value="{{ $seq }}">
+                    @endforeach
+                @endif
                 {{-- 주문서 처리 로직은 다음 Phase에서 구현 --}}
 
                 <h4 class="mt50">주문자 정보</h4>

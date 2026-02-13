@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Goods;
 use App\Models\Category;
+use Illuminate\Support\Facades\Auth;
 
 class GoodsController extends Controller
 {
@@ -79,6 +80,14 @@ class GoodsController extends Controller
                 break;
             case 'G': // Single Goods
                 $query->where('goods_scode', 'like', 'G%')
+                      ->orderBy('goods_seq', 'desc');
+                break;
+            case 'GK': // Korean Delivery (GK)
+                $query->where('goods_scode', 'like', 'GK%')
+                      ->orderBy('goods_seq', 'desc');
+                break;
+            case 'GT': // Global Delivery (GT)
+                $query->where('goods_scode', 'like', 'GT%')
                       ->orderBy('goods_seq', 'desc');
                 break;
             case 'price_asc':
@@ -199,6 +208,9 @@ class GoodsController extends Controller
         // Create Cookie (1 day)
         $cookie = cookie('goods_today', json_encode($todayGoods), 1440);
 
+        // ... logic ...
+        $title = $product->goods_name;
+
         return response()->view('front.goods.view', compact(
             'product',
             'categories',
@@ -209,7 +221,8 @@ class GoodsController extends Controller
             'gtdImg',
             'gusImg',
             'makerName',
-            'detailImgMap'
+            'detailImgMap',
+            'title'
         ))->withCookie($cookie);
     }
 
