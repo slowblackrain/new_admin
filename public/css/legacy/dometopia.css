@@ -655,6 +655,7 @@ img {
 
 #doto_footer .f_nav .menu li {
 	float: left;
+	list-style: none;
 }
 
 #doto_footer .f_nav .menu li+li {

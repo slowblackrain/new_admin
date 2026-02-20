@@ -1,4 +1,4 @@
-<div id="mypage_sidebar" style="width: 200px; float: left; margin-right: 40px;">
+<div id="mypage_sidebar" class="mypage-sidebar-responsive">
     <div class="mypage_menu" style="border: 1px solid #ddd; background: #fff;">
         <h2
             style="background: #333; color: #fff; padding: 15px; font-size: 16px; font-weight: bold; text-align: center; margin: 0;">

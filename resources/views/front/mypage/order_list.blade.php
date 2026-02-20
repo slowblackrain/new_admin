@@ -2,7 +2,13 @@
 
 @push('styles')
     <link rel="stylesheet" href="/css/mypage.css?v={{ time() }}">
+    <style>
+        .pagination li { list-style: none !important; display: inline-block !important; }
+        .pagination { display: flex; justify-content: center; padding: 0; }
+    </style>
 @endpush
+
+@section('title', '주문/배송 조회')
 
 @section('content')
     <div class="location_wrap hidden-mobile">

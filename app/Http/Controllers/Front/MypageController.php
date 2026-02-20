@@ -43,7 +43,7 @@ class MypageController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return view('front.mypage.order_list', compact('orders', 'allCount', 'orderCount', 'deliveryCount'));
+        return view('front.mypage.order_list', compact('orders', 'allCount', 'orderCount', 'deliveryCount'))->with('title', '주문/배송 조회');
     }
 
     public function orderView($id)

@@ -8,6 +8,54 @@
     width: 960px;
 }
 
+.mypage-sidebar-responsive {
+    float: left;
+    width: 200px;
+    margin-right: 20px;
+}
+
+@media (min-width: 1025px) {
+    .mypage-content-responsive .cart_table {
+        display: table !important;
+        width: 100% !important;
+    }
+}
+
+/* Pagination Styles */
+.pagination {
+    display: flex;
+    justify-content: center;
+    list-style: none;
+    padding: 0;
+    margin-top: 20px;
+}
+
+.pagination .page-item {
+    margin: 0 2px;
+}
+
+.pagination .page-link {
+    display: block;
+    padding: 6px 12px;
+    border: 1px solid #ddd;
+    background: #fff;
+    color: #333;
+    text-decoration: none;
+    font-size: 14px;
+    border-radius: 2px;
+}
+
+.pagination .page-item.active .page-link {
+    background: #f44336;
+    border-color: #f44336;
+    color: #fff;
+    font-weight: bold;
+}
+
+.pagination .page-link:hover {
+    background: #f9f9f9;
+}
+
 /* ==========================================================================
    Cart / Order List Table (Desktop)
    ========================================================================== */
@@ -78,6 +126,13 @@
     .mypage-content-responsive {
         float: none;
         width: 100%;
+    }
+
+    .mypage-sidebar-responsive {
+        float: none;
+        width: 100%;
+        margin-right: 0;
+        margin-bottom: 20px;
     }
 
     .location_wrap {

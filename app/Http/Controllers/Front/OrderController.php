@@ -695,6 +695,7 @@ class OrderController extends Controller
             // Agency Deduction Failure Logging
             // We expect "AgencyDeductionFail:" or just standard error if string parsing matches
             $msg = $e->getMessage();
+
             if (strpos($msg, 'AgencyDeductionFail:') === 0) {
                  $json = substr($msg, strlen('AgencyDeductionFail:'));
                  $context = json_decode($json, true);

@@ -1,5 +1,9 @@
 @extends('layouts.front')
 
+@push('styles')
+    <link rel="stylesheet" href="/css/mypage.css?v={{ time() }}">
+@endpush
+
 @section('content')
     <div class="location_wrap">
         <div class="location_cont">
@@ -12,7 +16,7 @@
         @include('front.mypage.sidebar')
 
         <!-- Right Content -->
-        <div id="mypage_content" style="float: right; width: 960px;">
+        <div id="mypage_content" class="mypage-content-responsive">
             <div class="cart_title_area">
                 <h3>주문 상세 내역</h3>
             </div>
