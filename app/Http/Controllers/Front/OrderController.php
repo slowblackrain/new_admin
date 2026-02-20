@@ -35,8 +35,8 @@ class OrderController extends Controller
     public function index(Request $request)
     {
         // 1. Validate Input (Cart Seqs)
-        // If coming from cart form submit
-        $cart_seqs = $request->input('cart_seq');
+        // If coming from cart form submit or from a validation redirect back()
+        $cart_seqs = $request->input('cart_seq') ?? old('cart_seq');
 
         if (!$cart_seqs || !is_array($cart_seqs)) {
             return redirect()->route('cart.index')->withErrors(['msg' => '선택된 상품이 없습니다.']);
@@ -58,6 +58,7 @@ class OrderController extends Controller
         // 4. Calculate Total (Initial calculation for verification, view will also Calc)
         $totalPrice = 0;
         $standardItemsTotal = 0;
+        $totalVat = 0;
 
         foreach ($cartItems as $item) {
             $goods = $item->goods;
@@ -80,6 +81,10 @@ class OrderController extends Controller
             $pricing = $this->pricingService->calculatePrice($goods, $calcOption, $ea);
             $totalPrice += $pricing['total_price'];
 
+            if ($goods && $goods->tax === 'tax') {
+                $totalVat += floor($pricing['total_price'] * 0.1);
+            }
+
             // Check if standard shipping (not postpaid)
             // Note: fm_cart_option has shipping_method column.
             if (($option->shipping_method ?? '') !== 'postpaid') {
@@ -97,8 +102,13 @@ class OrderController extends Controller
             $shipping = $shippingCost;
         }
 
-        $tax = floor($totalPrice * 0.1);
+        $tax = $totalVat;
         $finalPrice = $totalPrice + $shipping + $tax + $packagingCost;
+
+        // Check for tax-exempt items (legacy: chk_tax_exempt)
+        $hasExempt = $cartItems->contains(function($item) {
+            return $item->goods && $item->goods->tax === 'exempt';
+        });
 
         // 5. Fetch Usable Coupons
         $coupons = [];
@@ -112,7 +122,7 @@ class OrderController extends Controller
                 ->get();
         }
 
-        return view('front.order.order', compact('cartItems', 'user', 'totalPrice', 'user', 'cart_seqs', 'tax', 'finalPrice', 'shipping', 'packagingCost', 'coupons'));
+        return view('front.order.order', compact('cartItems', 'user', 'totalPrice', 'user', 'cart_seqs', 'tax', 'finalPrice', 'shipping', 'packagingCost', 'coupons', 'hasExempt'));
     }
 
     public function store(Request $request)
@@ -166,6 +176,7 @@ class OrderController extends Controller
             
             $totalPrice = 0;
             $totalEa = 0;
+            $totalVat = 0;
             $kinds = 0;
 
             // Calculate Total
@@ -197,6 +208,11 @@ class OrderController extends Controller
                 $price = $pricingInfo['unit_price'];
 
                 $totalPrice += ($price * $ea);
+                
+                if ($goods && $goods->tax === 'tax') {
+                    $totalVat += floor(($price * $ea) * 0.1);
+                }
+
                 $totalEa += $ea;
                 $kinds++;
 
@@ -294,7 +310,7 @@ class OrderController extends Controller
                 $shipping = $shippingCost;
             }
 
-            $tax = floor($totalPrice * 0.1);
+            $tax = $totalVat;
             $finalSettlePrice = $totalPrice + $shipping + $tax + $packagingCost;
 
             $order->settleprice = $finalSettlePrice;

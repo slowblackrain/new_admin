@@ -78,9 +78,15 @@ class CartController extends Controller
         // For simplicity: Postpaid items are excluded from "Standard Shipping" calculation sum.
         
         $standardItemsTotal = 0;
+        $totalVat = 0;
+
         foreach ($cartItems as $item) {
             if (!$item->is_postpaid) {
                 $standardItemsTotal += $item->pricing_info['total_price'];
+            }
+            if ($item->goods && $item->goods->tax === 'tax') {
+                // In legacy, VAT is 10% of the total price of the item.
+                $totalVat += floor($item->pricing_info['total_price'] * 0.1);
             }
         }
 
@@ -92,7 +98,7 @@ class CartController extends Controller
             $shippingCost = 0;
         }
 
-        return view('front.cart.index', compact('cartItems', 'validCartSeqs', 'shippingCost', 'freeShippingThreshold', 'packagingCost'));
+        return view('front.cart.index', compact('cartItems', 'validCartSeqs', 'shippingCost', 'freeShippingThreshold', 'packagingCost', 'totalVat'));
     }
 
     /**

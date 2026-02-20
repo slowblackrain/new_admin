@@ -93,7 +93,7 @@
                                     }
                                 }
                             @endphp
-                            <tr data-cart-seq="{{ $item->cart_seq }}" data-price="{{ $price }}" data-is-postpaid="{{ $item->is_postpaid ? 1 : 0 }}">
+                            <tr data-cart-seq="{{ $item->cart_seq }}" data-price="{{ $price }}" data-is-postpaid="{{ $item->is_postpaid ? 1 : 0 }}" data-tax="{{ $goods->tax ?? 'tax' }}">
                                 <td><input type="checkbox" name="cart_seq[]" class="chk_item" value="{{ $item->cart_seq }}"
                                         checked></td>
                                 <td class="img_cell">
@@ -173,10 +173,10 @@
                         <span>포장비 <strong id="total_packaging_price">0원</strong></span>
                         <span class="plus">+</span>
                         <span>부가세 <strong
-                                id="total_tax_price">{{ number_format(floor($totalPrice * 0.1)) }}원</strong></span>
+                                id="total_tax_price">{{ number_format($totalVat) }}원</strong></span>
                         <span class="equal">=</span>
                         <span class="final_price">총 결제금액 <strong
-                                id="total_settle_price">{{ number_format($totalPrice + floor($totalPrice * 0.1)) }}원</strong></span>
+                                id="total_settle_price">{{ number_format($totalPrice + $totalVat) }}원</strong></span>
                     </div>
                 </div>
 
@@ -288,15 +288,21 @@
             function calcTotal() {
                 let total = 0; // Standard items total
                 let grandTotalGoods = 0; // All items goods total
+                let totalTax = 0; // Taxable items tax
 
                 document.querySelectorAll('.chk_item:checked').forEach(chk => {
                     const tr = chk.closest('tr');
                     const price = parseInt(tr.dataset.price);
                     const ea = parseInt(tr.querySelector('.qty_input').value);
                     const isPostpaid = tr.dataset.isPostpaid === "1";
+                    const taxType = tr.dataset.tax;
                     
                     const itemTotal = price * ea;
                     grandTotalGoods += itemTotal;
+
+                    if (taxType === 'tax') {
+                        totalTax += Math.floor(itemTotal * 0.1);
+                    }
 
                     if (!isPostpaid) {
                         total += itemTotal;
@@ -307,7 +313,7 @@
                 const freeThreshold = {{ $freeShippingThreshold }};
                 const packagingCost = {{ $packagingCost }};
 
-                const tax = Math.floor(grandTotalGoods * 0.1);
+                const tax = totalTax;
                 let delivery = 0;
                 
                 // Calculate delivery based on STANDARD items total only

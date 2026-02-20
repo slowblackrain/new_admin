@@ -129,7 +129,12 @@ class GoodsController extends Controller
 
         // Fetch product or fail
         // In legacy, 'no' maps to 'goods_seq'
-        $product = Goods::active()->with(['option', 'images', 'inputs', 'subOptions'])->where('goods_seq', $no)->firstOrFail();
+        $product = Goods::where('goods_view', 'look')
+            ->whereIn('goods_status', ['normal', 'runout'])
+            ->whereHas('provider', function ($q) {
+                $q->where('provider_status', 'Y');
+            })
+            ->with(['option', 'images', 'inputs', 'subOptions'])->where('goods_seq', $no)->firstOrFail();
 
         // 1. Calculate Prices for Display (Tiered Pricing) using Service
         $priceInfo = $pricingService->getProductPricingInfo($product);

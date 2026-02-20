@@ -33,13 +33,26 @@ class AppServiceProvider extends ServiceProvider
         });
 
         // Scope to layouts to avoid overhead/conflicts on partials or exports
-        \Illuminate\Support\Facades\View::composer(['admin.layouts.*', 'front.layouts.*', 'layouts.*', 'welcome'], function ($view) {
+        \Illuminate\Support\Facades\View::composer(['admin.layouts.*', 'front.layouts.*', 'layouts.*', 'welcome', 'components.layout.footer'], function ($view) {
             $globalCategories = \App\Models\Category::where('level', 2)
                 ->where('hide_in_navigation', '0')
                 ->orderBy('position', 'asc')
                 ->get();
             $view->with('globalCategories', $globalCategories);
         });
+
+        // Global Shop Info
+        try {
+            if (\Illuminate\Support\Facades\Schema::hasTable('fm_config')) {
+                $shopInfo = \Illuminate\Support\Facades\DB::table('fm_config')
+                    ->where('groupcd', 'basic')
+                    ->pluck('value', 'codecd')
+                    ->toArray();
+                \Illuminate\Support\Facades\View::share('shopInfo', $shopInfo);
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\View::share('shopInfo', []);
+        }
 
         // Popup Integration (Front Only)
         \Illuminate\Support\Facades\View::composer(['layouts.front', 'front.main.index', 'front.layouts.mobile_header', 'front.layouts.mobile_bottom_nav', 'front.goods.search'], function ($view) {

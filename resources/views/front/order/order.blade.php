@@ -125,7 +125,7 @@
                         <span class="item">총 부가세: <strong>{{ number_format($tax) }}</strong> (면세)</span>
                         <span class="item ml10">예상포인트: 0</span>
                         <span class="op equal">=</span>
-                        <span class="item total">총 결제 금액: <strong>{{ number_format($finalPrice) }}</strong></span>
+                        <span class="item total">총 결제 금액: <strong class="final_price">{{ number_format($finalPrice) }}</strong></span>
                     </div>
                 </div>
             </div>
@@ -324,8 +324,12 @@
                                 <th>신청 선택</th>
                                 <td>
                                     <label><input type="radio" name="typereceipt" value="0" checked onclick="toggleReceipt(0)"> 신청안함</label>
-                                    <label class="ml10"><input type="radio" name="typereceipt" value="1" onclick="toggleReceipt(1)"> 세금계산서</label>
-                                    <label class="ml10"><input type="radio" name="typereceipt" value="2" onclick="toggleReceipt(2)"> 현금영수증</label>
+                                    @if(isset($hasExempt) && $hasExempt)
+                                        <span style="color:#d00; font-size:12px; margin-left:10px;">(비과세 상품 포함시 증빙서류 발급 불가)</span>
+                                    @else
+                                        <label class="ml10"><input type="radio" name="typereceipt" value="1" onclick="toggleReceipt(1)"> 세금계산서</label>
+                                        <label class="ml10"><input type="radio" name="typereceipt" value="2" onclick="toggleReceipt(2)"> 현금영수증</label>
+                                    @endif
                                 </td>
                             </tr>
                             <tr id="receipt_form_row" class="hide">
@@ -659,7 +663,7 @@
 
             if (finalPrice < 0) finalPrice = 0;
 
-            document.querySelector('.final_price').innerText = new Intl.NumberFormat().format(finalPrice) + '원';
+            document.querySelector('.final_price').innerText = new Intl.NumberFormat().format(finalPrice);
         }
 
         document.getElementById('use_emoney').addEventListener('change', updateFinalPrice);

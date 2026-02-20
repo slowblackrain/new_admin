@@ -532,8 +532,12 @@
                             <span class="total_goods_price_txt" id="total_price"
                                 style="font-size:30px; color:#d32f2f; font-weight:bold;">0원</span>
                             <div style="margin-top:20px;">
-                                <button type="button" class="button bgred" onclick="processOrder()">바로구매</button>
-                                <button type="button" class="button bgblue" onclick="processCart()">장바구니</button>
+                                @if($product->goods_status == 'runout')
+                                    <button type="button" class="button" style="width:100%; background:#777; color:#fff;" onclick="openRestockPopup({{ $product->goods_seq }})">재입고알림 신청</button>
+                                @else
+                                    <button type="button" class="button bgred" onclick="processOrder()">바로구매</button>
+                                    <button type="button" class="button bgblue" onclick="processCart()">장바구니</button>
+                                @endif
                             </div>
                         </div>
 
@@ -763,10 +767,15 @@
         </div>
 
         <div style="display:flex; justify-content:space-between;">
-            <button type="button" class="button bgred" onclick="processOrder()"
-                style="width:48%; height:40px;">바로구매</button>
-            <button type="button" class="button bgblue" onclick="processCart()"
-                style="width:48%; height:40px;">장바구니</button>
+            @if($product->goods_status == 'runout')
+                <button type="button" class="button" onclick="openRestockPopup({{ $product->goods_seq }})"
+                    style="width:100%; height:40px; background:#777; color:#fff;">재입고알림 신청</button>
+            @else
+                <button type="button" class="button bgred" onclick="processOrder()"
+                    style="width:48%; height:40px;">바로구매</button>
+                <button type="button" class="button bgblue" onclick="processCart()"
+                    style="width:48%; height:40px;">장바구니</button>
+            @endif
         </div>
     </div>
 
@@ -783,6 +792,10 @@
 
     {{-- JS Logic --}}
     <script>
+        function openRestockPopup(goodsSeq) {
+            window.open('/goods/restock/register?goods_seq=' + goodsSeq, 'restockPopup', 'width=500,height=500,scrollbars=yes');
+        }
+
         const priceInfo = @json($priceInfo ?? []);
         const hasOptions = @json($hasOptions);
         const defaultSeq = @json($defaultSeq);
