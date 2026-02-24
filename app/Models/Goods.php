@@ -22,7 +22,7 @@ class Goods extends Model
 
     protected $guarded = [];
 
-    protected $appends = ['price', 'consumer_price'];
+    protected $appends = ['price', 'consumer_price', 'supply_price'];
 
     public function getPriceAttribute()
     {
@@ -32,6 +32,11 @@ class Goods extends Model
     public function getConsumerPriceAttribute()
     {
         return $this->defaultOption->consumer_price ?? 0;
+    }
+
+    public function getSupplyPriceAttribute()
+    {
+        return $this->defaultOption->supply->supply_price ?? 0;
     }
 
     // Relationship to Categories

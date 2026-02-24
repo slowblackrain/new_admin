@@ -113,11 +113,11 @@
                 <li class="nav-item">
                     <a href="{{ route('seller.order.catalog') }}" class="nav-link {{ request()->routeIs('seller.order.catalog') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-link"></i>
-                        <p>연동주문 (리스트)</p>
+                        <p>일반/연동주문 (리스트)</p>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="{{ route('seller.order.excel_upload') }}" class="nav-link {{ request()->routeIs('seller.order.excel_upload') ? 'active' : '' }}">
+                    <a href="{{ route('seller.link.upload') }}" class="nav-link {{ request()->routeIs('seller.link.upload') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-file-excel"></i>
                         <p>엑셀업로드</p>
                     </a>
@@ -153,7 +153,7 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="{{ route('seller.account.index') }}" class="nav-link {{ request()->routeIs('seller.account.*') ? 'active' : '' }}">
+                    <a href="{{ route('seller.account.summary') }}" class="nav-link {{ request()->routeIs('seller.account.*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-file-invoice-dollar"></i>
                         <p>정산내역</p>
                     </a>

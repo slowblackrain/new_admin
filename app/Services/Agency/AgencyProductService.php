@@ -63,12 +63,11 @@ class AgencyProductService
             // Use time() as a temporary unique integer
             $newGoods->goods_code = time();
 
-            // Legacy logic for 'FFF' prefix
-            // $N_goods_scode = "FFF".substr($oldScode, 3);
-            if (Str::startsWith($original->goods_scode, 'FFF')) {
-                 $newGoods->goods_scode = $original->goods_scode . '_COPY'; // Prevent infinite FFF loop if re-copying?
+            // ATS to GT prefix mapping for reseller products
+            if (Str::startsWith($original->goods_scode, 'GT')) {
+                 $newGoods->goods_scode = $original->goods_scode . '_COPY'; // Prevent infinite GT loop if re-copying
             } else {
-                 $newGoods->goods_scode = 'FFF' . substr($original->goods_scode, 3);
+                 $newGoods->goods_scode = 'GT' . substr($original->goods_scode, 3);
             }
             
             $newGoods->provider_member_seq = $resellerMemberSeq;

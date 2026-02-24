@@ -21,21 +21,22 @@ class SellerReturnController extends Controller
             return redirect()->route('seller.login');
         }
 
-        // Logic to filter returns by provider items
-        // Since fm_order_return links to order, and order links to items
-        // We need to check if the return contains items belonging to this provider.
-        // OR more simply, if the order contains items from this provider (but return might not include them).
-        // Let's look at legacy logic:
-        // inner join fm_order_return_item as item ...
-        // LEFT JOIN fm_order_item orditem ON ...
-        // where ... orditem.provider_seq = ...
+        // Find linked member
+        $member = \App\Models\Member::where('userid', $seller->userid)->first();
+        if (!$member) {
+            return view('seller.return.index', [
+                'returns' => collect([]),
+                'startDate' => $startDate,
+                'endDate' => $endDate,
+                'status' => $status,
+                'message' => 'Linked reseller account not found.'
+            ]);
+        }
         
         $query = OrderReturn::with(['items.orderItem', 'order.member'])
             ->select('fm_order_return.*')
-            ->join('fm_order_return_item', 'fm_order_return.return_code', '=', 'fm_order_return_item.return_code')
-            ->join('fm_order_item', 'fm_order_return_item.item_seq', '=', 'fm_order_item.item_seq')
-            ->where('fm_order_item.provider_seq', $seller->provider_seq)
-            ->distinct();
+            ->join('fm_order', 'fm_order_return.order_seq', '=', 'fm_order.order_seq')
+            ->where('fm_order.member_seq', $member->member_seq);
 
         if ($startDate && $endDate) {
             $query->whereBetween('fm_order_return.regist_date', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);

@@ -17,6 +17,16 @@ use App\Http\Controllers\Admin\DashboardController;
 
 Route::prefix('admin')->name('admin.')->group(function () {
     
+    // [Temporary Testing Route] Auto-login for Browser Subagent
+    Route::get('auto-login', function () {
+        $user = \App\Models\Member::first();
+        if($user) {
+            \Illuminate\Support\Facades\Auth::guard('admin')->login($user);
+            return redirect()->route('admin.popup_image_full');
+        }
+        return 'No Admin Found';
+    });
+    
     // Auth Routes
     Route::middleware('guest:admin')->group(function () {
         Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -25,29 +35,29 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
     Route::post('logout', [LoginController::class, 'logout'])->name('logout');
 
-    // Protected Routes
+    // Admin Management Routes (Protected)
     Route::middleware('auth:admin')->group(function () {
         Route::get('/', function () {
             return redirect()->route('admin.dashboard');
         });
         
-        
         Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    });
-
-    // Test Login Route (For Verification - Remove in Production)
-    Route::get('test/login', function () {
-        $admin = \App\Models\Admin::where('manager_id', 'dmtadmin')->first();
-        if ($admin) {
-            \Illuminate\Support\Facades\Auth::guard('admin')->login($admin);
-            return redirect()->route('admin.dashboard');
-        }
-        return "Admin user 'dmtadmin' not found.";
-    });
 
         // Goods Routes
         Route::prefix('goods')->name('goods.')->group(function () {
-             // ... existing goods routes would be here if any ...
+            
+            // 진열번호 관리 (Sortcd Catalog)
+            Route::get('sortcd_catalog', [\App\Http\Controllers\Admin\Goods\SortcdCatalogController::class, 'index'])->name('sortcd_catalog');
+            Route::post('sortcd_catalog/store', [\App\Http\Controllers\Admin\Goods\SortcdCatalogController::class, 'store'])->name('sortcd_catalog.store');
+            Route::post('sortcd_catalog/update', [\App\Http\Controllers\Admin\Goods\SortcdCatalogController::class, 'update'])->name('sortcd_catalog.update');
+            Route::post('sortcd_catalog/destroy', [\App\Http\Controllers\Admin\Goods\SortcdCatalogController::class, 'destroy'])->name('sortcd_catalog.destroy');
+            Route::get('sortcd_catalog/excel', [\App\Http\Controllers\Admin\Goods\SortcdCatalogController::class, 'excel'])->name('sortcd_catalog.excel');
+            
+            // 일괄이미지등록 (대량 이미지 등록)
+            Route::get('popup_image_full', [\App\Http\Controllers\Admin\Goods\ImageBatchController::class, 'popup_image_full'])->name('popup_image_full');
+            Route::post('img_uploads', [\App\Http\Controllers\Admin\Goods\ImageBatchController::class, 'img_uploads'])->name('img_uploads');
+            
+            // 송장등록리스트 (deli_catalog) goods routes would be here if any ...
              Route::get('catalog', [\App\Http\Controllers\Admin\GoodsController::class, 'catalog'])->name('catalog');
              Route::get('regist', [\App\Http\Controllers\Admin\GoodsController::class, 'create'])->name('regist');
              Route::post('regist', [\App\Http\Controllers\Admin\GoodsController::class, 'store'])->name('store');
@@ -79,51 +89,103 @@ Route::prefix('admin')->name('admin.')->group(function () {
         });
 
         Route::prefix('order')->name('order.')->group(function () {
-        Route::get('catalog', [\App\Http\Controllers\Admin\OrderController::class, 'catalog'])->name('catalog');
-        
-        // Bank Check Routes
-        Route::get('bank_check', [\App\Http\Controllers\Admin\Order\BankCheckController::class, 'index'])->name('bank_check');
-        Route::get('bank_check/match', [\App\Http\Controllers\Admin\Order\BankCheckController::class, 'matchCandidates'])->name('bank_check.match');
-        Route::post('bank_check/process', [\App\Http\Controllers\Admin\Order\BankCheckController::class, 'processMatch'])->name('bank_check.process');
+            Route::get('catalog', [\App\Http\Controllers\Admin\OrderController::class, 'catalog'])->name('catalog');
+            
+            // Bank Check Routes
+            Route::get('bank_check', [\App\Http\Controllers\Admin\Order\BankCheckController::class, 'index'])->name('bank_check');
+            Route::get('bank_check/match', [\App\Http\Controllers\Admin\Order\BankCheckController::class, 'matchCandidates'])->name('bank_check.match');
+            Route::post('bank_check/process', [\App\Http\Controllers\Admin\Order\BankCheckController::class, 'processMatch'])->name('bank_check.process');
 
-        Route::get('view/{order_seq}', [\App\Http\Controllers\Admin\Order\OrderDetailController::class, 'index'])->name('view');
-        
-        // Product Search & Options (For Replacement Modal)
-        Route::get('search_goods', [\App\Http\Controllers\Admin\Order\OrderDetailController::class, 'searchGoods'])->name('search_goods');
-        Route::get('get_options', [\App\Http\Controllers\Admin\Order\OrderDetailController::class, 'getOptions'])->name('get_options');
-        
-        // Process Actions
-        Route::post('process', [\App\Http\Controllers\Admin\Order\OrderProcessController::class, 'updateStatus'])->name('process');
-        Route::post('replace_item', [\App\Http\Controllers\Admin\Order\OrderProcessController::class, 'replaceItem'])->name('replace_item');
-        Route::post('update_price', [\App\Http\Controllers\Admin\Order\OrderProcessController::class, 'updatePrice'])->name('update_price');
-        Route::post('update_recipient', [\App\Http\Controllers\Admin\Order\OrderDetailController::class, 'updateRecipient'])->name('update_recipient');
-    });
+            // Claims Routes
+            Route::get('claim/list', [\App\Http\Controllers\Admin\Order\ClaimController::class, 'index'])->name('claim.list');
+            Route::post('claim/process', [\App\Http\Controllers\Admin\Order\ClaimController::class, 'process'])->name('claim.process');
 
-    // Member Routes
-    Route::prefix('member')->name('member.')->group(function () {
-        Route::get('catalog', [\App\Http\Controllers\Admin\MemberController::class, 'catalog'])->name('catalog');
-        Route::get('view/{member_seq}', [\App\Http\Controllers\Admin\MemberController::class, 'view'])->name('view');
-    });
+            // Customer Memo (CS Template) Management
+            Route::get('customer_memo', [\App\Http\Controllers\Admin\Order\CustomerMemoController::class, 'index'])->name('customer_memo.index');
+            Route::post('customer_memo/store', [\App\Http\Controllers\Admin\Order\CustomerMemoController::class, 'store'])->name('customer_memo.store');
+            Route::post('customer_memo/update', [\App\Http\Controllers\Admin\Order\CustomerMemoController::class, 'update'])->name('customer_memo.update');
+            Route::post('customer_memo/destroy', [\App\Http\Controllers\Admin\Order\CustomerMemoController::class, 'destroy'])->name('customer_memo.destroy');
+            Route::get('customer_memo/popup', [\App\Http\Controllers\Admin\Order\CustomerMemoController::class, 'popup'])->name('customer_memo.popup');
 
-    // Category Routes
-    Route::prefix('category')->name('category.')->group(function () {
-        Route::get('catalog', [\App\Http\Controllers\Admin\CategoryController::class, 'catalog'])->name('catalog');
-        Route::get('tree', [\App\Http\Controllers\Admin\CategoryController::class, 'getTree'])->name('tree');
-        Route::get('detail/{id}', [\App\Http\Controllers\Admin\CategoryController::class, 'getDetail'])->name('detail');
-        Route::get('goods/{id}', [\App\Http\Controllers\Admin\CategoryController::class, 'getGoods'])->name('goods');
-        Route::post('store', [\App\Http\Controllers\Admin\CategoryController::class, 'store'])->name('store');
-        Route::post('update/{id}', [\App\Http\Controllers\Admin\CategoryController::class, 'update'])->name('update');
-        Route::post('move', [\App\Http\Controllers\Admin\CategoryController::class, 'move'])->name('move');
-        Route::post('destroy/{id}', [\App\Http\Controllers\Admin\CategoryController::class, 'destroy'])->name('destroy');
-    });
+            Route::get('view/{order_seq}', [\App\Http\Controllers\Admin\Order\OrderDetailController::class, 'index'])->name('view');
+            Route::post('save_memo', [\App\Http\Controllers\Admin\Order\OrderDetailController::class, 'saveMemo'])->name('save_memo');
+            
+            // Product Search & Options (For Replacement Modal)
+            Route::get('search_goods', [\App\Http\Controllers\Admin\Order\OrderDetailController::class, 'searchGoods'])->name('search_goods');
+            Route::get('get_options', [\App\Http\Controllers\Admin\Order\OrderDetailController::class, 'getOptions'])->name('get_options');
+            
+            // Process Actions
+            Route::post('process', [\App\Http\Controllers\Admin\Order\OrderProcessController::class, 'updateStatus'])->name('process');
+            Route::post('replace_item', [\App\Http\Controllers\Admin\Order\OrderProcessController::class, 'replaceItem'])->name('replace_item');
+            Route::post('update_price', [\App\Http\Controllers\Admin\Order\OrderProcessController::class, 'updatePrice'])->name('update_price');
+            Route::post('update_recipient', [\App\Http\Controllers\Admin\Order\OrderDetailController::class, 'updateRecipient'])->name('update_recipient');
+        });
 
-    // Provider Routes
-    Route::prefix('provider')->name('provider.')->group(function () {
-        Route::get('catalog', [\App\Http\Controllers\Admin\ProviderController::class, 'catalog'])->name('catalog');
-    });
+        // Coupon Routes
+        Route::prefix('coupon')->name('coupon.')->group(function () {
+            Route::get('catalog', [\App\Http\Controllers\Admin\CouponController::class, 'catalog'])->name('catalog');
+            Route::get('regist', [\App\Http\Controllers\Admin\CouponController::class, 'regist'])->name('regist');
+            Route::post('process', [\App\Http\Controllers\Admin\CouponController::class, 'process'])->name('process');
+        });
 
-    // SCM Routes (Protected)
-    Route::middleware('auth:admin')->group(function () {
+        // Event Routes
+        Route::prefix('event')->name('event.')->group(function () {
+            Route::get('catalog', [\App\Http\Controllers\Admin\EventController::class, 'catalog'])->name('catalog');
+            Route::get('regist', [\App\Http\Controllers\Admin\EventController::class, 'regist'])->name('regist');
+            Route::post('process', [\App\Http\Controllers\Admin\EventController::class, 'process'])->name('process');
+        });
+
+        // Member Routes
+        Route::prefix('member')->name('member.')->group(function () {
+            Route::get('catalog', [\App\Http\Controllers\Admin\MemberController::class, 'catalog'])->name('catalog');
+            Route::get('view/{member_seq}', [\App\Http\Controllers\Admin\MemberController::class, 'view'])->name('view');
+            
+            // Dormancy Management
+            Route::post('dormancy-on/{member_seq}', [\App\Http\Controllers\Admin\MemberController::class, 'dormancyOn'])->name('dormancy.on');
+            Route::post('dormancy-off/{member_seq}', [\App\Http\Controllers\Admin\MemberController::class, 'dormancyOff'])->name('dormancy.off');
+        });
+
+        // Test Routes
+        Route::prefix('test')->name('test.')->group(function () {
+            Route::get('alimtalk', function (\Illuminate\Http\Request $request, \App\Services\NotificationService $service) {
+                $phone = $request->query('phone', '01065001051'); // Default test number from legacy smail_kakao
+                $templateCode = $request->query('template', '12457'); // Default test template from legacy
+                $params = [$request->query('p1', '도매토피아'), $request->query('p2', '테스트유저')]; // Default test params
+
+                $smsFallback = $request->query('fallback', 'Y') === 'Y';
+                
+                if ($request->has('smsOnly')) {
+                    $result = $service->sendSms($phone, $request->query('msg', 'This is a test SMS message from the new Dometopia Laravel system.'));
+                } else {
+                    $result = $service->sendAlimtalk($templateCode, $phone, $params, $smsFallback);
+                }
+
+                return response()->json([
+                    'type' => $request->has('smsOnly') ? 'SMS' : 'Alimtalk',
+                    'target_phone' => $phone,
+                    'result' => $result
+                ], 200, [], JSON_UNESCAPED_UNICODE);
+            })->name('alimtalk');
+        });
+
+        // Category Routes
+        Route::prefix('category')->name('category.')->group(function () {
+            Route::get('catalog', [\App\Http\Controllers\Admin\CategoryController::class, 'catalog'])->name('catalog');
+            Route::get('tree', [\App\Http\Controllers\Admin\CategoryController::class, 'getTree'])->name('tree');
+            Route::get('detail/{id}', [\App\Http\Controllers\Admin\CategoryController::class, 'getDetail'])->name('detail');
+            Route::get('goods/{id}', [\App\Http\Controllers\Admin\CategoryController::class, 'getGoods'])->name('goods');
+            Route::post('store', [\App\Http\Controllers\Admin\CategoryController::class, 'store'])->name('store');
+            Route::post('update/{id}', [\App\Http\Controllers\Admin\CategoryController::class, 'update'])->name('update');
+            Route::post('move', [\App\Http\Controllers\Admin\CategoryController::class, 'move'])->name('move');
+            Route::post('destroy/{id}', [\App\Http\Controllers\Admin\CategoryController::class, 'destroy'])->name('destroy');
+        });
+
+        // Provider Routes
+        Route::prefix('provider')->name('provider.')->group(function () {
+            Route::get('catalog', [\App\Http\Controllers\Admin\ProviderController::class, 'catalog'])->name('catalog');
+        });
+
+        // SCM Routes (Protected)
         Route::prefix('scm')->name('scm_')->group(function () {
             // Basic Config
             Route::prefix('basic')->name('basic.')->group(function () {

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Member;
+use App\Services\MemberManagementService;
 
 class MemberController extends Controller
 {
@@ -119,5 +120,31 @@ class MemberController extends Controller
             ->get();
 
         return view('admin.member.view', compact('member', 'orderCounts', 'orderReady', 'exportReady'));
+    }
+
+    /**
+     * Manually process member dormancy turning ON
+     */
+    public function dormancyOn($member_seq, MemberManagementService $memberManagementService)
+    {
+        try {
+            $memberManagementService->processDormancyOn($member_seq);
+            return back()->with('success', '정상적으로 휴면 처리가 완료되었습니다.');
+        } catch (\Exception $e) {
+            return back()->with('error', '휴면 처리 중 오류가 발생했습니다: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Manually process member dormancy turning OFF
+     */
+    public function dormancyOff($member_seq, MemberManagementService $memberManagementService)
+    {
+        try {
+            $memberManagementService->processDormancyOff($member_seq);
+            return back()->with('success', '정상적으로 휴면 해제가 완료되었습니다.');
+        } catch (\Exception $e) {
+            return back()->with('error', '휴면 해제 처리 중 오류가 발생했습니다: ' . $e->getMessage());
+        }
     }
 }

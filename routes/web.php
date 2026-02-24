@@ -67,12 +67,12 @@ Route::prefix('page')->name('page.')->group(function () {
 
 Route::prefix('member')->name('member.')->group(function () {
     Route::get('/login', [MemberController::class, 'login'])->name('login');
-    Route::post('/login', [MemberController::class, 'login_process'])->name('login_process');
+    Route::post('/login', [MemberController::class, 'login_process'])->middleware('throttle:10,1')->name('login_process');
     Route::get('/logout', [MemberController::class, 'logout'])->name('logout');
     Route::get('/agreement', [MemberController::class, 'agreement'])->name('agreement');
     Route::get('/register', [MemberController::class, 'register'])->name('register');
-    Route::post('/register', [MemberController::class, 'register_process'])->name('register_process');
-    Route::post('/check_id', [MemberController::class, 'check_id'])->name('check_id');
+    Route::post('/register', [MemberController::class, 'register_process'])->middleware('throttle:5,1')->name('register_process');
+    Route::post('/check_id', [MemberController::class, 'check_id'])->middleware('throttle:30,1')->name('check_id');
 
     // ID/PW Find
     Route::get('/find_id', [MemberController::class, 'find_id'])->name('find_id');
@@ -82,18 +82,22 @@ Route::prefix('member')->name('member.')->group(function () {
     Route::post('/find_pw', [MemberController::class, 'find_pw_result'])->name('find_pw_result');
 });
 
-Route::prefix('order/cart')->name('cart.')->group(function () {
+Route::prefix('cart')->name('cart.')->group(function () {
     Route::get('/', [CartController::class, 'index'])->name('index');
-    Route::post('/add', [CartController::class, 'store'])->name('store');
-    Route::post('/ats-batch', [CartController::class, 'addAtsBatch'])->name('ats-batch');
-    Route::post('/update', [CartController::class, 'update'])->name('update');
-    Route::post('/delete', [CartController::class, 'destroy'])->name('destroy');
+    Route::post('/add', [CartController::class, 'store'])->middleware('throttle:30,1')->name('store');
+    Route::post('/ats-batch', [CartController::class, 'addAtsBatch'])->middleware('throttle:10,1')->name('ats-batch');
+    Route::post('/cart/store', [CartController::class, 'store'])->name('store.front');
+    Route::post('/cart/update', [CartController::class, 'update'])->name('update'); // Quantity modify
+    Route::post('/cart/change-option', [CartController::class, 'changeOption'])->name('changeOption');
+    Route::get('/cart/optional-changes', [CartController::class, 'optionalChanges'])->name('optionalChanges'); // Option change modal
+    Route::post('/cart/destroy', [CartController::class, 'destroy'])->name('destroy');
 });
 
 Route::prefix('order')->name('order.')->group(function () {
     Route::post('/form', [OrderController::class, 'index'])->name('form');
     Route::get('/form', [OrderController::class, 'index'])->name('form_get');
-    Route::post('/pay', [OrderController::class, 'store'])->name('store');
+    Route::post('/pay', [OrderController::class, 'store'])->middleware('throttle:5,1')->name('store');
+    Route::post('/calculate-shipping', [OrderController::class, 'calculateShipping'])->name('calculate-shipping');
     Route::get('/complete/{id}', [OrderController::class, 'complete'])->name('complete');
 });
 
@@ -105,8 +109,9 @@ Route::middleware(['auth'])->prefix('mypage')->name('mypage.')->group(function (
     Route::put('/my-info/update', [App\Http\Controllers\Front\MemberModifyController::class, 'update'])->name('member.update');
 
     // Member Withdrawal
-    Route::get('/drop', [App\Http\Controllers\Front\MemberDropController::class, 'index'])->name('member.drop');
-    Route::post('/drop', [App\Http\Controllers\Front\MemberDropController::class, 'leave'])->name('member.leave');
+    // Member Withdrawal
+    Route::get('/withdraw', [MypageController::class, 'withdrawForm'])->name('withdraw');
+    Route::post('/withdraw', [MypageController::class, 'withdrawProcess'])->name('withdraw.process');
 
     Route::prefix('delivery-address')->name('delivery_address.')->group(function() {
         Route::get('/', [App\Http\Controllers\Front\DeliveryAddressController::class, 'index'])->name('index');
@@ -131,6 +136,7 @@ Route::middleware(['auth'])->prefix('mypage')->name('mypage.')->group(function (
     Route::post('/order/confirm/{orderSeq}', [MypageController::class, 'confirmPurchase'])->name('order.confirm');
 
     // Claim Routes
+    Route::get('/order/claim', [MypageController::class, 'orderClaimList'])->name('order.claim');
     Route::get('/claim/apply/{orderSeq}/{type}', [MypageController::class, 'claimApply'])->name('claim.apply');
     Route::post('/claim/store/{orderSeq}', [MypageController::class, 'claimStore'])->name('claim.store');
 
@@ -263,6 +269,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('fail_log', [App\Http\Controllers\Admin\Scm\ScmOrderFailController::class, 'index'])->name('fail_log');
     });
 
+
+
     // SCM Order (New) - Phase C
     Route::prefix('scm_order')->name('scm_order.')->group(function () {
         Route::get('/', [App\Http\Controllers\Admin\Scm\ScmOrderController::class, 'index'])->name('index');
@@ -358,6 +366,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('operating', [App\Http\Controllers\Admin\SettingController::class, 'operating'])->name('operating');
         Route::get('pg', [App\Http\Controllers\Admin\SettingController::class, 'pg'])->name('pg');
         Route::get('member', [App\Http\Controllers\Admin\SettingController::class, 'member'])->name('member');
+        Route::post('member', [App\Http\Controllers\Admin\SettingController::class, 'save_member'])->name('member.save');
         Route::get('protect', [App\Http\Controllers\Admin\SettingController::class, 'protect'])->name('protect');
     });
 

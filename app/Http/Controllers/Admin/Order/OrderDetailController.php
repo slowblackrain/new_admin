@@ -103,4 +103,46 @@ class OrderDetailController extends Controller
             
         return response()->json($options);
     }
+
+    public function saveMemo(Request $request)
+    {
+        $request->validate([
+            'order_seq' => 'required',
+            'admin_memo' => 'nullable|string',
+            'original_memo' => 'nullable|string'
+        ]);
+
+        $order = Order::where('order_seq', $request->order_seq)->firstOrFail();
+        
+        // 동시성 제어 (Optimistic Lock)
+        // 현재 DB에 저장된 내용과, 화면이 로딩될 때의(또는 수정 전) 원본 내용이 다르면 누군가 중간에 먼저 내용을 저장한 것임
+        $currentMemoUnix = str_replace("\r\n", "\n", $order->admin_memo ?? '');
+        $originalMemoUnix = str_replace("\r\n", "\n", $request->original_memo ?? '');
+        
+        if ($currentMemoUnix !== $originalMemoUnix) {
+            return response()->json([
+                'success' => false,
+                'conflict' => true,
+                'latest_memo' => $order->admin_memo
+            ]);
+        }
+        
+        $order->update([
+            'admin_memo' => $request->admin_memo
+        ]);
+
+        // Create Log
+        \App\Models\OrderLog::create([
+            'order_seq' => $order->order_seq,
+            'type' => 'process',
+            'actor' => '관리자', 
+            'title' => '관리자 메모 수정',
+            'detail' => "관리자 메모 갱신됨: " . mb_substr($request->admin_memo ?? '', 0, 50),
+            'regist_date' => now(),
+            'mtype' => 'm', 
+            'mseq' => 1 
+        ]);
+
+        return response()->json(['success' => true]);
+    }
 }

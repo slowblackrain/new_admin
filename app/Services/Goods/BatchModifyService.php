@@ -56,7 +56,7 @@ class BatchModifyService
 
                     // Update fm_goods_supply (Stock)
                     $stockData = array_intersect_key($this->preparePriceData($id, $data), array_flip([
-                        'stock'
+                        'stock', 'supply_price'
                     ]));
                     // Map default_stock to stock if present
                     if (isset($data['default_stock'][$id])) {
@@ -89,7 +89,7 @@ class BatchModifyService
         // $data contains arrays keyed by field name, e.g. $data['price'][$id]
         $fields = [
             'price', 'consumer_price', 'b2b_price_rate', 'default_stock', 'runout_policy', 
-            'able_stock_limit', 'goods_view', 'goods_status'
+            'able_stock_limit', 'goods_view', 'goods_status', 'supply_price'
         ]; // Add more as needed
 
         $updateData = [];

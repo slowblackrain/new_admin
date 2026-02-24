@@ -47,4 +47,9 @@ class Seller extends Authenticatable
         }
         return parent::getAttribute($key);
     }
+
+    public function member()
+    {
+        return $this->belongsTo(Member::class, 'provider_id', 'userid');
+    }
 }

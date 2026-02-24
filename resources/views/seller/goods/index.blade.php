@@ -80,7 +80,7 @@
                                 <td>{{ number_format($item->consumer_price) }}</td>
                                 <td>{{ number_format($item->price) }}</td>
                                 <td>{{ number_format($item->supply_price) }}</td>
-                                <td>{{ number_format($item->stock) }}</td>
+                                <td>{{ number_format($item->tot_stock) }}</td>
                                 <td>
                                     @if($item->goods_status == 'normal')
                                         <span class="badge badge-success">판매중</span>
@@ -103,7 +103,7 @@
                     </table>
                 </div>
                 <div class="card-footer clearfix">
-                    {{ $goods->links('pagination::bootstrap-4') }}
+                    {{ $goods->withQueryString()->links('pagination::bootstrap-4') }}
                 </div>
             </div>
         </div>

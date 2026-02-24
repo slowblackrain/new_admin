@@ -23,8 +23,16 @@
             <table class="sub_title_button_tb" border="0" cellpadding="0" cellspacing="0">
                 <tr>
                     <td class="sel">
-                        취소/반품/교환<br />
-                        <span>{{ $cancelCount + $returnCount + $exchangeCount }}</span>
+                        취소<br />
+                        <span>{{ $cancelCount }}</span>
+                    </td>
+                    <td class="sel">
+                        반품<br />
+                        <span>{{ $returnCount }}</span>
+                    </td>
+                    <td class="sel">
+                        교환<br />
+                        <span>{{ $exchangeCount }}</span>
                     </td>
                 </tr>
             </table>
@@ -68,7 +76,9 @@
                             </td>
                             <td class="price_bold">{{ number_format($order->settleprice) }}원</td>
                             <td>
-                                {{ \App\Models\Order::getStepName($order->step) }}
+                                <span style="color:{{ \App\Models\Order::getStepColor($order->step) }}; font-weight:bold;">
+                                    {{ \App\Models\Order::getStepName($order->step) }}
+                                </span>
                             </td>
                             <td>
                                 <a href="{{ route('mypage.order.view', $order->order_seq) }}" class="btn_base">조회</a>
@@ -102,7 +112,7 @@
                          </div>
                          <div class="clearbox">
                              <span style="float:left; font-weight:bold; color:#000;">{{ number_format($order->settleprice) }}원</span>
-                             <span style="float:right; color:#d00;">{{ \App\Models\Order::getStepName($order->step) }}</span>
+                             <span style="float:right; font-weight:bold; color:{{ \App\Models\Order::getStepColor($order->step) }};">{{ \App\Models\Order::getStepName($order->step) }}</span>
                          </div>
                          <div style="margin-top:10px; text-align:center;">
                              <a href="{{ route('mypage.order.view', $order->order_seq) }}" style="display:block; padding:8px; border:1px solid #ddd; background:#f9f9f9; color:#666; text-decoration:none; font-size:12px;">상세보기</a>

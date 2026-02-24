@@ -4,7 +4,11 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Seller\Auth\LoginController;
 use App\Http\Controllers\Seller\DashboardController;
 use App\Http\Controllers\Seller\ProductController;
+use App\Http\Controllers\Seller\BatchModifyController;
 use App\Http\Controllers\Seller\ATSController;
+use App\Http\Controllers\Seller\PointController;
+use App\Http\Controllers\Seller\SellerController;
+use App\Http\Controllers\Seller\OrderPlayautoController;
 
 /*
 |--------------------------------------------------------------------------
@@ -25,6 +29,12 @@ Route::prefix('seller')->name('seller.')->group(function () {
         Route::post('login', [LoginController::class, 'login']);
     });
 
+    // --- 10. 포인트 내역 (Point / Cash) ---
+    Route::group(['prefix' => 'point', 'as' => 'point.', 'middleware' => 'seller.grade:Y'], function () {
+        Route::get('list', [PointController::class, 'index'])->name('list');
+        Route::get('order', [PointController::class, 'orderCash'])->name('order');
+    });
+
     Route::post('logout', [LoginController::class, 'logout'])->name('logout');
 
     // Protected Routes
@@ -41,11 +51,6 @@ Route::prefix('seller')->name('seller.')->group(function () {
             Route::post('info', [\App\Http\Controllers\Seller\SellerInfoController::class, 'update'])->name('update');
         });
 
-        // Settlement (Account)
-        Route::prefix('account')->name('account.')->group(function () {
-             Route::get('list', [\App\Http\Controllers\Seller\SellerAccountController::class, 'index'])->name('index');
-        });
-
         // Goods (Product) Routes
         Route::prefix('goods')->name('goods.')->group(function () {
             Route::get('catalog', [ProductController::class, 'index'])->name('index'); // catalog or index? Sidebar usually uses 'catalog' term for lists. Let's use 'index' as name but 'catalog' as URL to match others? Or just 'list'.
@@ -54,30 +59,43 @@ Route::prefix('seller')->name('seller.')->group(function () {
             Route::get('regist', [ProductController::class, 'create'])->name('create');
             Route::post('regist', [ProductController::class, 'store'])->name('store');
             Route::get('edit/{id}', [ProductController::class, 'edit'])->name('edit');
-            Route::post('edit/{id}', [ProductController::class, 'update'])->name('update'); // Using POST for update to avoid MethodNotAllowed if standard HTML form (though we can use @method('PUT')). Let's stick to POST or add @method('PUT') in form.
-            // I'll use POST in route for simplicity unless I put @method('PUT') in form. I didn't put @method('PUT') in form above.
-            // So Route::post is correct.
+            Route::post('edit/{id}', [ProductController::class, 'update'])->name('update'); // Using POST for update to avoid MethodNotAllowed if standard HTML form (though we can use @method('PUT')). Let's stick to POST or add @method('PUT')).
+            
+            // Batch Modify Routes
+            Route::get('batch_modify', [BatchModifyController::class, 'index'])->name('batch_modify.index');
+            Route::post('batch_modify/update', [BatchModifyController::class, 'update'])->name('batch_modify.update');
         });
 
-        // ATS (Product Investment) Routes
-        Route::prefix('ats')->name('ats.')->group(function () {
-            Route::get('catalog', [ATSController::class, 'catalog'])->name('catalog');
-            Route::get('social_catalog', [ATSController::class, 'social_catalog'])->name('social_catalog');
-            Route::get('settlement', [ATSController::class, 'settlement'])->name('settlement');
-            Route::post('runout', [ATSController::class, 'requestRunout'])->name('runout');
+      // --- 4. 정산 관리 (Settlement) ---
+    Route::group(['prefix' => 'account', 'as' => 'account.', 'middleware' => 'seller.grade:Y'], function () {
+        Route::get('summary', [ATSController::class, 'settlement'])->name('summary');
+        Route::get('detail', [ATSController::class, 'settlementDetail'])->name('detail');
+    });
 
-        });
+    // --- 통계 관리 (Statistics) ---
+    Route::group(['prefix' => 'statistics', 'as' => 'statistics.', 'middleware' => 'seller.grade:Y'], function () {
+        Route::get('/', [\App\Http\Controllers\Seller\SellerStatisticController::class, 'index'])->name('index');
+        Route::get('sales_monthly', [\App\Http\Controllers\Seller\SellerStatisticController::class, 'sales_monthly'])->name('sales_monthly');
+        Route::get('sales_daily', [\App\Http\Controllers\Seller\SellerStatisticController::class, 'sales_daily'])->name('sales_daily');
+        Route::get('goods', [\App\Http\Controllers\Seller\SellerStatisticController::class, 'goods'])->name('goods');
+    });
 
-        // Linked Order (OrderPlayauto) Routes
-        Route::prefix('order_playauto')->name('order.')->group(function () {
-			Route::get('catalog', [\App\Http\Controllers\Seller\OrderPlayautoController::class, 'catalog'])->name('catalog');
-            Route::get('excel_upload', [\App\Http\Controllers\Seller\OrderPlayautoController::class, 'excelupload'])->name('excel_upload');
-            Route::post('excel_upload', [\App\Http\Controllers\Seller\OrderPlayautoController::class, 'excelupload_process'])->name('excel_upload_process');
-            Route::post('excel_store', [\App\Http\Controllers\Seller\OrderPlayautoController::class, 'excelupload_store'])->name('excel_store');
-        });
+    // --- 5. 연동 주문화면 (Linked Orders - ATS) ---
+    Route::group(['prefix' => 'ats', 'as' => 'ats.', 'middleware' => 'seller.grade:Y'], function () {
+        Route::get('catalog', [ATSController::class, 'catalog'])->name('catalog');
+        Route::get('social_catalog', [ATSController::class, 'social_catalog'])->name('social_catalog');
+        Route::post('runout', [ATSController::class, 'requestRunout'])->name('runout');
+        Route::get('settlement', [ATSController::class, 'settlement'])->name('settlement');
+    });
+
+    // --- 6. Playauto & 연동 (Playauto) ---
+    Route::group(['prefix' => 'link', 'as' => 'link.', 'middleware' => 'seller.grade:Y'], function () {
+        Route::get('list', [OrderPlayautoController::class, 'catalog'])->name('list');
+        Route::get('upload', [OrderPlayautoController::class, 'excelupload'])->name('upload');
+    });        
 
         // General Order Management (SellerOrderController)
-        Route::prefix('order')->name('order_mgmt.')->group(function () {
+        Route::prefix('order')->name('order.')->group(function () {
              Route::get('catalog', [\App\Http\Controllers\Seller\SellerOrderController::class, 'index'])->name('catalog');
              Route::get('view/{id}', [\App\Http\Controllers\Seller\SellerOrderController::class, 'show'])->name('view');
         });

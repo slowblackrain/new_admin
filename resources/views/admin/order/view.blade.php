@@ -193,6 +193,24 @@
 <div class="row mt-3">
     <div class="col-12">
         <div class="card">
+            <div class="card-header bg-warning">
+                <h3 class="card-title"><i class="fas fa-sticky-note"></i> 관리자 메모 (CS Memo)</h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-sm btn-dark" onclick="openCustomerMemoPopup()">고객상담 메모(템플릿) 선택하기</button>
+                    <button type="button" class="btn btn-sm btn-primary ml-2" onclick="saveAdminMemo()">저장</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <input type="hidden" id="original_admin_memo" value="{{ $order->admin_memo }}">
+                <textarea id="admin_memo_txt" class="form-control" rows="4" placeholder="관리자용 상세 메모를 입력해주세요.">{{ $order->admin_memo }}</textarea>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="card">
             <div class="card-header">
                 <h3 class="card-title">처리 이력 (Order Log)</h3>
             </div>
@@ -301,6 +319,42 @@
                 }
             },
             error: function(err) {
+                alert('서버 오류가 발생했습니다.');
+            }
+        });
+    }
+
+    function openCustomerMemoPopup() {
+        var url = "{{ route('admin.order.customer_memo.popup') }}";
+        window.open(url, "customerMemoPopup", "width=800,height=600,scrollbars=yes,resizable=yes");
+    }
+
+    function saveAdminMemo() {
+        var memo = $('#admin_memo_txt').val();
+        var original_memo = $('#original_admin_memo').val();
+        
+        $.ajax({
+            url: "{{ route('admin.order.save_memo') }}",
+            type: "POST",
+            data: {
+                _token: '{{ csrf_token() }}',
+                order_seq: '{{ $order->order_seq }}',
+                admin_memo: memo,
+                original_memo: original_memo
+            },
+            success: function(res) {
+                if(res.success) {
+                    alert('관리자 메모가 저장되었습니다.');
+                    location.reload();
+                } else {
+                    if (res.conflict) {
+                        alert("⚠️ 메모 덮어쓰기 방지 (동시성 충돌) ⚠️\n\n다른 관리자가 회원님이 페이지를 보고 있는 사이에 메모를 수정했습니다.\n고객의 이전 기록이 유실될 수 있으므로 저장이 차단되었습니다.\n\n[현재 DB에 저장되어 있는 최신 메모 내용]\n------------------------------------\n" + res.latest_memo + "\n------------------------------------\n\n페이지를 새로고침(F5)하여 최신 내용을 먼저 확인한 뒤 새로운 메모를 작성해주세요.");
+                    } else {
+                        alert('오류: ' + res.message);
+                    }
+                }
+            },
+            error: function() {
                 alert('서버 오류가 발생했습니다.');
             }
         });

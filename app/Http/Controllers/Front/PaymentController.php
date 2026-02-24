@@ -42,6 +42,12 @@ class PaymentController extends Controller
         
         $order = Order::where('order_seq', $orderId)->firstOrFail();
         
+        // --- Security Check: Validate Client Amount Tampering ---
+        if ((float)$amount !== (float)$order->settleprice) {
+            \Illuminate\Support\Facades\Log::warning("Payment Amount Tampering Detected! Order: {$orderId}, Expected: {$order->settleprice}, Received: {$amount}");
+            return redirect()->route('cart.index')->withErrors(['msg' => '결제 금액 정보가 일치하지 않습니다. 위변조가 의심되어 취소되었습니다.']);
+        }
+        
         // Verify Payment (Toss API)
         $tossConfig = config('payment.toss');
         $secretKey = $tossConfig['secret_key'];
@@ -166,6 +172,13 @@ class PaymentController extends Controller
             // Success
              $order = Order::where('order_seq', $orderSeq)->first();
              if ($order) {
+                 // Validate Amount
+                 $paidAmount = $data['결제금액'] ?? $data['amount'] ?? 0;
+                 if ((float)$paidAmount > 0 && (float)$paidAmount !== (float)$order->settleprice) {
+                     \Illuminate\Support\Facades\Log::warning("Pairing Payment Amount Tampering Detected! Order: {$orderSeq}, Expected: {$order->settleprice}, Received: {$paidAmount}");
+                     return response('Amount Mismatch', 400);
+                 }
+
                  $order->step = Order::STEP_PAYMENT_CONFIRMED;
                  $order->deposit_yn = 'y';
                  $order->save();

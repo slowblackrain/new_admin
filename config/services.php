@@ -40,4 +40,17 @@ return [
         'model' => env('OPENAI_MODEL', 'gpt-4o-mini'),
     ],
 
+    'iwinv_alimtalk' => [
+        'endpoint' => 'https://alimtalk.bizservice.iwinv.kr/api/send/',
+        'token' => env('IWINV_ALIMTALK_TOKEN', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.IktON0lDODk2Wk9HUEZFVldMNE02MzkwMkZFNTFDN0Q2Ig.NaoTiZ-5P_1t6pO0pk476Sf7i0zaZh4p8iB8GRYPwy4'),
+        'sender_number' => env('IWINV_SENDER_NUMBER', '1566-6779'),
+    ],
+
+    'iwinv_sms' => [
+        'endpoint' => 'https://sms.bizservice.iwinv.kr/api/v2/send/',
+        'api_key' => env('IWINV_SMS_API_KEY', 'OMFAIQE4DRT87GK0JUX64FEC54E72A23'),
+        'auth_key' => env('IWINV_SMS_AUTH_KEY', '5c9bc78f61d41b46c456559833e5ce3d5545f0950752f46c114296972d96662f'),
+        'sender_number' => env('IWINV_SENDER_NUMBER', '1566-6779'),
+    ],
+
 ];

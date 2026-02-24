@@ -34,14 +34,15 @@
         bottom: 0;
         left: 0;
         width: 100%;
-        height: 60px;
-        background: #fff;
-        border-top: 1px solid #eee;
-        box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
+        height: 65px; /* Increased height for better touch area */
+        background: rgba(255, 255, 255, 0.98);
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.08); /* Softer shadow */
         z-index: 1000;
         justify-content: space-around;
         align-items: center;
+        /* iOS Safe Area Padding */
         padding-bottom: env(safe-area-inset-bottom);
+        backdrop-filter: blur(10px); /* Modern blur effect */
     }
 
     .mobile-bottom-nav .nav-item {
@@ -50,43 +51,57 @@
         align-items: center;
         justify-content: center;
         text-decoration: none;
-        color: #888;
-        font-size: 10px;
-        width: 20%;
+        color: #999;
+        font-size: 11px; /* Slightly larger text */
+        font-weight: 500;
+        flex: 1; /* Distribute evenly */
         height: 100%;
+        transition: all 0.2s ease-in-out; /* Smooth hover/active transition */
     }
 
     .mobile-bottom-nav .nav-item i {
-        font-size: 20px;
-        margin-bottom: 4px;
+        font-size: 22px; /* Emphasize icon */
+        margin-bottom: 5px;
+        transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Bouncy scale */
+    }
+
+    .mobile-bottom-nav .nav-item:active i {
+        transform: scale(0.85); /* Touch feedback */
     }
 
     .mobile-bottom-nav .nav-item.active {
-        color: #eb6506; /* Dometopia Orange */
+        color: #ff5722; /* Dometopia Primary Brand Color */
+    }
+
+    .mobile-bottom-nav .nav-item.active i {
+        transform: translateY(-2px); /* Lift up effect when active */
     }
 
     .mobile-bottom-nav .nav-item .badge {
         position: absolute;
-        top: -5px;
-        right: -8px;
-        background: #eb6506;
+        top: -4px;
+        right: -10px;
+        background: #ff5722;
         color: #fff;
-        width: 16px;
-        height: 16px;
+        width: 18px;
+        height: 18px;
         border-radius: 50%;
         font-size: 10px;
+        font-weight: 700;
         display: flex;
         align-items: center;
         justify-content: center;
+        border: 2px solid #fff;
+        box-sizing: content-box;
     }
 
     @media (max-width: 1024px) {
         .mobile-bottom-nav {
             display: flex;
         }
-        /* Add padding to body so content isn't covered */
         body {
-            padding-bottom: 60px; 
+            /* Account for nav bar height + safe area */
+            padding-bottom: calc(65px + env(safe-area-inset-bottom)); 
         }
     }
 </style>

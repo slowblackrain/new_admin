@@ -142,6 +142,9 @@
                                     <input type="number" name="ea" value="{{ $ea }}" min="1" class="qty_input"
                                         style="width: 50px;">
                                     <button type="button" class="btn_qty_mod">변경</button>
+                                    @if($options_count ?? 1 > 0)
+                                    <br><button type="button" class="btn_opt_mod" style="margin-top:5px; font-size:11px;">옵션/수량변경</button>
+                                    @endif
                                 </td>
                                 <td>{{ number_format($price) }}원</td>
                                 <td>
@@ -187,6 +190,9 @@
             </form>
         </div>
     </div>
+
+    <!-- Modal Container -->
+    <div id="modal_container"></div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -252,6 +258,60 @@
                             } else {
                                 alert(data.message);
                             }
+                        });
+                });
+            });
+
+            // Option Update Modal
+            document.querySelectorAll('.btn_opt_mod').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const tr = this.closest('tr');
+                    const cartSeq = tr.dataset.cartSeq;
+
+                    fetch(`{{ route('cart.optionalChanges') }}?cart_seq=${cartSeq}`)
+                        .then(res => res.text())
+                        .then(html => {
+                            const modalContainer = document.getElementById('modal_container');
+                            modalContainer.innerHTML = html;
+                            
+                            const modal = document.getElementById('modal_optional_changes');
+                            const dimmed = document.querySelector('.modal_dimmed');
+                            
+                            modal.style.display = 'block';
+                            dimmed.style.display = 'block';
+
+                            // Close events
+                            document.querySelectorAll('.btn_close_modal, .modal_dimmed').forEach(closeBtn => {
+                                closeBtn.addEventListener('click', function() {
+                                    modalContainer.innerHTML = '';
+                                });
+                            });
+
+                            // Save event
+                            document.getElementById('btn_save_optional_changes').addEventListener('click', function() {
+                                const newOptionSeq = document.getElementById('new_option_seq').value;
+                                if (!newOptionSeq) {
+                                    alert('변경할 옵션을 선택하세요.');
+                                    return;
+                                }
+
+                                fetch('{{ route("cart.changeOption") }}', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                    },
+                                    body: JSON.stringify({ cart_seq: cartSeq, option_seq: newOptionSeq })
+                                })
+                                .then(res => res.json())
+                                .then(data => {
+                                    if(data.status === 'success') {
+                                        location.reload();
+                                    } else {
+                                        alert(data.message);
+                                    }
+                                });
+                            });
                         });
                 });
             });

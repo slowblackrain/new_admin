@@ -6,7 +6,7 @@
 <div class="container-fluid">
     <div class="row mb-2">
         <div class="col-sm-6">
-            <h1 class="m-0 text-dark">상품 수정</h1>
+            <h1 class="m-0 text-dark">상품 수정: {{ $goods->goods_name }}</h1>
         </div>
         <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
@@ -48,31 +48,49 @@
     <form action="{{ route('seller.goods.update', $goods->goods_seq) }}" method="POST" enctype="multipart/form-data">
         @csrf
         
-        <div class="card card-warning">
+        <div class="card card-primary">
             <div class="card-header">
-                <h3 class="card-title">기본 정보 수정</h3>
+                <h3 class="card-title">기본 정보</h3>
             </div>
             <div class="card-body">
                 <!-- Category -->
                 <div class="form-group row">
                     <label for="category1" class="col-sm-2 col-form-label">카테고리 <span class="text-danger">*</span></label>
                     <div class="col-sm-10">
-                        <input type="hidden" name="old_category1" value="{{ $currentCat1 }}">
-                        <select name="category1" id="category1" class="form-control" required>
-                            <option value="">대분류 선택</option>
-                            @foreach($categories as $cat)
-                                <option value="{{ $cat->category_code }}" {{ old('category1', $currentCat1) == $cat->category_code ? 'selected' : '' }}>{{ $cat->title }}</option>
-                            @endforeach
-                        </select>
-                        <small class="text-muted">현재는 대분류 변경만 지원합니다.</small>
+                        <div class="row">
+                            <div class="col-3">
+                                <select name="category1" id="category1" class="form-control">
+                                    <option value="">대분류 선택</option>
+                                    @foreach($categories as $cat)
+                                        <option value="{{ $cat->category_code }}" {{ (old('category1', substr($goods->categories->first()->category_code ?? '', 0, 4)) == $cat->category_code) ? 'selected' : '' }}>{{ $cat->title }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <!-- Subcategories placeholders for future implementation -->
+                            <div class="col-3">
+                                <select name="category2" id="category2" class="form-control" disabled>
+                                    <option value="">중분류</option>
+                                </select>
+                            </div>
+                            <div class="col-3">
+                                <select name="category3" id="category3" class="form-control" disabled>
+                                    <option value="">소분류</option>
+                                </select>
+                            </div>
+                            <div class="col-3">
+                                <select name="category4" id="category4" class="form-control" disabled>
+                                    <option value="">세분류</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Goods Code -->
                  <div class="form-group row">
-                    <label class="col-sm-2 col-form-label">상품코드</label>
+                    <label for="goods_scode" class="col-sm-2 col-form-label">상품코드</label>
                     <div class="col-sm-4">
-                        <input type="text" class="form-control" value="{{ $goods->goods_scode }}" readonly>
+                        <input type="text" name="goods_scode" class="form-control" id="goods_scode" value="{{ $goods->goods_scode }}" readonly>
                     </div>
                 </div>
 
@@ -80,7 +98,7 @@
                 <div class="form-group row">
                     <label for="goods_name" class="col-sm-2 col-form-label">상품명 <span class="text-danger">*</span></label>
                     <div class="col-sm-10">
-                        <input type="text" name="goods_name" class="form-control" id="goods_name" required value="{{ old('goods_name', $goods->goods_name) }}">
+                        <input type="text" name="goods_name" class="form-control" id="goods_name" placeholder="상품명을 입력하세요" required value="{{ old('goods_name', $goods->goods_name) }}">
                     </div>
                 </div>
 
@@ -88,7 +106,7 @@
                 <div class="form-group row">
                     <label for="summary" class="col-sm-2 col-form-label">상품 요약설명</label>
                     <div class="col-sm-10">
-                        <input type="text" name="summary" class="form-control" id="summary" value="{{ old('summary', $goods->summary) }}">
+                        <input type="text" name="summary" class="form-control" id="summary" placeholder="짧은 설명" value="{{ old('summary', $goods->summary) }}">
                     </div>
                 </div>
 
@@ -96,13 +114,13 @@
                 <div class="form-group row">
                     <label for="keyword" class="col-sm-2 col-form-label">검색 키워드</label>
                     <div class="col-sm-10">
-                        <input type="text" name="keyword" class="form-control" id="keyword" value="{{ old('keyword', $goods->keyword) }}">
+                        <input type="text" name="keyword" class="form-control" id="keyword" placeholder="쉼표(,)로 구분" value="{{ old('keyword', $goods->keyword) }}">
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="card card-primary">
+        <div class="card card-warning">
             <div class="card-header">
                 <h3 class="card-title">가격 및 재고 정보</h3>
             </div>
@@ -111,11 +129,11 @@
                 <div class="form-group row">
                     <label for="consumer_price" class="col-sm-2 col-form-label">정가 (소비자가)</label>
                     <div class="col-sm-4">
-                        <input type="number" name="consumer_price" class="form-control" id="consumer_price" value="{{ old('consumer_price', $goods->defaultOption->consumer_price ?? 0) }}">
+                        <input type="number" name="consumer_price" class="form-control" id="consumer_price" value="{{ old('consumer_price', $goods->consumer_price) }}">
                     </div>
                     <label for="price" class="col-sm-2 col-form-label">판매가 <span class="text-danger">*</span></label>
                     <div class="col-sm-4">
-                        <input type="number" name="price" class="form-control" id="price" required value="{{ old('price', $goods->defaultOption->price ?? 0) }}">
+                        <input type="number" name="price" class="form-control" id="price" required value="{{ old('price', $goods->price) }}">
                     </div>
                 </div>
 
@@ -126,9 +144,53 @@
                     </div>
                      <label for="stock" class="col-sm-2 col-form-label">재고수량</label>
                     <div class="col-sm-4">
-                        <input type="number" name="stock" class="form-control" id="stock" value="{{ old('stock', $goods->stock) }}">
+                        <input type="number" name="stock" class="form-control" id="stock" value="{{ old('stock', $goods->tot_stock) }}">
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <div class="card card-secondary">
+            <div class="card-header">
+                <h3 class="card-title">옵션별 재고 관리</h3>
+            </div>
+            <div class="card-body p-0 table-responsive">
+                <table class="table table-bordered text-center align-middle m-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>옵션명</th>
+                            <th>추가금액</th>
+                            <th>공급가</th>
+                            <th>재고수량</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($goods->option as $opt)
+                        <tr>
+                            <td class="text-left">
+                                @if($opt->default_option == 'y')
+                                    <span class="badge badge-info">기본옵션</span>
+                                @else
+                                    {{ $opt->option1 }} {{ $opt->option2 ? '/ '.$opt->option2 : '' }} {{ $opt->option3 ? '/ '.$opt->option3 : '' }}
+                                @endif
+                                @if($opt->option_title)
+                                    <br><small class="text-muted">{{ $opt->option_title }}</small>
+                                @endif
+                            </td>
+                            <td>{{ number_format($opt->price) }}원</td>
+                            <td>{{ number_format($opt->supply->supply_price ?? 0) }}원</td>
+                            <td style="width: 200px;">
+                                <div class="input-group input-group-sm">
+                                    <input type="number" name="option_stock[{{ $opt->option_seq }}]" class="form-control" value="{{ $opt->supply->stock ?? 0 }}">
+                                    <div class="input-group-append">
+                                        <span class="input-group-text">개</span>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
             </div>
         </div>
 
@@ -173,7 +235,7 @@
 
         <div class="row">
             <div class="col-12 mb-4 text-center">
-                <button type="submit" class="btn btn-warning btn-lg px-5">수정 저장</button>
+                <button type="submit" class="btn btn-primary btn-lg px-5">상품 수정</button>
                 <a href="{{ route('seller.goods.index') }}" class="btn btn-secondary btn-lg px-5">취소</a>
             </div>
         </div>

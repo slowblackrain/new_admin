@@ -27,7 +27,7 @@ class ScmLedgerDetailService
     {
         $startDate = $filters['start_date'] ?? date('Y-m-01');
         $endDate = $filters['end_date'] ?? date('Y-m-d');
-        $whSeq = $filters['wh_seq'] ?? null;
+        $whSeq = isset($filters['wh_seq']) ? (int)$filters['wh_seq'] : null;
 
         // 1. Get Goods Info
         $goodsInfo = DB::table('fm_goods')

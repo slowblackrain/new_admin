@@ -16,6 +16,37 @@ class MypageController extends Controller
         return redirect()->route('mypage.order.list');
     }
 
+    public function withdrawForm()
+    {
+        return view('front.mypage.withdraw');
+    }
+
+    public function withdrawProcess(Request $request, \App\Services\MemberManagementService $memberService)
+    {
+        $request->validate([
+            'reason_code' => 'required',
+            'reason_desc' => 'required_if:reason_code,other|string|max:255',
+            'agree' => 'accepted'
+        ]);
+
+        $user = Auth::user();
+        $reason = $request->reason_code;
+        if ($reason === 'other') {
+            $reason = '기타: ' . $request->reason_desc;
+        }
+
+        try {
+            $memberService->processWithdrawal($user->member_seq, $reason, 'user');
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect('/')->with('success', '정상적으로 회원 탈퇴가 처리되었습니다. 그동안 이용해 주셔서 감사합니다.');
+        } catch (\Exception $e) {
+            return back()->with('error', '회원 탈퇴 처리 중 오류가 발생했습니다: ' . $e->getMessage());
+        }
+    }
+
     public function orderList(Request $request)
     {
         $user = Auth::user();
@@ -73,13 +104,16 @@ class MypageController extends Controller
         // For now, let's include 95 (Cancel) and 85 (Transaction Complete - often includes returns finalized? No, usually 85 is happy path).
         // Let's stick to 95 for "Cancel/Return" bucket until we find more codes.
         // Actually, let's show all "Terminated" orders here or specific claims?
-        // Let's strictly show 95 (Cancel) and 99 (Fail) for now as "Claims/Cancels".
-        $query->whereIn('step', [95, 99]);
+        // Let's strictly show 81(Return), 82(Exchange), 91(Cancel Request), 95 (Cancel) for now as "Claims".
+        $query->whereIn('step', [81, 82, 91, 95]);
 
         // Calculate counts for tabs
-        $cancelCount = (clone $query)->where('step', 95)->count();
-        $returnCount = 0; // Placeholder until return logic defined
-        $exchangeCount = 0; // Placeholder
+        $cancelCount = clone $query;
+        $cancelCount = $cancelCount->whereIn('step', [91, 95])->count();
+        $returnCount = clone $query;
+        $returnCount = $returnCount->where('step', 81)->count();
+        $exchangeCount = clone $query;
+        $exchangeCount = $exchangeCount->where('step', 82)->count();
 
         // Fetch orders
         $orders = $query->with(['items.goods.images', 'items.options'])

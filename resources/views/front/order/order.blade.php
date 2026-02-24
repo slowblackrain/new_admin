@@ -121,6 +121,9 @@
                         <span class="item">배송비: <strong>{{ number_format($shipping) }}</strong></span>
                         <span class="op minus">-</span>
                         <span class="item">총 할인: <strong>0</strong></span>
+                        <span class="item" id="extra_shipping_wrap" style="display:none; color: #d00; margin-left:10px;">
+                            <span class="op plus">+</span> 추가배송비: <strong id="extra_shipping_display">0</strong>
+                        </span>
                         <span class="op plus">+</span>
                         <span class="item">총 부가세: <strong>{{ number_format($tax) }}</strong> (면세)</span>
                         <span class="item ml10">예상포인트: 0</span>
@@ -264,7 +267,7 @@
                                 </td>
                             </tr>
                             <tr>
-                                <th>예치금</th>
+                                <th>적립금</th>
                                 <td>
                                     <input type="number" name="use_emoney" id="use_emoney" class="input_text" value="0" style="text-align:right;"> 원
                                     <span style="color:#888; margin-left:10px;">(보유: <strong>{{ number_format($user->emoney ?? 0) }}</strong>원)</span>
@@ -272,11 +275,11 @@
                                 </td>
                             </tr>
                             <tr>
-                                <th>포인트</th>
+                                <th>예치금</th>
                                 <td>
-                                    <input type="number" name="use_point" id="use_point" class="input_text" value="0" style="text-align:right;"> P
-                                    <span style="color:#888; margin-left:10px;">(보유: <strong>{{ number_format($user->point ?? 0) }}</strong>P)</span>
-                                    <button type="button" class="btn_base" onclick="useAll('point', {{ $user->point ?? 0 }})">전액사용</button>
+                                    <input type="number" name="use_cash" id="use_cash" class="input_text" value="0" style="text-align:right;"> 원
+                                    <span style="color:#888; margin-left:10px;">(보유: <strong>{{ number_format($user->cash ?? 0) }}</strong>원)</span>
+                                    <button type="button" class="btn_base" onclick="useAll('cash', {{ $user->cash ?? 0 }})">전액사용</button>
                                 </td>
                             </tr>
                         </tbody>
@@ -568,13 +571,46 @@
             document.getElementById('recipient_address_type').value = addr.recipient_address_type || 'zibun';
             
             closeAddressModal();
+            fetchShippingExtraCost(addr.recipient_zipcode);
         }
 
         // Initial PHP values passing to JS
         const initialFinalPrice = {{ $totalPrice + $shipping + $packagingCost + $tax }};
         const initialGoodsPrice = {{ $totalPrice }};
         const maxEmoney = {{ $user->emoney ?? 0 }};
-        const maxPoint = {{ $user->point ?? 0 }};
+        const maxCash = {{ $user->cash ?? 0 }};
+        let extraShippingCost = 0; // 추가 배송비 저장 변수
+
+        // 비동기 추가 배송비 조회 로직
+        function fetchShippingExtraCost(zipcode) {
+            if (!zipcode) return;
+            
+            fetch("{{ route('order.calculate-shipping') }}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": "{{ csrf_token() }}"
+                },
+                body: JSON.stringify({ zipcode: zipcode })
+            })
+            .then(res => res.json())
+            .then(data => {
+                extraShippingCost = parseInt(data.extra_cost) || 0;
+                const wrap = document.getElementById('extra_shipping_wrap');
+                const display = document.getElementById('extra_shipping_display');
+                
+                if (extraShippingCost > 0) {
+                    wrap.style.display = 'inline-block';
+                    display.innerText = new Intl.NumberFormat().format(extraShippingCost);
+                } else {
+                    wrap.style.display = 'none';
+                    display.innerText = '0';
+                }
+                
+                updateFinalPrice();
+            })
+            .catch(err => console.error("Shipping Calculation Error:", err));
+        }
 
         function useAll(type, amount) {
             const input = document.getElementById('use_' + type);
@@ -588,11 +624,11 @@
 
         function calculateCurrentTotal(excludeType) {
             // Recalculate everything to be safe
-            // Base - Coupon - (Other Points)
-            let total = initialFinalPrice - calculateCouponDiscount();
+            // Base + ExtraShipping - Coupon - (Other Points)
+            let total = initialFinalPrice + extraShippingCost - calculateCouponDiscount();
             
             if (excludeType !== 'emoney') total -= parseInt(document.getElementById('use_emoney').value || 0);
-            if (excludeType !== 'point') total -= parseInt(document.getElementById('use_point').value || 0);
+            if (excludeType !== 'cash') total -= parseInt(document.getElementById('use_cash').value || 0);
             return total;
         }
 
@@ -622,7 +658,7 @@
 
         function updateFinalPrice() {
             let useEmoney = parseInt(document.getElementById('use_emoney').value || 0);
-            let usePoint = parseInt(document.getElementById('use_point').value || 0);
+            let useCash = parseInt(document.getElementById('use_cash').value || 0);
             let couponDiscount = calculateCouponDiscount();
 
             // Display Coupon Discount
@@ -632,8 +668,8 @@
                  document.getElementById('coupon_discount_display').innerText = '';
             }
 
-            // Available total for points is (Final - Coupon)
-            let availableForPoints = initialFinalPrice - couponDiscount;
+            // Available total for points is (Final + ExtraShipping - Coupon)
+            let availableForPoints = initialFinalPrice + extraShippingCost - couponDiscount;
 
             // Re-validate points against new available total
             if (useEmoney > availableForPoints) {
@@ -642,24 +678,24 @@
             }
             availableForPoints -= useEmoney;
 
-            if (usePoint > availableForPoints) {
-                 usePoint = availableForPoints;
-                 document.getElementById('use_point').value = usePoint;
+            if (useCash > availableForPoints) {
+                 useCash = availableForPoints;
+                 document.getElementById('use_cash').value = useCash;
             }
 
             // Validation Max Holding
             if (useEmoney > maxEmoney) {
-                alert('보유 예치금을 초과할 수 없습니다.');
+                alert('보유 적립금을 초과할 수 없습니다.');
                 useEmoney = maxEmoney;
                 document.getElementById('use_emoney').value = useEmoney;
             }
-            if (usePoint > maxPoint) {
-                alert('보유 포인트를 초과할 수 없습니다.');
-                usePoint = maxPoint;
-                document.getElementById('use_point').value = usePoint;
+            if (useCash > maxCash) {
+                alert('보유 예치금을 초과할 수 없습니다.');
+                useCash = maxCash;
+                document.getElementById('use_cash').value = useCash;
             }
 
-            let finalPrice = initialFinalPrice - couponDiscount - useEmoney - usePoint;
+            let finalPrice = initialFinalPrice + extraShippingCost - couponDiscount - useEmoney - useCash;
 
             if (finalPrice < 0) finalPrice = 0;
 
@@ -667,7 +703,7 @@
         }
 
         document.getElementById('use_emoney').addEventListener('change', updateFinalPrice);
-        document.getElementById('use_point').addEventListener('change', updateFinalPrice);
+        document.getElementById('use_cash').addEventListener('change', updateFinalPrice);
         document.getElementById('download_seq').addEventListener('change', updateFinalPrice);
 
         // Toggle Receipt Forms
@@ -741,6 +777,9 @@
                     // Save detailed address data
                     document.getElementById("recipient_address").value = data.jibunAddress || data.autoJibunAddress || addr; // Always try to save Jibun
                     document.getElementById("recipient_address_street").value = data.roadAddress || data.autoRoadAddress || ''; // Always try to save Road
+
+                    // Fetch Extra Shipping Cost with resolved zipcode
+                    fetchShippingExtraCost(data.zonecode);
 
                     // 커서를 상세주소 필드로 이동한다.
                     document.getElementById("recipient_address_detail").focus();

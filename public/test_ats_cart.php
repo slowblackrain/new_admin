@@ -3,16 +3,12 @@ require __DIR__.'/../vendor/autoload.php';
 $app = require_once __DIR__.'/../bootstrap/app.php';
 $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
 
-// Create a Mock Request
-$request = Illuminate\Http\Request::create('/order/cart/ats-batch', 'POST', [
+$controller = $app->make(\App\Http\Controllers\Front\CartController::class);
+$request = Illuminate\Http\Request::create('/cart/ats-batch', 'POST', [
     'goods_seq_list' => '1000064' // Use the goods_seq we know exists
 ]);
 
-// Mock Session/Auth if needed?
-// The controller uses Auth::id() ?? 0. 
-// We can try running it as guest first.
-
-$response = $kernel->handle($request);
+$response = $controller->addAtsBatch($request);
 
 echo "Status: " . $response->getStatusCode() . "\n";
 echo "Content: " . $response->getContent() . "\n";

@@ -90,12 +90,12 @@ class CartController extends Controller
             }
         }
 
-        $shippingCost = 3000;
+        $shippingCost = 0;
         $freeShippingThreshold = 50000;
         $packagingCost = 300; // Mandatory Box Fee
 
-        if ($standardItemsTotal >= $freeShippingThreshold) {
-            $shippingCost = 0;
+        if ($standardItemsTotal > 0 && $standardItemsTotal < $freeShippingThreshold) {
+            $shippingCost = 3000;
         }
 
         return view('front.cart.index', compact('cartItems', 'validCartSeqs', 'shippingCost', 'freeShippingThreshold', 'packagingCost', 'totalVat'));
@@ -145,15 +145,17 @@ class CartController extends Controller
                 // 4. Insert Cart Option (Postpaid Force)
                 $cartOption = new CartOption();
                 $cartOption->cart_seq = $cart->cart_seq;
-                // $cartOption->option_seq = $option->option_seq; // Column does not exist in fm_cart_option
                 $cartOption->ea = $ea;
                 // Force Postpaid
                 $cartOption->shipping_method = 'postpaid'; 
                 
                 // Copy Option Titles for snapshot
-                $cartOption->option1 = $option->option1;
-                $cartOption->title1 = $option->option1; // Usually title and option match or Title is "Color" -> Option "Red"
-                // For legacy compliance, just copy what we can.
+                $cartOption->title1 = $option->option1 ?? '옵션';
+                $cartOption->option1 = $option->option1 ?? '';
+                $cartOption->option2 = $option->option2 ?? '';
+                $cartOption->option3 = $option->option3 ?? '';
+                $cartOption->option4 = $option->option4 ?? '';
+                $cartOption->option5 = $option->option5 ?? '';
                 
                 $cartOption->save();
             }
@@ -452,6 +454,56 @@ class CartController extends Controller
         } catch (\Exception $e) {
             return response()->json(['status' => 'error', 'message' => '변경 실패']);
         }
+    }
+
+    public function changeOption(Request $request)
+    {
+        $request->validate([
+            'cart_seq' => 'required|exists:fm_cart,cart_seq',
+            'option_seq' => 'required|exists:fm_goods_option,option_seq',
+        ]);
+
+        try {
+            DB::beginTransaction();
+            $cart = Cart::currentUser()->where('cart_seq', $request->cart_seq)->with(['options', 'inputs'])->firstOrFail();
+            $newOptionInfo = DB::table('fm_goods_option')->where('option_seq', $request->option_seq)->first();
+
+            if (!$newOptionInfo) {
+                return response()->json(['status' => 'error', 'message' => '존재하지 않는 옵션입니다.']);
+            }
+            
+            // Just update the option
+            $currentOption = $cart->options->first();
+            $currentOption->option1 = $newOptionInfo->option1 ?? '';
+            $currentOption->option2 = $newOptionInfo->option2 ?? '';
+            $currentOption->option3 = $newOptionInfo->option3 ?? '';
+            $currentOption->option4 = $newOptionInfo->option4 ?? '';
+            $currentOption->option5 = $newOptionInfo->option5 ?? '';
+            $currentOption->title1 = $newOptionInfo->option_title ?? '옵션';
+            $currentOption->save();
+
+            $cart->update_date = now();
+            $cart->save();
+
+            DB::commit();
+            return response()->json(['status' => 'success', 'message' => '옵션이 변경되었습니다.']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['status' => 'error', 'message' => '변경 실패: ' . $e->getMessage()]);
+        }
+    }
+
+    public function optionalChanges(Request $request)
+    {
+        $cartSeq = $request->input('cart_seq');
+        $cartItem = Cart::currentUser()->where('cart_seq', $cartSeq)->with(['goods', 'options', 'inputs'])->firstOrFail();
+        
+        $goods = $cartItem->goods;
+        $options = DB::table('fm_goods_option')
+            ->where('goods_seq', $goods->goods_seq)
+            ->get();
+            
+        return view('front.cart.optional_changes', compact('cartItem', 'goods', 'options'));
     }
 
     public function destroy(Request $request)

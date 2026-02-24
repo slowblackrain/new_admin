@@ -62,8 +62,7 @@ return [
             ['name' => '주문', 'url' => '/admin/order/index'], // Placeholder
             ['name' => '주문리스트', 'url' => '/admin/order/catalog'],
             ['name' => '송장등록리스트', 'url' => '/admin/goods/deli_catalog'],
-            ['name' => '반품리스트', 'url' => '/admin/returns/catalog'],
-            ['name' => '환불리스트', 'url' => '/admin/refund/catalog'],
+            ['name' => '클레임 통합 리스트', 'url' => '/admin/order/claim/list'],
             ['name' => '매출증빙리스트', 'url' => '/admin/order/sales'],
             ['name' => '상담메모관리', 'url' => '/admin/order/customer_memo'],
             ['name' => '송장엑셀처리', 'url' => '/admin/order/excel_songjang'],

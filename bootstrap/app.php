@@ -11,6 +11,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->alias([
+            'seller.grade' => \App\Http\Middleware\CheckSellerGrade::class,
+        ]);
         $middleware->validateCsrfTokens(except: [
             'payment/*',
         ]);

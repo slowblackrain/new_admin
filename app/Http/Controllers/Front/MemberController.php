@@ -73,17 +73,42 @@ class MemberController extends Controller
 
     public function register_process(Request $request)
     {
-        // 1. Validation
-        $validated = $request->validate([
+        $isBusiness = $request->input('type') === 'business';
+
+        $rules = [
             'userid' => 'required|unique:fm_member,userid|min:4|max:20',
             'password' => 'required|min:4',
             'username' => 'required',
             'email' => 'required|email|unique:fm_member,email',
             'cellphone' => 'required',
-        ]);
+        ];
+
+        if ($isBusiness) {
+            $rules['bname'] = 'required';
+            $rules['bno'] = 'required';
+            $rules['bceo'] = 'required';
+            $rules['bno_file'] = 'required|file|mimes:jpeg,png,jpg,pdf|max:5120';
+        }
+
+        // 1. Validation
+        $validated = $request->validate($rules);
 
         // 2. Hash Password (SHA-256 standard for new users)
         $passwordHash = hash('sha256', $validated['password']);
+
+        // Check Admin policy for B2B Auto Approve (Assuming it's stored in fm_config.b2b_auto_approve or similar, default false)
+        // Here we default to group 1 (General/Wait) if not auto-approved.
+        // If config requires, it could be group 2 (Dealer) etc.
+        // Let's assume manual approval: group 1, status 'done', mtype 'b2b'.
+        $mtype = $isBusiness ? 'b2b' : 'person';
+        
+        $config = DB::table('fm_config')->first();
+        // Fallback to manual approval (group 1) if b2b_auto_approve is not set or false
+        $groupSeq = 1; 
+        if ($isBusiness && isset($config->b2b_auto_approve) && $config->b2b_auto_approve == 1) {
+            // Assume group 2 is a basic business/dealer group
+            $groupSeq = 2; 
+        }
 
         // 3. Create Member
         $member = Member::create([
@@ -98,13 +123,15 @@ class MemberController extends Controller
             'address' => '',
             'address_street' => '',
             'address_detail' => '',
+            'company' => $isBusiness ? $validated['bname'] : '',
+            'mtype' => $mtype,
 
             'regist_date' => now(),
             'update_date' => now(),
 
             'status' => 'done',
             'gubun_seq' => 1,
-            'group_seq' => 1,
+            'group_seq' => $groupSeq,
             'group_set_date' => '1000-01-01 00:00:00',
 
             'rute' => 'none',
@@ -117,15 +144,44 @@ class MemberController extends Controller
             'lastlogin_date' => now(),
             'grade_update_date' => '1000-01-01 00:00:00',
             'marketplace' => '',
+            'admin_memo' => $isBusiness && $groupSeq == 1 ? 'B2B 가입 승인 대기' : '',
 
             'account_cnt' => 0,
             'Personal_ccn' => '',
         ]);
 
-        // 4. Login after registration
+        // 4. Handle B2B Business Fields and Upload
+        if ($isBusiness) {
+            $bnoFilePath = '';
+            if ($request->hasFile('bno_file')) {
+                // Store file in storage/app/public/business_licenses
+                $path = $request->file('bno_file')->store('business_licenses', 'public');
+                $bnoFilePath = '/storage/' . $path;
+            }
+
+            // Insert into fm_member_business
+            DB::table('fm_member_business')->insert([
+                'member_seq' => $member->member_seq,
+                'bname' => $validated['bname'],
+                'bceo' => $validated['bceo'],
+                'bno' => $validated['bno'],
+                'bno_file' => $bnoFilePath,
+                'bstatus' => 'done', // Or default
+                'bzipcode' => '',
+                'baddress' => '',
+                'baddress_detail' => '',
+                'baddress_street' => '',
+            ]);
+        }
+
+        // 5. Login after registration
         \Illuminate\Support\Facades\Auth::login($member);
 
-        return redirect()->route('home')->with('message', '회원가입이 완료되었습니다.');
+        $msg = $isBusiness && $groupSeq == 1 
+            ? '기업 회원가입이 완료되었습니다. 관리자 승인 후 도매 혜택이 적용됩니다.' 
+            : '회원가입이 완료되었습니다.';
+
+        return redirect()->route('home')->with('message', $msg);
     }
 
     public function logout()

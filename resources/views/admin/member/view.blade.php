@@ -42,7 +42,20 @@
                                 @if($member->status == 'done') <span class="badge badge-success">승인</span>
                                 @elseif($member->status == 'hold') <span class="badge badge-warning">대기</span>
                                 @elseif($member->status == 'withdrawal') <span class="badge badge-danger">탈퇴</span>
+                                @elseif($member->status == 'dormancy') <span class="badge badge-secondary">휴면</span>
                                 @else {{ $member->status }} @endif
+
+                                @if($member->status == 'dormancy')
+                                    <form action="{{ route('admin.member.dormancy.off', $member->member_seq) }}" method="POST" class="d-inline ml-2" onsubmit="return confirm('이 회원의 휴면 상태를 해제하시겠습니까?');">
+                                        @csrf
+                                        <button type="submit" class="btn btn-xs btn-success">휴면 해제 처리</button>
+                                    </form>
+                                @elseif($member->status != 'withdrawal')
+                                    <form action="{{ route('admin.member.dormancy.on', $member->member_seq) }}" method="POST" class="d-inline ml-2" onsubmit="return confirm('이 회원을 강제로 휴면 처리하시겠습니까?\nPII 정보가 분리 보관됩니다.');">
+                                        @csrf
+                                        <button type="submit" class="btn btn-xs btn-warning">강제 휴면 처리</button>
+                                    </form>
+                                @endif
                             </td>
                         </tr>
                         <tr>

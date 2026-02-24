@@ -8,8 +8,9 @@
                 <h2 style="font-size: 24px; font-weight: bold;">회원정보 입력</h2>
             </div>
 
-            <form name="registFrm" method="post" action="{{ route('member.register_process') }}">
+            <form name="registFrm" method="post" action="{{ route('member.register_process') }}" enctype="multipart/form-data">
                 @csrf
+				<input type="hidden" name="type" value="{{ $type }}">
 
                 <table class="form-table" style="width: 100%; border-collapse: collapse;">
                     <tr style="border-bottom: 1px solid #eee;">
@@ -26,19 +27,45 @@
                         </td>
                     </tr>
                     <tr style="border-bottom: 1px solid #eee;">
-                        <th style="padding: 15px; text-align: left; background: #f9f9f9;">이름</th>
+                        <th style="padding: 15px; text-align: left; background: #f9f9f9;">이름 <span style="color:red">*</span></th>
                         <td style="padding: 15px;">
                             <input type="text" name="username" style="padding: 5px; width: 200px;">
                         </td>
                     </tr>
+                    @if(isset($type) && $type === 'business')
                     <tr style="border-bottom: 1px solid #eee;">
-                        <th style="padding: 15px; text-align: left; background: #f9f9f9;">이메일</th>
+                        <th style="padding: 15px; text-align: left; background: #f9f9f9;">상호명(법인명) <span style="color:red">*</span></th>
+                        <td style="padding: 15px;">
+                            <input type="text" name="bname" style="padding: 5px; width: 200px;">
+                        </td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #eee;">
+                        <th style="padding: 15px; text-align: left; background: #f9f9f9;">사업자등록번호 <span style="color:red">*</span></th>
+                        <td style="padding: 15px;">
+                            <input type="text" name="bno" placeholder="'-' 없이 입력" style="padding: 5px; width: 200px;">
+                        </td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #eee;">
+                        <th style="padding: 15px; text-align: left; background: #f9f9f9;">대표자명 <span style="color:red">*</span></th>
+                        <td style="padding: 15px;">
+                            <input type="text" name="bceo" style="padding: 5px; width: 200px;">
+                        </td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #eee;">
+                        <th style="padding: 15px; text-align: left; background: #f9f9f9;">사업자등록증 사본 <span style="color:red">*</span></th>
+                        <td style="padding: 15px;">
+                            <input type="file" name="bno_file" accept=".jpg,.jpeg,.png,.pdf" style="padding: 5px;">
+                        </td>
+                    </tr>
+                    @endif
+                    <tr style="border-bottom: 1px solid #eee;">
+                        <th style="padding: 15px; text-align: left; background: #f9f9f9;">이메일 <span style="color:red">*</span></th>
                         <td style="padding: 15px;">
                             <input type="email" name="email" style="padding: 5px; width: 300px;">
                         </td>
                     </tr>
                     <tr style="border-bottom: 1px solid #eee;">
-                        <th style="padding: 15px; text-align: left; background: #f9f9f9;">휴대폰</th>
+                        <th style="padding: 15px; text-align: left; background: #f9f9f9;">휴대폰 <span style="color:red">*</span></th>
                         <td style="padding: 15px;">
                             <input type="text" name="cellphone" style="padding: 5px; width: 200px;">
                         </td>

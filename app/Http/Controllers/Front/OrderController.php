@@ -125,6 +125,21 @@ class OrderController extends Controller
         return view('front.order.order', compact('cartItems', 'user', 'totalPrice', 'user', 'cart_seqs', 'tax', 'finalPrice', 'shipping', 'packagingCost', 'coupons', 'hasExempt'));
     }
 
+    public function calculateShipping(Request $request)
+    {
+        $zipcode = $request->input('zipcode');
+        if (!$zipcode) {
+            return response()->json(['extra_cost' => 0]);
+        }
+
+        $extraShippingCost = DB::table('shipping_extra_costs')
+            ->where('zipcode_start', '<=', $zipcode)
+            ->where('zipcode_end', '>=', $zipcode)
+            ->value('extra_cost') ?? 0;
+
+        return response()->json(['extra_cost' => $extraShippingCost]);
+    }
+
     public function store(Request $request)
     {
 
@@ -310,6 +325,17 @@ class OrderController extends Controller
                 $shipping = $shippingCost;
             }
 
+            // [NEW] 도서산간 배송비(우편번호 기반 구간 매핑) 적용
+            $recipientZipcode = $request->recipient_zipcode;
+            $extraShippingCost = 0;
+            if ($recipientZipcode) {
+                $extraShippingCost = DB::table('shipping_extra_costs')
+                    ->where('zipcode_start', '<=', $recipientZipcode)
+                    ->where('zipcode_end', '>=', $recipientZipcode)
+                    ->value('extra_cost') ?? 0;
+            }
+            $shipping += $extraShippingCost;
+
             $tax = $totalVat;
             $finalSettlePrice = $totalPrice + $shipping + $tax + $packagingCost;
 
@@ -321,32 +347,52 @@ class OrderController extends Controller
 
             // Point/Emoney Usage
             $useEmoney = $request->input('use_emoney', 0);
-            $usePoint = $request->input('use_point', 0);
+            $useCash = $request->input('use_cash', 0);
 
             if ($useEmoney > 0) {
                 if ($user->emoney < $useEmoney) {
-                    throw new \Exception("보유 예치금이 부족합니다.");
+                    throw new \Exception("보유 적립금이 부족합니다.");
                 }
                 if ($useEmoney > $finalSettlePrice) {
-                    throw new \Exception("결제 금액보다 많은 예치금을 사용할 수 없습니다.");
+                    throw new \Exception("결제 금액보다 많은 적립금을 사용할 수 없습니다.");
                 }
                 $finalSettlePrice -= $useEmoney;
                 $user->decrement('emoney', $useEmoney);
-                $order->emoney = $useEmoney; // Assuming 'emoney' column holds USED emoney
+                $order->emoney = $useEmoney; // 'emoney' column holds USED emoney
+                
+                DB::table('fm_emoney')->insert([
+                    'member_seq' => $user->member_seq,
+                    'type' => 'order',
+                    'gb' => 'minus',
+                    'emoney' => $useEmoney,
+                    'ordno' => $order->order_seq,
+                    'memo' => "[차감]주문 ({$order->order_seq})에 의한 적립금 차감",
+                    'regist_date' => now(),
+                ]);
             } else {
                  $order->emoney = 0;
             }
 
-            if ($usePoint > 0) {
-                 if ($user->point < $usePoint) {
-                    throw new \Exception("보유 포인트가 부족합니다.");
+            if ($useCash > 0) {
+                 if ($user->cash < $useCash) {
+                    throw new \Exception("보유 예치금이 부족합니다.");
                 }
-                 if ($usePoint > $finalSettlePrice) {
-                    throw new \Exception("결제 금액보다 많은 포인트를 사용할 수 없습니다.");
+                 if ($useCash > $finalSettlePrice) {
+                    throw new \Exception("결제 금액보다 많은 예치금을 사용할 수 없습니다.");
                 }
-                $finalSettlePrice -= $usePoint;
-                $user->decrement('point', $usePoint);
-                $order->cash = $usePoint; 
+                $finalSettlePrice -= $useCash;
+                $user->decrement('cash', $useCash);
+                $order->cash = $useCash; 
+                
+                DB::table('fm_cash')->insert([
+                    'member_seq' => $user->member_seq,
+                    'type' => 'order',
+                    'gb' => 'minus',
+                    'cash' => $useCash,
+                    'ordno' => $order->order_seq,
+                    'memo' => "[차감]주문 ({$order->order_seq})에 의한 예치금 차감",
+                    'regist_date' => now(),
+                ]);
             } else {
                 $order->cash = 0;
             }
@@ -443,7 +489,50 @@ class OrderController extends Controller
             }
 
              try {
+                $order->typereceipt = $request->input('typereceipt', 0);
                 $order->save();
+
+                // Phase 1: Save Tax Invoice / Cash Receipt Request to fm_sales
+                if ($order->typereceipt == 1) { // 세금계산서
+                    DB::table('fm_sales')->insert([
+                        'typereceipt' => 1,
+                        'type' => 2, // 수동 신청
+                        'tstep' => 1, // 발급 신청 접수
+                        'order_seq' => $order->order_seq,
+                        'member_seq' => $order->member_seq ?? 0,
+                        'price' => $order->settleprice, // 우선 총액 기준 (실제로는 과세/면세 분리 고도화 필요)
+                        'supply' => round($order->settleprice / 1.1),
+                        'surtax' => $order->settleprice - round($order->settleprice / 1.1),
+                        'co_name' => $request->input('co_name', ''),
+                        'busi_no' => str_replace('-', '', $request->input('busi_no', '')),
+                        'co_ceo' => $request->input('co_ceo', ''),
+                        'co_status' => $request->input('co_status', ''),
+                        'co_type' => $request->input('co_type', ''),
+                        'person' => $request->input('tax_person', ''),
+                        'email' => $request->input('tax_email', ''),
+                        'regdate' => now(),
+                    ]);
+                } elseif ($order->typereceipt == 2) { // 현금영수증
+                    $cuse = $request->input('cuse', 0);
+                    $cnoInput = $request->input('cash_receipt_number', '');
+                    $cno = str_replace('-', '', $cnoInput);
+
+                    DB::table('fm_sales')->insert([
+                        'typereceipt' => 2,
+                        'type' => 0, // 사용자 수동
+                        'tstep' => 1, // 발급 신청 접수
+                        'order_seq' => $order->order_seq,
+                        'member_seq' => $order->member_seq ?? 0,
+                        'price' => $order->settleprice,
+                        'supply' => round($order->settleprice / 1.1),
+                        'surtax' => $order->settleprice - round($order->settleprice / 1.1),
+                        'cuse' => $cuse, // 0:개인, 1:사업자
+                        'creceipt_number' => $cno,
+                        'person' => $request->input('order_user_name', ''),
+                        'email' => $request->input('order_email', ''),
+                        'regdate' => now(),
+                    ]);
+                }
         
             } catch (\Exception $e) {
                 if (strpos($e->getMessage(), 'virtual_date') !== false) {
@@ -705,13 +794,17 @@ class OrderController extends Controller
             }
 
         } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Order Store Failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
-    
+            $msg = $e->getMessage();
+            Log::error('Order Store Failed', ['error' => $msg, 'trace' => $e->getTraceAsString()]);
+
+            try {
+                DB::rollBack();
+            } catch (\Exception $rollbackEx) {
+                Log::error('DB Rollback Failed', ['error' => $rollbackEx->getMessage()]);
+            }
+
             // Agency Deduction Failure Logging
             // We expect "AgencyDeductionFail:" or just standard error if string parsing matches
-            $msg = $e->getMessage();
-
             if (strpos($msg, 'AgencyDeductionFail:') === 0) {
                  $json = substr($msg, strlen('AgencyDeductionFail:'));
                  $context = json_decode($json, true);

@@ -20,6 +20,9 @@
                     <li><a href="{{ route('mypage.wishlist') }}"
                             style="display: block; padding: 10px 15px; color: #666; text-decoration: none; border-bottom: 1px solid #eee;">관심상품</a>
                     </li>
+                    <li><a href="{{ route('board.index', ['id' => 'mbqna']) }}"
+                            style="display: block; padding: 10px 15px; color: #666; text-decoration: none; border-bottom: 1px solid #eee;">1:1 문의내역</a>
+                    </li>
                 </ul>
             </li>
             <li class="menu_group">

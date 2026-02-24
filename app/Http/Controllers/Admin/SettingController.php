@@ -38,7 +38,23 @@ class SettingController extends Controller
     // Member/Points Settings
     public function member()
     {
-        return view('admin.setting.member');
+        $config = DB::table('fm_config')->first();
+        return view('admin.setting.member', compact('config'));
+    }
+
+    public function save_member(Request $request)
+    {
+        $autoApprove = $request->input('b2b_auto_approve', 0);
+
+        // Check if config row exists
+        $exists = DB::table('fm_config')->exists();
+        if ($exists) {
+            DB::table('fm_config')->update(['b2b_auto_approve' => $autoApprove]);
+        } else {
+            DB::table('fm_config')->insert(['b2b_auto_approve' => $autoApprove]);
+        }
+
+        return back()->with('success', '회원 설정이 저장되었습니다.');
     }
 
     // Security/Admin Settings

@@ -18,7 +18,8 @@ class ProductController extends Controller
     {
         $seller = Auth::guard('seller')->user();
 
-        $query = Goods::where('provider_seq', $seller->provider_seq);
+        $query = Goods::with('defaultOption.supply')
+            ->where('provider_seq', $seller->provider_seq);
 
         // Filters
         if ($request->filled('keyword')) {
@@ -190,6 +191,97 @@ class ProductController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', '상품 등록 중 오류가 발생했습니다: ' . $e->getMessage())->withInput();
+        }
+    }
+
+    public function edit($id)
+    {
+        $seller = Auth::guard('seller')->user();
+
+        $goods = Goods::with(['option.supply', 'categories'])
+            ->where('provider_seq', $seller->provider_seq)
+            ->findOrFail($id);
+
+        $categories = Category::whereRaw('length(category_code) = 4')->get();
+
+        return view('seller.goods.edit', compact('seller', 'goods', 'categories'));
+    }
+
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'goods_name' => 'required',
+            'price' => 'required|numeric',
+            'supply_price' => 'required|numeric',
+        ]);
+
+        $seller = Auth::guard('seller')->user();
+
+        $goods = Goods::where('provider_seq', $seller->provider_seq)->findOrFail($id);
+
+        DB::beginTransaction();
+        try {
+            // Update Goods
+            $goods->goods_name = $request->goods_name;
+            $goods->summary = $request->summary;
+            $goods->goods_status = $request->goods_status ?? 'normal';
+            $goods->goods_view = $request->goods_view ?? 'look';
+            $goods->keyword = $request->keyword;
+            $goods->tot_stock = $request->stock ?? $goods->tot_stock;
+            $goods->update_date = now();
+            $goods->save();
+
+            // Find Default Option
+            $defaultOption = DB::table('fm_goods_option')
+                ->where('goods_seq', $id)
+                ->where('default_option', 'y')
+                ->first();
+
+            if ($defaultOption) {
+                DB::table('fm_goods_option')
+                    ->where('option_seq', $defaultOption->option_seq)
+                    ->update([
+                        'consumer_price' => $request->consumer_price ?? 0,
+                        'price' => $request->price,
+                    ]);
+
+                DB::table('fm_goods_supply')
+                    ->where('option_seq', $defaultOption->option_seq)
+                    ->update([
+                        'supply_price' => $request->supply_price,
+                        // If no multi-option submitted, fallback to default stock edit
+                        'stock' => $request->input("option_stock.{$defaultOption->option_seq}") ?? ($request->stock ?? $goods->tot_stock),
+                    ]);
+            }
+
+            // Update all options' stock if provided
+            if ($request->has('option_stock')) {
+                foreach ($request->option_stock as $optSeq => $optStock) {
+                    DB::table('fm_goods_supply')
+                        ->where('goods_seq', $id)
+                        ->where('option_seq', $optSeq)
+                        ->update(['stock' => $optStock]);
+                }
+            }
+
+            // Category Update (Simplified: recreate links)
+            $categoryCode = $request->category4 ?: ($request->category3 ?: ($request->category2 ?: $request->category1));
+            if ($categoryCode) {
+                DB::table('fm_category_link')->where('goods_seq', $id)->delete();
+                DB::table('fm_category_link')->insert([
+                    'category_code' => $categoryCode,
+                    'goods_seq' => $id,
+                    'link' => 1,
+                    'regist_date' => now()
+                ]);
+            }
+
+            DB::commit();
+            return redirect()->route('seller.goods.index')->with('success', '상품이 성공적으로 수정되었습니다.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', '상품 수정 중 오류가 발생했습니다: ' . $e->getMessage())->withInput();
         }
     }
 }

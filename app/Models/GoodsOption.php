@@ -19,4 +19,9 @@ class GoodsOption extends Model
     {
         return $this->belongsTo(Goods::class, 'goods_seq', 'goods_seq');
     }
+
+    public function supply()
+    {
+        return $this->hasOne(GoodsSupply::class, 'option_seq', 'option_seq');
+    }
 }

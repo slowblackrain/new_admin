@@ -92,8 +92,10 @@ class BankCheckController extends Controller
         if ($order->step == 15) { // 'Waiting for Deposit'
             DB::beginTransaction();
             try {
-                // 1. Update Order Step to 25
+                // 1. Update Order Step to 25 and set deposit info
                 $order->step = 25;
+                $order->deposit_yn = 'y';
+                $order->deposit_date = now();
                 $order->save();
 
                 // 2. Log

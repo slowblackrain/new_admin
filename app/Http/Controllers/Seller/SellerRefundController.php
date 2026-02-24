@@ -17,14 +17,13 @@ class SellerRefundController extends Controller
         $keyword = $request->input('keyword');
 
         $seller = Auth::guard('seller')->user();
+        $member = \App\Models\Member::where('userid', $seller->userid)->first();
 
-        // Join structure similar to Returns
+        // Join structure to filter by member_seq
         $query = OrderRefund::with(['items.orderItem', 'order.member'])
             ->select('fm_order_refund.*')
-            ->join('fm_order_refund_item', 'fm_order_refund.refund_code', '=', 'fm_order_refund_item.refund_code')
-            ->join('fm_order_item', 'fm_order_refund_item.item_seq', '=', 'fm_order_item.item_seq')
-            ->where('fm_order_item.provider_seq', $seller->provider_seq)
-            ->distinct();
+            ->join('fm_order', 'fm_order_refund.order_seq', '=', 'fm_order.order_seq')
+            ->where('fm_order.member_seq', $member->member_seq ?? 0);
 
         if ($startDate && $endDate) {
             $query->whereBetween('fm_order_refund.regist_date', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);

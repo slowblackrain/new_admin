@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\GoodsExport;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Models\Member;
 
 class SellerExportController extends Controller
 {
@@ -18,18 +19,35 @@ class SellerExportController extends Controller
         $status = $request->input('status');
         $keyword = $request->input('keyword');
 
-        $providerId = Auth::guard('seller')->id(); // Using 'seller' guard defined in auth.php
+        $provider = session('provider');
+
+        // Fallback for development
+        if (!$provider) {
+            $provider = DB::table('fm_provider')->where('provider_id', 'dometopia001')->first();
+            $provider = (array) $provider;
+        }
+
+        if (!$provider || !isset($provider['userid'])) {
+            return redirect()->back()->with('error', 'Seller information not found.');
+        }
+
+        // Find linked member
+        /** @var \App\Models\Member $member */
+        $member = Member::where('userid', $provider['userid'])->first();
+
+        if (!$member) {
+            return view('seller.export.catalog', [
+                'exports' => [],
+                'message' => 'Linked reseller account not found.',
+                'startDate' => $startDate,
+                'endDate' => $endDate
+            ]);
+        }
 
         $query = GoodsExport::with(['items', 'order.member'])
             ->select('fm_goods_export.*')
             ->join('fm_order', 'fm_goods_export.order_seq', '=', 'fm_order.order_seq')
-            ->leftJoin('fm_order_item', function($join) use ($providerId) {
-                // Determine if this order has items for this provider
-                $join->on('fm_goods_export.order_seq', '=', 'fm_order_item.order_seq');
-            })
-            // Filter by Provider: Assuming provider_seq is in fm_order_item or checked via relationship
-            // Legacy query: oitem.provider_seq = '{$this->providerInfo['provider_seq']}'
-            ->where('fm_order_item.provider_seq', $providerId)
+            ->where('fm_order.member_seq', $member->member_seq)
             ->groupBy('fm_goods_export.export_seq');
 
         // Date Filter
