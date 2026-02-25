@@ -140,7 +140,7 @@
 
                 <li><a href="/page/index?tpl=etc/print_info.html">판촉물인쇄</a></li>
                 <li><a href="{{ route('mypage.order.list') }}">주문배송조회</a></li>
-                <li><a href="/order/cart">장바구니</a></li>
+                <li><a href="/cart">장바구니</a></li>
                 <li><a href="/service/cs">고객센터</a></li>
 
                 @if(Auth::check() && Auth::user()->member_provider_seq)

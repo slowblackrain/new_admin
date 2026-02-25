@@ -128,6 +128,7 @@ class Goods extends Model
     {
         return $query->where('goods_view', 'look')
             ->where('goods_status', 'normal')
+            ->where('provider_status', 1) // 상품 단위 승인 상태 (1 = 승인)
             ->whereHas('provider', function ($q) {
                 $q->where('provider_status', 'Y');
             });

@@ -119,8 +119,10 @@
                         <span class="item">총 상품 금액: <strong>{{ number_format($totalPrice) }}</strong></span>
                         <span class="op plus">+</span>
                         <span class="item">배송비: <strong>{{ number_format($shipping) }}</strong></span>
+                        <span class="op plus">+</span>
+                        <span class="item">포장비: <strong>{{ number_format($packagingCost) }}</strong></span>
                         <span class="op minus">-</span>
-                        <span class="item">총 할인: <strong>0</strong></span>
+                        <span class="item">총 할인: <strong id="coupon_discount_display_text">0</strong></span>
                         <span class="item" id="extra_shipping_wrap" style="display:none; color: #d00; margin-left:10px;">
                             <span class="op plus">+</span> 추가배송비: <strong id="extra_shipping_display">0</strong>
                         </span>
@@ -152,21 +154,21 @@
                         <tbody>
                             <tr>
                                 <th>주문자명 <span class="required">*</span></th>
-                                <td><input type="text" name="order_user_name" value="{{ $user->user_name ?? '' }}"
+                                <td><input type="text" name="order_user_name" value="{{ old('order_user_name', $user->user_name ?? '') }}"
                                         class="input_text" required></td>
                             </tr>
                             <tr>
                                 <th>전화번호</th>
-                                <td><input type="text" name="order_phone" value="{{ $user->phone ?? '' }}" class="input_text"></td>
+                                <td><input type="text" name="order_phone" value="{{ old('order_phone', $user->phone ?? '') }}" class="input_text"></td>
                             </tr>
                             <tr>
                                 <th>휴대전화 <span class="required">*</span></th>
-                                <td><input type="text" name="order_cellphone" value="{{ $user->cellphone ?? '' }}"
+                                <td><input type="text" name="order_cellphone" value="{{ old('order_cellphone', $user->cellphone ?? '') }}"
                                         class="input_text" required></td>
                             </tr>
                             <tr>
                                 <th>이메일 <span class="required">*</span></th>
-                                <td><input type="email" name="order_email" value="{{ $user->email ?? '' }}"
+                                <td><input type="email" name="order_email" value="{{ old('order_email', $user->email ?? '') }}"
                                         class="input_text" required></td>
                             </tr>
                         </tbody>
@@ -195,45 +197,45 @@
                         <tbody>
                             <tr>
                                 <th>수령인 <span class="required">*</span></th>
-                                <td><input type="text" name="recipient_user_name" id="recipient_user_name"
+                                <td><input type="text" name="recipient_user_name" id="recipient_user_name" value="{{ old('recipient_user_name') }}"
                                         class="input_text" required></td>
                             </tr>
                             <tr>
                                 <th>전화번호</th>
-                                <td><input type="text" name="recipient_phone" id="recipient_phone" class="input_text"></td>
+                                <td><input type="text" name="recipient_phone" id="recipient_phone" value="{{ old('recipient_phone') }}" class="input_text"></td>
                             </tr>
                             <tr>
                                 <th>휴대전화 <span class="required">*</span></th>
-                                <td><input type="text" name="recipient_cellphone" id="recipient_cellphone"
+                                <td><input type="text" name="recipient_cellphone" id="recipient_cellphone" value="{{ old('recipient_cellphone') }}"
                                         class="input_text" required></td>
                             </tr>
                             <tr>
                                 <th>주소 <span class="required">*</span></th>
                                 <td>
-                                    <input type="text" name="recipient_zipcode" id="recipient_zipcode" class="input_text"
+                                    <input type="text" name="recipient_zipcode" id="recipient_zipcode" class="input_text" value="{{ old('recipient_zipcode') }}"
                                         style="width: 80px;" placeholder="우편번호" readonly>
                                     <button type="button" class="btn_base" onclick="openDaumPostcode()">우편번호 찾기</button>
                                     <button type="button" class="btn_base btn_addr_list" onclick="openAddressModal()">배송지 목록</button><br>
 
                                     {{-- Visible Address Input (Display Only) --}}
-                                    <input type="text" id="recipient_address_display" class="input_text"
+                                    <input type="text" id="recipient_address_display" class="input_text" value="{{ old('recipient_address_type') == 'street' ? old('recipient_address_street') : old('recipient_address') }}"
                                         style="width: 300px; margin-top: 5px;" placeholder="기본주소" readonly>
 
                                     {{-- Actual Data Inputs --}}
-                                    <input type="hidden" name="recipient_address" id="recipient_address"> {{-- Jibun Address
+                                    <input type="hidden" name="recipient_address" id="recipient_address" value="{{ old('recipient_address') }}"> {{-- Jibun Address
                                     --}}
-                                    <input type="hidden" name="recipient_address_street" id="recipient_address_street"> {{--
+                                    <input type="hidden" name="recipient_address_street" id="recipient_address_street" value="{{ old('recipient_address_street') }}"> {{--
                                     Road Address --}}
-                                    <input type="hidden" name="recipient_address_type" id="recipient_address_type"> {{--
+                                    <input type="hidden" name="recipient_address_type" id="recipient_address_type" value="{{ old('recipient_address_type') }}"> {{--
                                     Type: street/zibun --}}
 
-                                    <input type="text" name="recipient_address_detail" id="recipient_address_detail"
+                                    <input type="text" name="recipient_address_detail" id="recipient_address_detail" value="{{ old('recipient_address_detail') }}"
                                         class="input_text" style="width: 200px; margin-top: 5px;" placeholder="상세주소">
                                 </td>
                             </tr>
                             <tr>
                                 <th>배송메시지</th>
-                                <td><input type="text" name="memo" class="input_text full_width"></td>
+                                <td><input type="text" name="memo" value="{{ old('memo') }}" class="input_text full_width"></td>
                             </tr>
                         </tbody>
                     </table>
@@ -253,7 +255,7 @@
                                     <select name="download_seq" id="download_seq" class="input_text" style="min-width: 200px;">
                                         <option value="">쿠폰을 선택하세요</option>
                                         @foreach($coupons as $coupon)
-                                            <option value="{{ $coupon->download_seq }}" 
+                                            <option value="{{ $coupon->download_seq }}" {{ old('download_seq') == $coupon->download_seq ? 'selected' : '' }}
                                                 data-type="{{ $coupon->sale_type }}"
                                                 data-percent="{{ $coupon->percent_goods_sale }}"
                                                 data-max="{{ $coupon->max_percent_goods_sale }}"
@@ -269,7 +271,7 @@
                             <tr>
                                 <th>적립금</th>
                                 <td>
-                                    <input type="number" name="use_emoney" id="use_emoney" class="input_text" value="0" style="text-align:right;"> 원
+                                    <input type="number" name="use_emoney" id="use_emoney" class="input_text" value="{{ old('use_emoney', 0) }}" style="text-align:right;"> 원
                                     <span style="color:#888; margin-left:10px;">(보유: <strong>{{ number_format($user->emoney ?? 0) }}</strong>원)</span>
                                     <button type="button" class="btn_base" onclick="useAll('emoney', {{ $user->emoney ?? 0 }})">전액사용</button>
                                 </td>
@@ -277,7 +279,7 @@
                             <tr>
                                 <th>예치금</th>
                                 <td>
-                                    <input type="number" name="use_cash" id="use_cash" class="input_text" value="0" style="text-align:right;"> 원
+                                    <input type="number" name="use_cash" id="use_cash" class="input_text" value="{{ old('use_cash', 0) }}" style="text-align:right;"> 원
                                     <span style="color:#888; margin-left:10px;">(보유: <strong>{{ number_format($user->cash ?? 0) }}</strong>원)</span>
                                     <button type="button" class="btn_base" onclick="useAll('cash', {{ $user->cash ?? 0 }})">전액사용</button>
                                 </td>
@@ -295,8 +297,8 @@
                             <tr>
                                 <th>결제 방법</th>
                                 <td>
-                                    <label><input type="radio" name="payment" value="bank" checked> 무통장 입금</label>
-                                    <label style="margin-left: 20px;"><input type="radio" name="payment" value="card">
+                                    <label><input type="radio" name="payment" value="bank" {{ old('payment', 'bank') == 'bank' ? 'checked' : '' }}> 무통장 입금</label>
+                                    <label style="margin-left: 20px;"><input type="radio" name="payment" value="card" {{ old('payment') == 'card' ? 'checked' : '' }}>
                                         신용카드</label>
                                 </td>
                             </tr>
@@ -304,10 +306,10 @@
                                 <th>입금 계좌</th>
                                 <td>
                                     <select name="bank_account" class="input_text">
-                                        <option value="국민은행 123-456-7890 도매토피아">국민은행 123-456-7890 도매토피아</option>
-                                        <option value="농협 098-765-4321 도매토피아">농협 098-765-4321 도매토피아</option>
+                                        <option value="국민은행 123-456-7890 도매토피아" {{ old('bank_account') == '국민은행 123-456-7890 도매토피아' ? 'selected' : '' }}>국민은행 123-456-7890 도매토피아</option>
+                                        <option value="농협 098-765-4321 도매토피아" {{ old('bank_account') == '농협 098-765-4321 도매토피아' ? 'selected' : '' }}>농협 098-765-4321 도매토피아</option>
                                     </select>
-                                    <input type="text" name="depositor" class="input_text" placeholder="입금자명">
+                                    <input type="text" name="depositor" value="{{ old('depositor') }}" class="input_text" placeholder="입금자명">
                                 </td>
                             </tr>
                         </tbody>
@@ -326,12 +328,12 @@
                             <tr>
                                 <th>신청 선택</th>
                                 <td>
-                                    <label><input type="radio" name="typereceipt" value="0" checked onclick="toggleReceipt(0)"> 신청안함</label>
+                                    <label><input type="radio" name="typereceipt" value="0" {{ old('typereceipt', '0') == '0' ? 'checked' : '' }} onclick="toggleReceipt(0)"> 신청안함</label>
                                     @if(isset($hasExempt) && $hasExempt)
                                         <span style="color:#d00; font-size:12px; margin-left:10px;">(비과세 상품 포함시 증빙서류 발급 불가)</span>
                                     @else
-                                        <label class="ml10"><input type="radio" name="typereceipt" value="1" onclick="toggleReceipt(1)"> 세금계산서</label>
-                                        <label class="ml10"><input type="radio" name="typereceipt" value="2" onclick="toggleReceipt(2)"> 현금영수증</label>
+                                        <label class="ml10"><input type="radio" name="typereceipt" value="1" {{ old('typereceipt') == '1' ? 'checked' : '' }} onclick="toggleReceipt(1)"> 세금계산서</label>
+                                        <label class="ml10"><input type="radio" name="typereceipt" value="2" {{ old('typereceipt') == '2' ? 'checked' : '' }} onclick="toggleReceipt(2)"> 현금영수증</label>
                                     @endif
                                 </td>
                             </tr>
@@ -340,22 +342,22 @@
                                 <td>
                                     {{-- Tax Invoice Form --}}
                                     <div id="tax_form" class="hide">
-                                        <div class="receipt_row"><span class="label">상호명</span> <input type="text" name="co_name" class="input_text"></div>
-                                        <div class="receipt_row"><span class="label">사업자번호</span> <input type="text" name="busi_no" class="input_text" placeholder="'-'없이 입력"></div>
-                                        <div class="receipt_row"><span class="label">대표자명</span> <input type="text" name="co_ceo" class="input_text"></div>
-                                        <div class="receipt_row"><span class="label">업태</span> <input type="text" name="co_status" class="input_text"></div>
-                                        <div class="receipt_row"><span class="label">종목</span> <input type="text" name="co_type" class="input_text"></div>
-                                        <div class="receipt_row"><span class="label">담당자명</span> <input type="text" name="tax_person" class="input_text"></div>
-                                        <div class="receipt_row"><span class="label">이메일</span> <input type="text" name="tax_email" class="input_text"></div>
+                                        <div class="receipt_row"><span class="label">상호명</span> <input type="text" name="co_name" value="{{ old('co_name') }}" class="input_text"></div>
+                                        <div class="receipt_row"><span class="label">사업자번호</span> <input type="text" name="busi_no" value="{{ old('busi_no') }}" class="input_text" placeholder="'-'없이 입력"></div>
+                                        <div class="receipt_row"><span class="label">대표자명</span> <input type="text" name="co_ceo" value="{{ old('co_ceo') }}" class="input_text"></div>
+                                        <div class="receipt_row"><span class="label">업태</span> <input type="text" name="co_status" value="{{ old('co_status') }}" class="input_text"></div>
+                                        <div class="receipt_row"><span class="label">종목</span> <input type="text" name="co_type" value="{{ old('co_type') }}" class="input_text"></div>
+                                        <div class="receipt_row"><span class="label">담당자명</span> <input type="text" name="tax_person" value="{{ old('tax_person') }}" class="input_text"></div>
+                                        <div class="receipt_row"><span class="label">이메일</span> <input type="text" name="tax_email" value="{{ old('tax_email') }}" class="input_text"></div>
                                     </div>
                                     {{-- Cash Receipt Form --}}
                                     <div id="cash_form" class="hide">
                                         <div class="receipt_row">
-                                            <label><input type="radio" name="cuse" value="0" checked> 개인소득공제용</label>
-                                            <label class="ml10"><input type="radio" name="cuse" value="1"> 사업자지출증빙용</label>
+                                            <label><input type="radio" name="cuse" value="0" {{ old('cuse', '0') == '0' ? 'checked' : '' }}> 개인소득공제용</label>
+                                            <label class="ml10"><input type="radio" name="cuse" value="1" {{ old('cuse') == '1' ? 'checked' : '' }}> 사업자지출증빙용</label>
                                         </div>
                                         <div class="receipt_row mt5">
-                                            <span class="label">휴대폰/번호</span> <input type="text" name="cash_receipt_number" class="input_text" placeholder="'-'없이 입력">
+                                            <span class="label">휴대폰/번호</span> <input type="text" name="cash_receipt_number" value="{{ old('cash_receipt_number') }}" class="input_text" placeholder="'-'없이 입력">
                                         </div>
                                     </div>
                                 </td>
@@ -482,8 +484,56 @@
                 <h3>나의 배송지 목록</h3>
                 <button type="button" class="btn_close_modal" onclick="closeAddressModal()">X</button>
             </div>
-            <div class="modal_body">
-                <ul id="addressList" class="address_list">
+            <div class="modal_body" style="background:#fff; padding:15px; max-height: 400px; overflow-y: auto;">
+                <div style="margin-bottom: 15px; text-align: right;">
+                    <button type="button" class="btn_base" onclick="toggleNewAddressForm()">+ 신규 배송지 등록</button>
+                </div>
+                
+                {{-- 신규 배송지 입력 폼 (기본 숨김) --}}
+                <div id="newAddressFormArea" style="display:none; background:#f9f9f9; padding:15px; border:1px solid #ddd; margin-bottom: 20px;">
+                    <h4 style="margin-bottom:10px; font-size:14px;">새로운 배송지 입력</h4>
+                    <table class="form_table">
+                        <colgroup>
+                            <col width="100">
+                            <col width="*">
+                        </colgroup>
+                        <tbody>
+                            <tr>
+                                <th>수령인 *</th>
+                                <td><input type="text" id="new_addr_name" class="input_text full_width"></td>
+                            </tr>
+                            <tr>
+                                <th>휴대전화 *</th>
+                                <td><input type="text" id="new_addr_mobile" class="input_text full_width"></td>
+                            </tr>
+                            <tr>
+                                <th>배송지명</th>
+                                <td><input type="text" id="new_addr_group" class="input_text full_width" placeholder="예: 집, 회사"></td>
+                            </tr>
+                            <tr>
+                                <th>주소 *</th>
+                                <td>
+                                    <input type="text" id="new_addr_zipcode" class="input_text" style="width: 80px;" readonly>
+                                    <button type="button" class="btn_base" onclick="openModalDaumPostcode()">검색</button><br>
+                                    <input type="text" id="new_addr_address" class="input_text full_width mt5" readonly><br>
+                                    <input type="hidden" id="new_addr_street">
+                                    <input type="hidden" id="new_addr_type">
+                                    <input type="text" id="new_addr_detail" class="input_text full_width mt5" placeholder="상세주소를 입력해주세요">
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>기본배송지</th>
+                                <td><label><input type="checkbox" id="new_addr_default" value="Y"> 기본 배송지로 설정</label></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div style="text-align:center; margin-top:15px;">
+                        <button type="button" class="btn_base btn_black" onclick="saveNewAddress()">저장하기</button>
+                        <button type="button" class="btn_base" onclick="toggleNewAddressForm()">취소</button>
+                    </div>
+                </div>
+
+                <ul id="addressList" class="address_list" style="list-style:none; padding:0; margin:0;">
                     <!-- Loaded via AJAX -->
                 </ul>
             </div>
@@ -524,7 +574,7 @@
             listEl.innerHTML = '<li>로딩중...</li>';
             document.getElementById('addressModal').style.display = 'block';
 
-            fetch("{{ route('mypage.delivery_address.index') }}")
+            fetch("{{ route('mypage.delivery_address.json') }}")
                 .then(res => res.json())
                 .then(data => {
                     if (data.status === 'success') {
@@ -535,12 +585,15 @@
                         }
                         data.data.forEach(addr => {
                             const li = document.createElement('li');
+                            li.style.cssText = "border:1px solid #ddd; padding:15px; margin-bottom:10px; cursor:pointer;";
+                            li.onclick = function() { selectAddress(addr); };
                             li.innerHTML = `
-                                <div class="addr_item" onclick='selectAddress(${JSON.stringify(addr)})'>
-                                    <strong>${addr.recipient_user_name}</strong>
-                                    <span>[${addr.address_group || '기본'}]</span>
-                                    <p>${addr.recipient_address} ${addr.recipient_address_detail || ''}</p>
-                                    <p>${addr.recipient_cellphone}</p>
+                                <div class="addr_item">
+                                    <strong style="color:#000; font-size:14px;">${addr.recipient_user_name}</strong>
+                                    <span style="color:#888; font-size:12px; margin-left:5px;">[${addr.address_group || '기본'}]</span>
+                                    ${addr.default === 'Y' ? '<span style="display:inline-block; padding:2px 5px; background:#d00; color:#fff; font-size:11px; margin-left:5px; border-radius:3px;">기본</span>' : ''}
+                                    <p style="margin:5px 0 0 0; color:#555; font-size:13px;">${addr.recipient_address} ${addr.recipient_address_detail || ''}</p>
+                                    <p style="margin:2px 0 0 0; color:#888; font-size:12px;">${addr.recipient_mobile || addr.recipient_cellphone || ''}</p>
                                 </div>
                             `;
                             listEl.appendChild(li);
@@ -562,16 +615,80 @@
 
         function selectAddress(addr) {
             document.getElementById('recipient_user_name').value = addr.recipient_user_name;
-            document.getElementById('recipient_cellphone').value = addr.recipient_cellphone;
+            // Handle differences in column name vs frontend expectation
+            document.getElementById('recipient_cellphone').value = addr.recipient_mobile || addr.recipient_cellphone || '';
             document.getElementById('recipient_zipcode').value = addr.recipient_zipcode;
             document.getElementById('recipient_address').value = addr.recipient_address;
             document.getElementById('recipient_address_display').value = addr.recipient_address;
-            document.getElementById('recipient_address_detail').value = addr.recipient_address_detail;
+            document.getElementById('recipient_address_detail').value = addr.recipient_address_detail || '';
             document.getElementById('recipient_address_street').value = addr.recipient_address_street || '';
             document.getElementById('recipient_address_type').value = addr.recipient_address_type || 'zibun';
             
             closeAddressModal();
             fetchShippingExtraCost(addr.recipient_zipcode);
+        }
+
+        // 새 배송지 폼 토글
+        function toggleNewAddressForm() {
+            const formArea = document.getElementById('newAddressFormArea');
+            if (formArea.style.display === 'none') {
+                formArea.style.display = 'block';
+                // Reset inputs
+                document.getElementById('new_addr_name').value = '';
+                document.getElementById('new_addr_mobile').value = '';
+                document.getElementById('new_addr_group').value = '';
+                document.getElementById('new_addr_zipcode').value = '';
+                document.getElementById('new_addr_address').value = '';
+                document.getElementById('new_addr_detail').value = '';
+                document.getElementById('new_addr_default').checked = false;
+            } else {
+                formArea.style.display = 'none';
+            }
+        }
+
+        // 새 배송지 저장요청 (AJAX)
+        function saveNewAddress() {
+            const data = {
+                recipient_user_name: document.getElementById('new_addr_name').value,
+                recipient_mobile: document.getElementById('new_addr_mobile').value,
+                address_group: document.getElementById('new_addr_group').value,
+                recipient_zipcode: document.getElementById('new_addr_zipcode').value,
+                recipient_address: document.getElementById('new_addr_address').value,
+                recipient_address_street: document.getElementById('new_addr_street').value,
+                recipient_address_detail: document.getElementById('new_addr_detail').value,
+                recipient_address_type: document.getElementById('new_addr_type').value || 'zibun',
+                default: document.getElementById('new_addr_default').checked ? 'Y' : 'N'
+            };
+
+            if(!data.recipient_user_name || !data.recipient_mobile || !data.recipient_zipcode) {
+                alert('필수 사항을 모두 입력해주세요.');
+                return;
+            }
+
+            fetch("{{ route('mypage.delivery_address.store') }}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "X-CSRF-TOKEN": "{{ csrf_token() }}"
+                },
+                body: JSON.stringify(data)
+            })
+            .then(res => res.json())
+            .then(resData => {
+                if(resData.status === 'success') {
+                    alert('새 배송지가 등록되었습니다.');
+                    toggleNewAddressForm();
+                    // 목록 리프레시
+                    openAddressModal();
+                } else {
+                    alert('등록 중 오류가 발생했습니다.');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert('요청 실패');
+            });
         }
 
         // Initial PHP values passing to JS
@@ -783,6 +900,28 @@
 
                     // 커서를 상세주소 필드로 이동한다.
                     document.getElementById("recipient_address_detail").focus();
+                }
+            }).open();
+        }
+
+        // 새 배송지용 Daum 주소
+        function openModalDaumPostcode() {
+            new daum.Postcode({
+                oncomplete: function (data) {
+                    var addr = ''; 
+                    if (data.userSelectedType === 'R') { 
+                        addr = data.roadAddress;
+                        document.getElementById('new_addr_type').value = 'street';
+                    } else { 
+                        addr = data.jibunAddress;
+                        document.getElementById('new_addr_type').value = 'zibun';
+                    }
+
+                    document.getElementById('new_addr_zipcode').value = data.zonecode;
+                    document.getElementById("new_addr_address").value = addr;
+                    document.getElementById("new_addr_street").value = data.roadAddress || data.autoRoadAddress || ''; 
+
+                    document.getElementById("new_addr_detail").focus();
                 }
             }).open();
         }

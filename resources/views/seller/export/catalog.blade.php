@@ -42,6 +42,9 @@
 
                     <button type="submit" class="btn btn-primary">검색</button>
                     <a href="{{ route('seller.export.catalog') }}" class="btn btn-secondary ml-2">초기화</a>
+                    {{-- Excel Download (Tracking Numbers) --}}
+                    {{-- <button type="submit" name="export_excel" value="1" class="btn btn-success ml-2"><i class="fas fa-file-excel mr-1"></i>엑셀 다운로드</button> --}}
+                    <button type="button" class="btn btn-success ml-auto" onclick="alert('엑셀 다운로드 기능은 구현 예정입니다.');"><i class="fas fa-file-excel mr-1"></i>엑셀 폼(송장) 다운로드</button>
                 </form>
 
                 <div class="table-responsive">

@@ -15,6 +15,19 @@ class OrderItemOption extends Model
 
     protected $guarded = [];
 
+    protected $attributes = [
+        'refund_ea' => 0,
+        'tax' => 0,
+        'option1' => '',
+        'option2' => '',
+        'option3' => '',
+        'option4' => '',
+        'option5' => '',
+        'price' => 0,
+        'consumer_price' => 0,
+        'supply_price' => 0,
+    ];
+
     public function item()
     {
         return $this->belongsTo(OrderItem::class, 'item_seq', 'item_seq');

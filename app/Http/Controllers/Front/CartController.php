@@ -67,38 +67,80 @@ class CartController extends Controller
         // Checkboxes logic
         $validCartSeqs = $cartItems->pluck('cart_seq')->toArray();
 
-        // Based on fm_provider_shipping (provider_seq 1, 3, etc.)
-        // Default policy: 3000 won, free over 50,000 won
-        // ATS POSTPAID LOGIC:
-        // Items with shipping_method='postpaid' do NOT contribute to prepay shipping calculation?
-        // Or they just have their own shipping cost (which is effectively 0 to pay now, but user pays on arrival).
-        // Standard items: Sum(Price) -> Check Threshold -> +3000 or 0.
-        // Postpaid items: Ignored for threshold? Or separate group?
-        // Legacy ATS_add usually implies distinct handling. 
-        // For simplicity: Postpaid items are excluded from "Standard Shipping" calculation sum.
-        
-        $standardItemsTotal = 0;
+        // [Multi-Origin Shipping Grouping]
+        $groupedCart = [];
         $totalVat = 0;
+        $globalTotalProductPrice = 0;
+        $globalTotalShippingCost = 0;
+
+        $freeShippingThreshold = config('shop.shipping.free_threshold', 50000);
+        $packagingCost = config('shop.shipping.packaging_cost', 300); // Mandatory Box Fee
+        $baseShipping = config('shop.shipping.base_cost', 2500); // Or 3000
 
         foreach ($cartItems as $item) {
-            if (!$item->is_postpaid) {
-                $standardItemsTotal += $item->pricing_info['total_price'];
+            if ($item->is_postpaid) {
+                // Postpaid items (ATS) might be entirely separate or zero prepaid shipping
+                $groupKey = 'postpaid_ats';
+                $groupName = '판매대행(착불) 배송';
+            } else {
+                $goods = $item->goods;
+                $scode = $goods->goods_scode ?? '';
+                
+                // Grouping Logic Based on shipping_policy
+                if ($goods && $goods->shipping_policy === 'goods') {
+                    // Dropship / Individual Policy
+                    $prefix = substr($scode, 0, 3);
+                    $groupKey = 'dropship_' . $prefix;
+                    $groupName = '본사 직배송 (' . $prefix . ')';
+                } else {
+                    // Default Shop Policy
+                    $groupKey = 'hq_default';
+                    $groupName = '도매토피아 일반배송';
+                }
             }
+
+            if (!isset($groupedCart[$groupKey])) {
+                $groupedCart[$groupKey] = [
+                    'name' => $groupName,
+                    'items' => [],
+                    'total_price' => 0,
+                    'shipping_cost' => 0,
+                    'is_postpaid' => $item->is_postpaid
+                ];
+            }
+
+            // Push Item
+            $groupedCart[$groupKey]['items'][] = $item;
+
+            // Sum product total per group
+            $itemPrice = $item->pricing_info['total_price'] ?? 0;
+            $groupedCart[$groupKey]['total_price'] += $itemPrice;
+            $globalTotalProductPrice += $itemPrice;
+
+            // Calculate VAT
             if ($item->goods && $item->goods->tax === 'tax') {
-                // In legacy, VAT is 10% of the total price of the item.
-                $totalVat += floor($item->pricing_info['total_price'] * 0.1);
+                $totalVat += floor($itemPrice * 0.1);
             }
         }
 
-        $shippingCost = 0;
-        $freeShippingThreshold = 50000;
-        $packagingCost = 300; // Mandatory Box Fee
-
-        if ($standardItemsTotal > 0 && $standardItemsTotal < $freeShippingThreshold) {
-            $shippingCost = 3000;
+        // Calculate Shipping per Group
+        foreach ($groupedCart as $key => &$group) {
+            if ($group['is_postpaid'] || $group['total_price'] == 0) {
+                // No prepay shipping if postpaid or empty
+                $group['shipping_cost'] = 0;
+            } else {
+                // If group total is below threshold, charge base shipping once per group
+                if ($group['total_price'] < $freeShippingThreshold) {
+                    // Note: some dropship logic might have fixed unlimit_shipping_price, but fallback to base
+                    $group['shipping_cost'] = 3000; // Using 3000 default for new system
+                } else {
+                    $group['shipping_cost'] = 0;
+                }
+            }
+            $globalTotalShippingCost += $group['shipping_cost'];
         }
 
-        return view('front.cart.index', compact('cartItems', 'validCartSeqs', 'shippingCost', 'freeShippingThreshold', 'packagingCost', 'totalVat'));
+        return view('front.cart.index', compact('groupedCart', 'validCartSeqs', 'globalTotalProductPrice', 'globalTotalShippingCost', 'freeShippingThreshold', 'packagingCost', 'totalVat'));
     }
 
     /**

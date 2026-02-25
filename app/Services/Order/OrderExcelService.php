@@ -158,45 +158,76 @@ class OrderExcelService
                 }
 
                 // 2. Insert Order
-                $order_seq = DB::table('fm_order')->insertGetId([
+                $order_seq = date('ymdHis') . sprintf('%04d', rand(0, 9999));
+                DB::table('fm_order')->insert([
+                    'order_seq' => $order_seq,
                     'regist_date' => now(),
                     'step' => 15, // Payment Confirmed / Deposited
-                    'order_type' => 'personal', // Or 'admin' or 'agency'
                     'payment' => 'point', // Use Point (Emoney)
                     'settleprice' => $settleprice,
-                    'price' => (int)$row['price'],
-                    'delivery_price' => (int)$row['delivery_price'],
+                    'original_settleprice' => $settleprice,
+                    'shipping_cost' => (int)$row['delivery_price'],
                     'emoney' => $settleprice, // Paid by emoney
-                    'cash' => 0,
                     'order_user_name' => $row['order_name'] ?? $member->user_name,
-                    'order_phone' => $row['order_phone'] ?? $member->phone,
-                    'order_cell' => $row['order_cell'] ?? $member->cellphone,
-                    'order_email' => $row['order_email'] ?? $member->email,
-                    'recipient_user_name' => $row['recive_name'],
-                    'recipient_phone' => $row['recive_phone'],
-                    'recipient_cell' => $row['recive_cell'] ?? $row['recive_mobile'] ?? '', 
+                    'order_phone' => $row['order_phone'] ?? '',
+                    'order_cellphone' => $row['order_cell'] ?? '',
+                    'order_email' => $row['order_email'] ?? '',
+                    'recipient_user_name' => $row['recive_name'] ?? '',
+                    'recipient_phone' => $row['recive_phone'] ?? '',
+                    'recipient_cellphone' => $row['recive_cell'] ?? $row['recive_mobile'] ?? '', 
                     'recipient_zipcode' => $row['zipcode'],
                     'recipient_address' => $row['addr'],
                     'recipient_address_street' => $row['addr'], 
                     'memo' => $row['memo'] ?? '',
                     'member_seq' => $member->member_seq,
-                    'order_ip' => request()->ip(),
-                    'sgl' => 0, 
+                    'ip' => request()->ip(),
+                    'tax' => 0,
+                    'enuri' => 0,
+                    'international' => 'domestic',
+                    'international_cost' => 0,
+                    'total_ea' => $row['goods_ea'],
+                    'total_type' => 1,
+                    'mode' => 'order',
+                    'sitetype' => 'P',
+                    'skintype' => 'P',
+                    'important' => '0',
+                    'hidden' => 'N',
+                    'admin_order' => '',
+                    'cash_receipts_no' => '',
+                    'virtual_date' => '1000-01-01 00:00:00',
+                    'deposit_yn' => 'n',
+                    'bundle_yn' => 'n',
+                    'session_id' => session()->getId() ?? \Illuminate\Support\Str::random(40),
                 ]);
 
                 // 3. Insert Order Item
-                DB::table('fm_order_item')->insert([
+                $item_seq = DB::table('fm_order_item')->insertGetId([
                     'order_seq' => $order_seq,
                     'goods_seq' => $row['goods_seq'],
                     'goods_name' => $row['goods_name'],
                     'goods_code' => $row['goods_code'],
-                    'ea' => $row['goods_ea'],
+                    'goods_shipping_cost' => 0,
+                    'basic_shipping_cost' => 0,
+                    'image' => '',
+                ]);
+
+                // 3.5 Insert Order Item Option
+                DB::table('fm_order_item_option')->insert([
+                    'order_seq' => $order_seq,
+                    'item_seq' => $item_seq,
                     'price' => (int)$row['price'],
-                    'supply_price' => 0, 
-                    'consumer_price' => 0,
+                    'ea' => $row['goods_ea'],
                     'step' => 15,
-                    'regist_date' => now(),
-                    'provider_seq' => $this->providerInfo['provider_seq'], 
+                    'title1' => '옵션',
+                    'option1' => '옵션 선택',
+                    'refund_ea' => 0,
+                    'tax' => 0,
+                    'option2' => '',
+                    'option3' => '',
+                    'option4' => '',
+                    'option5' => '',
+                    'consumer_price' => 0,
+                    'supply_price' => 0,
                 ]);
                 
                 // 4. Insert Shipping
@@ -213,12 +244,13 @@ class OrderExcelService
                 // 6. Log Emoney
                 DB::table('fm_emoney')->insert([
                     'member_seq' => $member->member_seq,
+                    'type' => 'order',
                     'gb' => 'minus',
-                    'emoney' => -$settleprice,
-                    'remain' => $current_emoney - $settleprice,
+                    'emoney' => $settleprice,
                     'memo' => '엑셀주문차감 (주문번호: ' . $order_seq . ')',
                     'regist_date' => now(),
-                    'order_seq' => $order_seq,
+                    'ordno' => $order_seq,
+                    'old_seq' => 0,
                 ]);
 
                 $current_emoney -= $settleprice;
@@ -248,16 +280,20 @@ class OrderExcelService
         $ea = (int)($row['goods_ea'] ?? 1);
         if($ea < 1) $ea = 1;
 
-        $price = $goods->price * $ea; 
+        $pricingService = app(\App\Services\PricingService::class);
+        $pricing = $pricingService->calculatePrice($goods, null, $ea, $member);
         
+        $price = $pricing['total_price'];
+        $unitPrice = $pricing['unit_price'];
+
         $row['goods_seq'] = $goods->goods_seq;
         $row['goods_name'] = $goods->goods_name;
-        $row['price'] = $goods->price;
+        $row['price'] = $unitPrice;
         $row['goods_ea'] = $ea;
         $row['option_sno'] = ''; 
 
         // Delivery
-        $row['delivery_price'] = 3000; 
+        $row['delivery_price'] = 2800; // Standard Dometopia B2B shipping fee
         $row['settleprice'] = $price + $row['delivery_price'];
 
         return $row;

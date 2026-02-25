@@ -15,6 +15,11 @@ class OrderItem extends Model
 
     protected $guarded = [];
 
+    protected $attributes = [
+        'tax' => 'tax',
+        'option_international_shipping_status' => 'n',
+    ];
+
     public function order()
     {
         return $this->belongsTo(Order::class, 'order_seq', 'order_seq');

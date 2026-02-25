@@ -16,7 +16,7 @@
         <span>마이페이지</span>
     </a>
     {{-- Recent Items or Cart --}}
-    <a href="/order/cart" class="nav-item {{ Request::is('order/cart*') ? 'active' : '' }}">
+    <a href="/cart" class="nav-item {{ Request::is('cart*') ? 'active' : '' }}">
         <div style="position: relative; display: inline-block;">
             <i class="fas fa-shopping-cart"></i>
             @if(isset($cartCount) && $cartCount > 0)

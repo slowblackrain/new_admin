@@ -16,13 +16,13 @@ class PricingService
      * @param int $quantity
      * @return array Price information structure
      */
-    public function calculatePrice(Goods $product, ?GoodsOption $option, int $quantity = 1): array
+    public function calculatePrice(Goods $product, ?GoodsOption $option, int $quantity = 1, $user = null): array
     {
         // 0. Base Price & User Info
-        $user = Auth::user();
-        $memberSeq = $user ? $user->member_seq : null;
-        $mtype = $user ? $user->mtype : null;
-        $groupSeq = $user ? $user->group_seq : null;
+        $user = $user ?? Auth::user();
+        $memberSeq = $user ? (is_array($user) ? $user['member_seq'] : $user->member_seq) : null;
+        $mtype = $user ? (is_array($user) ? $user['mtype'] : $user->mtype) : null;
+        $groupSeq = $user ? (is_array($user) ? $user['group_seq'] : $user->group_seq) : null;
 
         $basePrice = (float) ($option ? $option->price : $product->price);
         $consumerPrice = (float) ($option ? $option->consumer_price : $product->consumer_price);

@@ -51,6 +51,11 @@
                                 <a href="{{ route('seller.order.catalog') }}" class="btn btn-default btn-block">초기화</a>
                             </div>
                         </div>
+                        <div class="row mt-3">
+                            <div class="col-md-12 text-right">
+                                <button type="button" class="btn btn-success" onclick="alert('엑셀 다운로드 기능은 구현 예정입니다.');"><i class="fas fa-file-excel mr-1"></i>엑셀 리스트 다운로드</button>
+                            </div>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -114,7 +119,7 @@
                                 </td>
                                 <td>
                                     {{-- OrderPlayauto generally just lists orders. Detail view might route to standard order view if needed --}}
-                                    <a href="{{ route('seller.order_mgmt.view', $order->order_seq) }}" class="btn btn-sm btn-info">상세보기</a>
+                                    <a href="{{ route('seller.order.view', $order->order_seq) }}" class="btn btn-sm btn-info">상세보기</a>
                                 </td>
                             </tr>
                         @empty

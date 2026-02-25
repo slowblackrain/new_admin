@@ -15,7 +15,7 @@
         </div>
         <div class="header-right">
             <button type="button" class="btn_search" onclick="toggleHeaderSearch()"><i class="fas fa-search"></i></button>
-            <a href="/order/cart" class="btn_cart" style="position:relative;">
+            <a href="/cart" class="btn_cart" style="position:relative;">
                 <i class="fas fa-shopping-cart"></i>
                 @if(isset($cartCount) && $cartCount > 0)
                     <span style="position:absolute; top:-5px; right:-5px; background:#eb6506; color:#fff; font-size:10px; border-radius:50%; width:15px; height:15px; display:flex; justify-content:center; align-items:center;">{{ $cartCount }}</span>

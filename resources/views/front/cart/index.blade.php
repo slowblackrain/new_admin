@@ -49,9 +49,15 @@
                             <th scope="col">선택</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    @forelse($groupedCart as $groupKey => $group)
+                    <tbody class="shipping-group" data-group-key="{{ $groupKey }}">
+                        <tr class="group-header" style="background-color: #f8f9fa;">
+                            <td colspan="8" style="text-align: left; padding: 10px 15px; font-weight: bold; font-size: 14px; border-bottom: 2px solid #ddd;">
+                                <i class="fas fa-truck" style="margin-right: 5px;"></i> {{ $group['name'] }}
+                            </td>
+                        </tr>
                         @php $totalPrice = 0; @endphp
-                        @forelse($cartItems as $item)
+                        @forelse($group['items'] as $item)
                             @php
                                 // Use Pre-calculated Pricing Info from Controller
                                 $goods = $item->goods;
@@ -83,7 +89,6 @@
                                     if (Str::startsWith($imagePath, 'http')) {
                                         $imgSrc = $imagePath;
                                     } elseif (strpos($imagePath, 'goods_img') !== false) {
-                                        // Handle paths like /data/goods_img/1/2007/... or just goods_img/...
                                         $suffix = substr($imagePath, strpos($imagePath, 'goods_img') + 9);
                                         $imgSrc = "https://dmtusr.vipweb.kr/goods_img" . $suffix;
                                     } elseif (strpos($imagePath, '/data/goods/') === 0) {
@@ -93,9 +98,8 @@
                                     }
                                 }
                             @endphp
-                            <tr data-cart-seq="{{ $item->cart_seq }}" data-price="{{ $price }}" data-is-postpaid="{{ $item->is_postpaid ? 1 : 0 }}" data-tax="{{ $goods->tax ?? 'tax' }}">
-                                <td><input type="checkbox" name="cart_seq[]" class="chk_item" value="{{ $item->cart_seq }}"
-                                        checked></td>
+                            <tr data-cart-seq="{{ $item->cart_seq }}" data-price="{{ $price }}" data-is-postpaid="{{ $item->is_postpaid ? 1 : 0 }}" data-tax="{{ $goods->tax ?? 'tax' }}" data-group-key="{{ $groupKey }}">
+                                <td><input type="checkbox" name="cart_seq[]" class="chk_item" value="{{ $item->cart_seq }}" checked></td>
                                 <td class="img_cell">
                                     <a href="{{ route('goods.view', ['no' => $goods->goods_seq]) }}">
                                         <img src="{{ $imgSrc }}" alt="{{ $goods->goods_name }}" width="60" onerror="this.src='/images/no_image.gif'">
@@ -121,9 +125,6 @@
                                                     <strong>{{ $input->input_title }}:</strong>
                                                     @if($input->type == 'file')
                                                         @php
-                                                            // Ensure path is relative to storage root for asset()
-                                                            // Laravel storeAs returns path relative to disk root.
-                                                            // asset('storage/...') maps to public/storage -> storage/app/public
                                                             $fileUrl = asset('storage/' . $input->input_value);
                                                             $fileName = basename($input->input_value);
                                                         @endphp
@@ -139,32 +140,42 @@
                                     @endif
                                 </td>
                                 <td>
-                                    <input type="number" name="ea" value="{{ $ea }}" min="1" class="qty_input"
-                                        style="width: 50px;">
+                                    <input type="number" name="ea" value="{{ $ea }}" min="1" class="qty_input" style="width: 50px;">
                                     <button type="button" class="btn_qty_mod">변경</button>
                                     @if($options_count ?? 1 > 0)
                                     <br><button type="button" class="btn_opt_mod" style="margin-top:5px; font-size:11px;">옵션/수량변경</button>
                                     @endif
                                 </td>
                                 <td>{{ number_format($price) }}원</td>
-                                <td>
-                                    @if($item->is_postpaid)
-                                        <span style="color:red; font-weight:bold;">착불</span>
-                                    @else
-                                        기본배송
-                                    @endif
-                                </td>
+                                
+                                {{-- Group Level Shipping Sub-row --}}
+                                @if($loop->first)
+                                    <td rowspan="{{ count($group['items']) }}" style="border-left: 1px solid #ddd;">
+                                        @if($group['is_postpaid'])
+                                            <span style="color:red; font-weight:bold;">착불</span>
+                                        @else
+                                            <span class="shipping-cost-display">{{ $group['shipping_cost'] > 0 ? number_format($group['shipping_cost']) . '원' : '무료' }}</span>
+                                            <br><span style="font-size: 11px; color:#666;">(조건부 무료)</span>
+                                        @endif
+                                    </td>
+                                @endif
+
                                 <td class="price_cell price_bold">{{ number_format($itemPrice) }}원</td>
                                 <td>
                                     <button type="button" class="btn_del">삭제</button>
                                 </td>
                             </tr>
                         @empty
-                            <tr>
-                                <td colspan="8" class="no_data">장바구니에 담긴 상품이 없습니다.</td>
-                            </tr>
+                            <!-- Should not happen within a valid group, but good practice -->
                         @endforelse
                     </tbody>
+                    @empty
+                    <tbody>
+                        <tr>
+                            <td colspan="8" class="no_data">장바구니에 담긴 상품이 없습니다.</td>
+                        </tr>
+                    </tbody>
+                    @endforelse
                 </table>
 
                 <div class="cart_total_area">
@@ -346,57 +357,65 @@
 
             // Calculate Total
             function calcTotal() {
-                let total = 0; // Standard items total
                 let grandTotalGoods = 0; // All items goods total
+                let grandTotalDelivery = 0; // All delivery total
                 let totalTax = 0; // Taxable items tax
 
-                document.querySelectorAll('.chk_item:checked').forEach(chk => {
-                    const tr = chk.closest('tr');
-                    const price = parseInt(tr.dataset.price);
-                    const ea = parseInt(tr.querySelector('.qty_input').value);
-                    const isPostpaid = tr.dataset.isPostpaid === "1";
-                    const taxType = tr.dataset.tax;
-                    
-                    const itemTotal = price * ea;
-                    grandTotalGoods += itemTotal;
-
-                    if (taxType === 'tax') {
-                        totalTax += Math.floor(itemTotal * 0.1);
-                    }
-
-                    if (!isPostpaid) {
-                        total += itemTotal;
-                    }
-                });
-
-                const shippingCost = {{ $shippingCost }};
                 const freeThreshold = {{ $freeShippingThreshold }};
+                const shippingCost = {{ $shippingCost ?? '2500' }}; // fallback
                 const packagingCost = {{ $packagingCost }};
 
-                const tax = totalTax;
-                let delivery = 0;
-                
-                // Calculate delivery based on STANDARD items total only
-                if (total > 0 && total < freeThreshold) {
-                    delivery = shippingCost;
-                }
+                // Iterate over each Shipping Group (tbody)
+                document.querySelectorAll('tbody.shipping-group').forEach(tbody => {
+                    let groupTotalGoods = 0;
+                    let hasPostpaid = false;
+                    let hasCheckedItems = false;
 
-                // Packaging cost is always added if there are items (Assumption: even if only ATS?)
-                // ATS items are Boxes, maybe they don't need "Packaging Cost"?
-                // Legacy: packagingCost is usually "Box Fee" for repacking. 
-                // If ATS is already a Box, maybe no fee?
-                // For now, simpler to leave it as is.
-                
+                    // Calculate items within this group
+                    tbody.querySelectorAll('.chk_item:checked').forEach(chk => {
+                        hasCheckedItems = true;
+                        const tr = chk.closest('tr');
+                        const price = parseInt(tr.dataset.price);
+                        const ea = parseInt(tr.querySelector('.qty_input').value);
+                        const isPostpaid = tr.dataset.isPostpaid === "1";
+                        const taxType = tr.dataset.tax;
+                        
+                        const itemTotal = price * ea;
+                        groupTotalGoods += itemTotal;
+                        grandTotalGoods += itemTotal;
+
+                        if (taxType === 'tax') {
+                            totalTax += Math.floor(itemTotal * 0.1);
+                        }
+
+                        if (isPostpaid) {
+                            hasPostpaid = true;
+                        }
+                    });
+
+                    // Calculate Delivery for this group
+                    let groupDelivery = 0;
+                    if (hasCheckedItems && !hasPostpaid) {
+                        if (groupTotalGoods < freeThreshold) {
+                            groupDelivery = 3000; // Base config rate for new dropship system
+                        }
+                    }
+                    grandTotalDelivery += groupDelivery;
+
+                    // UI Update for Group Header/Sub-row (Optional sync)
+                    // You could update the UI text of the shipping cost cell here if needed
+                });
+
                 let finalPackaging = 0;
                 if (grandTotalGoods > 0) {
                     finalPackaging = packagingCost;
                 }
 
-                const final = grandTotalGoods + delivery + tax + finalPackaging;
+                const final = grandTotalGoods + grandTotalDelivery + totalTax + finalPackaging;
 
                 document.getElementById('total_goods_price').innerText = new Intl.NumberFormat().format(grandTotalGoods) + '원';
-                document.getElementById('total_delivery_price').innerText = new Intl.NumberFormat().format(delivery) + '원';
-                document.getElementById('total_tax_price').innerText = new Intl.NumberFormat().format(tax) + '원';
+                document.getElementById('total_delivery_price').innerText = new Intl.NumberFormat().format(grandTotalDelivery) + '원';
+                document.getElementById('total_tax_price').innerText = new Intl.NumberFormat().format(totalTax) + '원';
                 document.getElementById('total_packaging_price').innerText = new Intl.NumberFormat().format(finalPackaging) + '원';
                 document.getElementById('total_settle_price').innerText = new Intl.NumberFormat().format(final) + '원';
             }

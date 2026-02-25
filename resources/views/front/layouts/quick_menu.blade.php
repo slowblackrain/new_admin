@@ -130,7 +130,7 @@
         <div class="right_item_mypage">
             <a href="/mypage" class="mypage"><p class="patt_tit">마이페이지<i class="red_arrow_mid"></i></p></a>
             <p class="right_item_line"></p>
-            <a href="/order/cart" class="cart"><p class="qcr_tit">장바구니<span class="quick_cart_total" id="right_cart_total">0</span></p></a>
+            <a href="/cart" class="cart"><p class="qcr_tit">장바구니<span class="quick_cart_total" id="right_cart_total">0</span></p></a>
             <p class="right_item_line"></p>
             <a href="/mypage/order_catalog" class="mypage"><p class="patt_tit">주문/배송</p></a>
         </div>

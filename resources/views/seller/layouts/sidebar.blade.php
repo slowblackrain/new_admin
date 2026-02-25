@@ -35,10 +35,16 @@
                     </a>
                 </li>
 
-                 <li class="nav-item">
+                <li class="nav-item">
                     <a href="{{ route('seller.my.index') }}" class="nav-link {{ request()->routeIs('seller.my.*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-user-cog"></i>
                         <p>내 정보 관리</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" onclick="alert('계약서 열람 라우트는 구상 중입니다.')">
+                        <i class="nav-icon fas fa-file-contract"></i>
+                        <p>계약서 열람</p>
                     </a>
                 </li>
 
@@ -146,6 +152,10 @@
                         <p>포인트내역</p>
                     </a>
                 </li>
+
+                {{-- ATS 공급사 전용 (Premium/Investment) 메뉴 --}}
+                @if($is_ats_provider)
+                <li class="nav-header">전용 정산/통계 (Premium)</li>
                 <li class="nav-item">
                     <a href="{{ route('seller.point.cash') }}" class="nav-link {{ request()->routeIs('seller.point.cash') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-money-bill"></i>
@@ -187,6 +197,32 @@
                         </li>
                     </ul>
                 </li>
+                @endif
+                
+                {{-- ShopOn 제휴 공급사 --}}
+                @php
+                    $is_shopon = $member->shopon ?? false;
+                    $is_shopon_hosting = ($member->shopon_hosting ?? '') == 'Y';
+                @endphp
+                @if($is_shopon || $is_shopon_hosting)
+                <li class="nav-header">ShopOn 제휴</li>
+                @if($is_shopon)
+                <li class="nav-item">
+                    <a href="#" class="nav-link" onclick="alert('샵온 로그인 라우트는 구상 중입니다.')">
+                        <i class="nav-icon fas fa-store"></i>
+                        <p>샵온 로그인</p>
+                    </a>
+                </li>
+                @endif
+                @if($is_shopon_hosting)
+                <li class="nav-item">
+                    <a href="#" class="nav-link" onclick="alert('샵온 생성 라우트는 구상 중입니다.')">
+                        <i class="nav-icon fas fa-plus-circle"></i>
+                        <p>샵온 생성</p>
+                    </a>
+                </li>
+                @endif
+                @endif
 
                 <li class="nav-header">게시판</li>
                 <li class="nav-item">

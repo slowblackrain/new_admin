@@ -51,6 +51,13 @@ class DeliveryAddressController extends Controller
 
         DeliveryAddress::create($data);
 
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => '배송지가 등록되었습니다.'
+            ]);
+        }
+
         return redirect()->route('mypage.delivery_address.index')->with('success', '배송지가 등록되었습니다.');
     }
 
@@ -91,7 +98,10 @@ class DeliveryAddressController extends Controller
     public function listJson()
     {
         if (!Auth::check()) {
-            return response()->json(['status' => 'error', 'message' => '로그인이 필요합니다.'], 401);
+            return response()->json([
+                'status' => 'success',
+                'data' => []
+            ]);
         }
 
         $addresses = DeliveryAddress::currentUser()
