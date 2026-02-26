@@ -19,17 +19,36 @@ class HomeController extends Controller
         $categories = Category::whereRaw('length(category_code) = 4')
             ->where('hide', '!=', '1')
             ->where('title', 'not like', '%낱개판매코너%')
+            ->where('title', 'not like', '%test%')
             ->orderBy('position')
             ->with(['children' => function ($query) {
-                $query->where('hide', '!=', '1')->orderBy('position');
+                $query->where('hide', '!=', '1')
+                      ->where('title', 'not like', '%test%')
+                      ->orderBy('position');
             }])
             ->get();
 
         // 2. Fetch Best Products (Recommended) - Display ID: 7150
         $bestProducts = $this->getDisplayProducts(7150);
+        if ($bestProducts->isEmpty()) {
+            $bestProducts = Goods::where('goods_view', 'look')
+                ->where('goods_status', 'normal')
+                ->with(['option', 'images', 'activeIcons'])
+                ->orderBy('review_count', 'desc')
+                ->limit(10)
+                ->get();
+        }
         
         // 3. Fetch New Products - Display ID: 7152
         $newProducts = $this->getDisplayProducts(7152);
+        if ($newProducts->isEmpty()) {
+            $newProducts = Goods::where('goods_view', 'look')
+                ->where('goods_status', 'normal')
+                ->with(['option', 'images', 'activeIcons'])
+                ->orderBy('regist_date', 'desc')
+                ->limit(10)
+                ->get();
+        }
 
         // 4. Fetch Main Banners (Banner ID: 11)
         // fm_design_banner has multiple rows for same banner_seq with different skins.

@@ -44,6 +44,11 @@
                          $priceLabel = '특가';
                     }
 
+                    // Legacy B2B UI Display Parity: Show the Wholesale price by default for '도매가'
+                    if ($priceLabel === '도매가' && $product->mtype_discount > 0) {
+                        $displayPrice = $displayPrice - $product->mtype_discount;
+                    }
+
                     // --- Quick Menu Logic ---
                     $hasMultipleOptions = $product->option->count() > 1; // Basic checks
                     // If count is 1, check if it's a real option or just default price row (usually title is empty or '기본')
@@ -63,7 +68,7 @@
                     }
                     // ------------------------
                 @endphp
-                <img src="{{ $imgSrc }}" width="172" height="172" onerror="this.src='/images/no_image.gif'" style="object-fit: cover;">
+                <img src="{{ $imgSrc }}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='/images/no_image.gif'">
             </a>
             <div class="goodsDisplayQuickMenu">
                 <span class="goodsDisplayQuickIcon">

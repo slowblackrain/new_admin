@@ -238,7 +238,7 @@
         }
         
         .goodsDisplayQuickMenu {
-            width: 174px;
+            width: 100%;
             height: 25px;
             font-size: 15px;
             color: #444;
@@ -776,7 +776,7 @@
 
                 <div class="clearfix">
                     @forelse($bestProducts as $product)
-                        @include('front.main.product_item', ['product' => $product, 'rank' => $loop->iteration])
+                        @include('front.main.product_item', ['product' => $product])
                     @empty
                         <div style="width:100%; text-align:center; padding:50px;">상품이 없습니다.</div>
                     @endforelse
