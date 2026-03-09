@@ -30,6 +30,31 @@ class MemberController extends Controller
 
         $userid = $credentials['userid'];
         $password = $credentials['password'];
+        $ip = $request->ip();
+
+        // [방어 로직 1] 10분 내 5회 이상 실패 확인 (동일 ID & IP)
+        $tenMinutesAgo = now()->subMinutes(10);
+        $recentFailCount = DB::table('fm_member_login_fail')
+            ->where('userid', $userid)
+            ->where('ip', $ip)
+            ->where('regist_date', '>', $tenMinutesAgo)
+            ->count();
+
+        if ($recentFailCount > 5) {
+            return back()->withErrors(['userid' => '로그인 시도 횟수 초과가 되었습니다. 10분 뒤 다시 시도해 주세요.']);
+        }
+
+        // [방어 로직 2] 15일 내 50회 이상 실패 확인 (동일 ID & IP)
+        $fifteenDaysAgo = now()->subDays(15);
+        $longTermFailCount = DB::table('fm_member_login_fail')
+            ->where('userid', $userid)
+            ->where('ip', $ip)
+            ->where('fail_date', '>', $fifteenDaysAgo->format('Y-m-d'))
+            ->count();
+
+        if ($longTermFailCount > 50) {
+            return back()->withErrors(['userid' => '로그인 시도 횟수 초과가 되었습니다. 도매토피아에 문의해 주세요.']);
+        }
 
         // 1. Generate PHP-side hashes
         $str_md5 = md5($password);
@@ -56,7 +81,15 @@ class MemberController extends Controller
 
             return redirect()->route('home');
         } else {
-            return back()->withErrors(['userid' => 'Invalid credentials.']);
+            // [방어 로직 3] 로그인 실패 시 fm_member_login_fail 에 기록
+            DB::table('fm_member_login_fail')->insert([
+                'userid'      => $userid,
+                'fail_date'   => now()->format('Y-m-d'),
+                'ip'          => $ip,
+                'regist_date' => now()
+            ]);
+
+            return back()->withErrors(['userid' => '아이디 또는 비밀번호가 일치하지 않습니다.']);
         }
     }
 
