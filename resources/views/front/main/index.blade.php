@@ -776,7 +776,7 @@
 
                 <div class="clearfix">
                     @forelse($bestProducts as $product)
-                        @include('front.main.product_item', ['product' => $product])
+                        @include('front.main.product_item', ['product' => $product, 'rank' => $loop->iteration])
                     @empty
                         <div style="width:100%; text-align:center; padding:50px;">상품이 없습니다.</div>
                     @endforelse
@@ -806,11 +806,66 @@
                     <div class="gtq" id="category_nav05">
                         <a href="/goods/catalog?code=0147" target='_self'><img loading="lazy"
                                 src="{{ asset('images/legacy/main/bnr_gth.jpg') }}" alt="직수입 특가" style="width:100%;" /></a>
+                        <div class="designDisplay">
+                            <div class="container" style="width: 226px; overflow: hidden; margin: 0 auto;">
+                                <ul class="item" style="list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 12px 26px; width: 226px; box-sizing: content-box;">
+                                    @foreach($dadaDirectImportProducts as $product)
+                                        @php
+                                            $imgSrc = asset('images/legacy/common/noimage.gif');
+                                            if ($product->images && $product->images->count() > 0) {
+                                                $img = $product->images->first();
+                                                if (preg_match('/^http/', $img->image)) {
+                                                    $imgSrc = $img->image;
+                                                } else {
+                                                    $imgSrc = 'http://dometopia.com/' . ltrim($img->image, '/');
+                                                }
+                                            } elseif ($product->image1) {
+                                                $imgSrc = 'http://dometopia.com/data/goods/' . substr($product->goods_scode, 0, 3) . '/' . $product->goods_scode . '/' . $product->image1;
+                                            }
+                                        @endphp
+                                        <li class="goodsDisplayItemWrap" style="width: 100px; height: 100px; margin: 0; padding: 0; list-style: none;">
+                                            <div class="thumb" style="width:100px; height:100px; overflow:hidden;">
+                                                <a href="/goods/view?no={{ $product->goods_seq }}">
+                                                    <img src="{{ $imgSrc }}" style="width:100px; height:100px; object-fit: cover;" onerror="this.src='{{ asset('images/legacy/common/noimage.gif') }}'">
+                                                </a>
+                                            </div>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        </div>
                     </div>
                     <div class="gtq2" id="category_nav06">
                         <a href="https://dometopia.com/goods/catalog?code=0055" target='_self'><img loading="lazy"
-                                src="{{ asset('images/legacy/main/bnr_gtq.jpg') }}" title="땡처리 상품전" alt="땡처리 상품전"
-                                style="width:100%;" /></a>
+                                src="{{ asset('images/legacy/main/bnr_gtq.jpg') }}" title="땡처리 상품전" alt="땡처리 상품전" style="width:100%;" /></a>
+                        <div class="designDisplay">
+                            <div class="container" style="width: 226px; overflow: hidden; margin: 0 auto;">
+                                <ul class="item" style="list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 12px 26px; width: 226px; box-sizing: content-box;">
+                                    @foreach($dadaClearanceProducts as $product)
+                                        @php
+                                            $imgSrc = asset('images/legacy/common/noimage.gif');
+                                            if ($product->images && $product->images->count() > 0) {
+                                                $img = $product->images->first();
+                                                if (preg_match('/^http/', $img->image)) {
+                                                    $imgSrc = $img->image;
+                                                } else {
+                                                    $imgSrc = 'http://dometopia.com/' . ltrim($img->image, '/');
+                                                }
+                                            } elseif ($product->image1) {
+                                                $imgSrc = 'http://dometopia.com/data/goods/' . substr($product->goods_scode, 0, 3) . '/' . $product->goods_scode . '/' . $product->image1;
+                                            }
+                                        @endphp
+                                        <li class="goodsDisplayItemWrap" style="width: 100px; height: 100px; margin: 0; padding: 0; list-style: none;">
+                                            <div class="thumb" style="width:100px; height:100px; overflow:hidden;">
+                                                <a href="/goods/view?no={{ $product->goods_seq }}">
+                                                    <img src="{{ $imgSrc }}" style="width:100px; height:100px; object-fit: cover;" onerror="this.src='{{ asset('images/legacy/common/noimage.gif') }}'">
+                                                </a>
+                                            </div>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

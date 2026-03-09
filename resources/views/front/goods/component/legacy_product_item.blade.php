@@ -96,20 +96,70 @@
     @endif
 
     {{-- Badges Row --}}
-    <dd class="goodsDisplayIcon" style="min-height: 20px; padding: 0 5px;">
-        @if($product->goods_status == 'runout')
-            <img src="{{ asset('images/legacy/icon/goods_status/icon_list_soldout.gif') }}" alt="품절" />
-        @endif
+    @php
+        $icons = [];
+        $scode = $product->goods_scode ?? '';
         
-        {{-- Single Unit Badge (G*) --}}
-        @if(Str::startsWith($product->goods_scode, 'G'))
-             <span style="display:inline-block; border:1px solid #dcdcdc; color:#5d5d5d; padding:0 3px; font-size:11px; margin-right:3px;">낱개</span>
-        @endif
+        $delivery = 'N';
+        if ($product->shipping_policy == 'goods' && $product->unlimit_shipping_price == 0 && $product->postpaid_delivery_cost_yn != 'y') {
+            $delivery = 'Y';
+        }
 
-        {{-- Free Shipping Badge --}}
-        @if($product->shipping_policy == 'free')
-            <span style="display:inline-block; border:1px solid #2e8b57; color:#2e8b57; padding:0 3px; font-size:11px;">무료배송</span>
-        @endif
+        $isExcludedScodePrefix = in_array(substr($scode, 0, 3), ['OOO', 'CCC', 'DDD', 'BTB', 'BBB', 'GBC']);
+        
+        if (!$isExcludedScodePrefix && $scode) {
+            $s1 = substr($scode, 0, 1);
+            $s2 = substr($scode, 1, 1);
+            $s3 = substr($scode, 2, 1);
+
+            // First icon
+            if ($s1 == 'X' || $s1 == 'E') {
+                $icons[] = 'https://dometopia.com/data/skin/beauty/images/icon/G.gif';
+            } elseif (!in_array($s1, ['M', 'A', 'K', 'F', 'C']) && $s2) {
+                $icons[] = 'https://dometopia.com/data/skin/beauty/images/icon/' . $s1 . '.gif';
+            }
+
+            // Second icon
+            if (!in_array($s2, ['T', 'K', 'B']) && $s1 != 'F') {
+                $icons[] = 'https://dometopia.com/data/skin/beauty/images/icon/_' . $s2 . '.gif';
+            }
+
+            // Free delivery icon
+            if ($delivery == 'Y') {
+                $icons[] = 'https://dometopia.com/data/icon/common/free_delivery.gif';
+            }
+
+            // Video icon (Assuming $product->defaultInfo->video_url or similar exists. For now, checking if relation is loaded)
+            if ($product->defaultInfo && $product->defaultInfo->video_url) {
+                $icons[] = 'https://dometopia.com/data/icon/common/vod_icon.gif';
+            }
+
+            // Third icon
+            if (!in_array($s3, ['S', 'A', 'M', 'L', 'Y', 'D', 'C']) && !in_array($s1, ['K', 'F']) && $s3) {
+                $icons[] = 'https://dometopia.com/data/skin/beauty/images/icon/__' . $s3 . '.gif';
+            }
+        }
+        
+        // Out of stock icon
+        $isSoldout = false;
+        if ($product->goods_status == 'runout') {
+             $isSoldout = true;
+        } elseif ($product->goods_status_info) {
+             $statusInfoArr = explode(',', rtrim($product->goods_status_info, ','));
+             if (in_array('soldout', $statusInfoArr)) {
+                 $isSoldout = true;
+             }
+        }
+        
+        if ($isSoldout) {
+            $icons[] = 'https://dometopia.com/data/icon/common/end_icon.gif';
+        }
+    @endphp
+
+    <dd class="goodsDisplayIcon" style="min-height: 20px; padding: 0 5px; margin-top:5px;">
+        @foreach($icons as $iconSrc)
+            <img src="{{ $iconSrc }}" alt="icon" style="vertical-align:top; margin-right: 2px;" />
+        @endforeach
     </dd>
 
     {{-- Checkbox + Code --}}

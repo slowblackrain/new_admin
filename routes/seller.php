@@ -92,6 +92,8 @@ Route::prefix('seller')->name('seller.')->group(function () {
     Route::group(['prefix' => 'link', 'as' => 'link.', 'middleware' => 'seller.grade:Y'], function () {
         Route::get('list', [OrderPlayautoController::class, 'catalog'])->name('list');
         Route::get('upload', [OrderPlayautoController::class, 'excelupload'])->name('upload');
+        Route::post('upload/process', [OrderPlayautoController::class, 'excelupload_process'])->name('upload.process');
+        Route::post('upload/store', [OrderPlayautoController::class, 'excelupload_store'])->name('upload.store');
     });        
 
         // General Order Management (SellerOrderController)

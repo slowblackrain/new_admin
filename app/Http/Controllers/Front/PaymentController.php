@@ -102,8 +102,8 @@ class PaymentController extends Controller
             // Payment Success
             $order->step = Order::STEP_PAYMENT_CONFIRMED; // 25
             $order->deposit_yn = 'y';
-            $order->pg_tid = $data['paymentKey'] ?? $paymentKey;
-            $order->pg_result_code = '0000';
+            $order->pg_transaction_number = $data['paymentKey'] ?? $paymentKey;
+            $order->pg_approval_number = $data['approvedAt'] ?? '0000';
             $order->save();
             
             // Delete Cart Items deferred from OrderController
@@ -167,8 +167,8 @@ class PaymentController extends Controller
         if ($status === 'DONE' && $order->step < Order::STEP_PAYMENT_CONFIRMED) {
             $order->step = Order::STEP_PAYMENT_CONFIRMED;
             $order->deposit_yn = 'y';
-            $order->pg_tid = $paymentKey;
-            $order->pg_result_code = '0000';
+            $order->pg_transaction_number = $paymentKey;
+            $order->pg_approval_number = '0000';
             $order->save();
 
             // Run Fulfillment

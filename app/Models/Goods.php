@@ -124,6 +124,11 @@ class Goods extends Model
         return $this->belongsTo(Provider::class, 'provider_seq', 'provider_seq');
     }
 
+    public function defaultInfo()
+    {
+        return $this->hasOne(ScmOrderDefaultinfo::class, 'goods_seq', 'goods_seq');
+    }
+
     public function scopeActive($query)
     {
         return $query->where('goods_view', 'look')

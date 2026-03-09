@@ -3,7 +3,7 @@
         <span class="goodsDisplayImageWrap">
             <a href="{{ route('goods.view', ['no' => $product->goods_seq]) }}" target="_blank">
                 @php
-                    $imgSrc = '/images/no_image.gif';
+                    $imgSrc = asset('images/legacy/common/noimage.gif');
                     
                     // Helper function for legacy image logic
                     $resolveImage = function($img) {
@@ -68,7 +68,7 @@
                     }
                     // ------------------------
                 @endphp
-                <img src="{{ $imgSrc }}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='/images/no_image.gif'">
+                <img src="{{ $imgSrc }}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='{{ asset('images/legacy/common/noimage.gif') }}'">
             </a>
             <div class="goodsDisplayQuickMenu">
                 <span class="goodsDisplayQuickIcon">
@@ -86,9 +86,8 @@
             </div>
         </span>
         @if(isset($rank))
-            <div style="position: absolute; top: 0; left: 0; background-color: #f47425; color: white; width: 20px; height: 20px; text-align: center; line-height: 20px; font-weight: bold; font-size: 12px; z-index: 10;">
-                {{ $rank }}
-            </div>
+            <img src="{{ asset('images/legacy/main/new_label.png') }}" class="best_label" style="position: absolute; z-index:98; left: -2px; top: 7px; width: 40px !important;" alt="Rank Label">
+            <span class="best_no" style="position: absolute; z-index: 99; font-size: 15px; color: #fff; left: -2px; top: 11px; text-align: center; width: 40px;"><b>{{ $rank }}</b></span>
         @endif
     </dt>
 
@@ -113,42 +112,91 @@
     </dd>
     
     {{-- Product Icons --}}
-    <dd class="goodsDisplayIcon" style="text-align: right; display: flex; justify-content: flex-end; padding: 0 10px; margin-bottom: 5px; height: auto; border: none;">
-@php
+    <dd class="goodsDisplayIcon" style="text-align: left; display: flex; justify-content: flex-start; align-items: flex-start; flex-wrap: wrap; padding: 0 10px; margin-bottom: 5px; height: auto; border: none; min-height: 20px;">
+        @php
+            $icons = [];
+            $scode = $product->goods_scode ?? '';
             $iconBaseUrl = 'http://dometopia.com';
+            
+            // 1. Icons from fm_goods_icon (Best, New, etc.)
+            if ($product->activeIcons && $product->activeIcons->count() > 0) {
+                foreach($product->activeIcons as $icon) {
+                    $icons[] = $iconBaseUrl . '/data/icon/goods/' . $icon->codecd . '.gif';
+                }
+            }
+
+            // 2. Legacy Dynamic Icons based on scode, delivery, video
+            $delivery = 'N';
+            if ($product->shipping_policy == 'goods' && $product->unlimit_shipping_price == 0 && $product->postpaid_delivery_cost_yn != 'y') {
+                $delivery = 'Y';
+            }
+
+            $isExcludedScodePrefix = in_array(substr($scode, 0, 3), ['OOO', 'CCC', 'DDD', 'BTB', 'BBB', 'GBC']);
+            
+            if (!$isExcludedScodePrefix && $scode) {
+                $s1 = substr($scode, 0, 1);
+                $s2 = substr($scode, 1, 1);
+                $s3 = substr($scode, 2, 1);
+
+                // First icon
+                if ($s1 == 'X' || $s1 == 'E') {
+                    $icons[] = 'https://dometopia.com/data/skin/beauty/images/icon/G.gif';
+                } elseif (!in_array($s1, ['M', 'A', 'K', 'F', 'C']) && $s2) {
+                    $icons[] = 'https://dometopia.com/data/skin/beauty/images/icon/' . $s1 . '.gif';
+                }
+
+                // Second icon
+                if (!in_array($s2, ['T', 'K', 'B']) && $s1 != 'F') {
+                    $icons[] = 'https://dometopia.com/data/skin/beauty/images/icon/_' . $s2 . '.gif';
+                }
+
+                // Free delivery icon
+                if ($delivery == 'Y') {
+                    $icons[] = 'https://dometopia.com/data/icon/common/free_delivery.gif';
+                }
+
+                // Video icon
+                if (($product->defaultInfo && $product->defaultInfo->video_url) || (isset($product->video_use) && $product->video_use == 'Y')) {
+                    $icons[] = 'https://dometopia.com/data/icon/common/vod_icon.gif';
+                }
+
+                // Third icon
+                if (!in_array($s3, ['S', 'A', 'M', 'L', 'Y', 'D', 'C']) && !in_array($s1, ['K', 'F']) && $s3) {
+                    $icons[] = 'https://dometopia.com/data/skin/beauty/images/icon/__' . $s3 . '.gif';
+                }
+            }
+            
+            // Tax Free
+            if(isset($product->tax) && $product->tax == 'exempt') {
+                $icons[] = 'https://dometopia.com/data/icon/goods_status/taxfree.gif';
+            }
+
+            // Out of stock icon
+            $isSoldout = false;
+            if (isset($product->goods_status)) {
+                if ($product->goods_status == 'runout') {
+                    $isSoldout = true;
+                } elseif ($product->goods_status == 'purchasing') {
+                    $icons[] = 'https://dometopia.com/data/icon/goods_status/icon_list_warehousing.gif';
+                } elseif ($product->goods_status == 'unsold') {
+                    $icons[] = 'https://dometopia.com/data/icon/goods_status/icon_list_stop.gif';
+                }
+            }
+            if ($product->goods_status_info) {
+                 $statusInfoArr = explode(',', rtrim($product->goods_status_info, ','));
+                 if (in_array('soldout', $statusInfoArr)) {
+                     $isSoldout = true;
+                 }
+            }
+            
+            if ($isSoldout) {
+                $icons[] = 'https://dometopia.com/data/icon/common/end_icon.gif';
+            }
         @endphp
 
-        {{-- 1. Icons from fm_goods_icon (Best, New, etc.) --}}
-        @if($product->activeIcons && $product->activeIcons->count() > 0)
-            @foreach($product->activeIcons as $icon)
-                <img src="{{ $iconBaseUrl }}/data/icon/goods/{{ $icon->codecd }}.gif" style="margin-left: 2px; vertical-align: middle;" alt="icon">
-            @endforeach
-        @endif
-
-        {{-- 2. Video Icon --}}
-        @if(isset($product->video_use) && $product->video_use == 'Y')
-            <img src="{{ $iconBaseUrl }}/data/icon/goods_status/icon_list_video.gif" style="margin-left: 2px; vertical-align: middle;" alt="Video">
-        @endif
-
-        {{-- 3. Tax Free --}}
-        @if(isset($product->tax) && $product->tax == 'exempt')
-            <img src="{{ $iconBaseUrl }}/data/icon/goods_status/taxfree.gif" style="margin-left: 2px; vertical-align: middle;" alt="Tax Free">
-        @endif
-
-        {{-- 4. Sold Out --}}
-        @if(isset($product->goods_status) && $product->goods_status == 'runout')
-            <img src="{{ $iconBaseUrl }}/data/icon/goods_status/icon_list_soldout.gif" style="margin-left: 2px; vertical-align: middle;" alt="Sold Out">
-        @endif
-
-        {{-- 5. Warehousing (Purchasing) --}}
-        @if(isset($product->goods_status) && $product->goods_status == 'purchasing')
-            <img src="{{ $iconBaseUrl }}/data/icon/goods_status/icon_list_warehousing.gif" style="margin-left: 2px; vertical-align: middle;" alt="Warehousing">
-        @endif
-
-        {{-- 6. Unsold (Stop) --}}
-        @if(isset($product->goods_status) && $product->goods_status == 'unsold')
-            <img src="{{ $iconBaseUrl }}/data/icon/goods_status/icon_list_stop.gif" style="margin-left: 2px; vertical-align: middle;" alt="Stop">
-        @endif
+        @foreach($icons as $iconSrc)
+            <img src="{{ $iconSrc }}" alt="icon" style="vertical-align:top; margin-right: 2px;" />
+        @endforeach
     </dd>
 
     <dd class="goodsDisplayTitle" style="margin-left: 0 !important; width: 100% !important; text-align: left;">

@@ -36,6 +36,14 @@
 
             <!-- Main content -->
             <div class="content">
+                @if(session('alert-warning'))
+                    <div class="alert alert-warning alert-dismissible fade show text-center font-weight-bold shadow-sm" role="alert" style="border: 2px solid #856404; background-color: #fff3cd; color: #856404;">
+                        <i class="fas fa-shield-alt mr-2"></i> {{ session('alert-warning') }}
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                @endif
                 @yield('content')
             </div>
             <!-- /.content -->

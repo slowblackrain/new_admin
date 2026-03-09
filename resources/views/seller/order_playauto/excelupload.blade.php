@@ -143,7 +143,7 @@
                     </a>
                 </div>
             </div>
-            <form action="{{ route('seller.order.excel_upload_process') }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('seller.link.upload.process') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="card-body">
                     <div class="form-group">

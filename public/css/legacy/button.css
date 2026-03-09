@@ -1,0 +1,129 @@
+.doto-button a,
+.doto-button button,
+.doto-button input[type="button"],
+.doto-button input[type="submit"]
+{margin-bottom:3px; display: inline-block;padding: 0 1em;height: 26px;background-color: #373e58;text-align: center;line-height: 26px;font-size: 13px;font-weight: 600;color: white !important;border: 0px;cursor:pointer;	}
+
+.doto-button a.write,
+.doto-button button.write,
+input[type="button"].write { background-color: #f44336; }
+
+.doto-list-button .del_btn {background: #7e7e7e;color: #FFF;outline: none; padding: 3px 5px;}
+.doto-list-button .edit_btn {background: #4c4c4c; color: #FFF;outline: none; padding: 3px 5px;}
+
+/* 도토 버튼 */
+.doto-white-btn { border: 1px solid #cfd5da; height: 36px; padding: 6px 10px; font-weight: bold; font-size: 13px;cursor:pointer;  }
+.doto-white-btn-new {height: 35px; background-color: #f7601d; color: #fff; font-weight: bold; width: 212px; text-align: center; font-size: 17px; margin-left: 15%; border-radius: 4px; border: 1px solid #d54b0d;}
+button.doto-goods-folding{ float: right;background: url(/data/skin/beauty/images/icon/cl_m.jpg)no-repeat;  width: 35px; height: 35px;display:inline-block; }
+button.doto-goods-folding.on {background: url(/data/skin/beauty/images/icon/cl_p.jpg)no-repeat;} 
+
+.btn-bgblack { background: #333;color: #FFF !important; }
+.btn-bgred { background: #f44336; }
+.btn-bgwhite { background-color: #fff; border:1px solid #ccd2d8; color: #333 !important; }
+
+.doto-blue-btn {background-color: #2979ff; color: white !important; border: none !important; position: relative;}
+
+.doto-cart-btn { display: inline-block; line-height: 60px; width: 210px; border-radius: 6px; font-size: 20px;margin: 0 5px;text-decoration: none; color: #FFF;font-weight: bold;height: 60px;cursor:pointer; }
+.doto-cart-btn.shopping:after { content: ""; background: url(/data/skin/beauty/images/icon/cart_arrow.png)no-repeat; width: 30px; height: 30px; display: inline-block; vertical-align: middle; margin-left: 10px; margin-bottom: 5px; }
+.password_alert_msg{font-size:12px; width: 92%; margin: 5px 0 8px;}
+
+
+/* 회원 아이디 비밀번호찾기 && 서비스안내 페이지 버튼 */
+.doto-member-find-btn {width: 316px; height: 50px;line-height:50px;text-align:center; color: #fff !important; font-size: 20px;font-weight: 500; display: block; margin: 0 auto; transition: box-shadow .7s; }
+.doto-member-find-btn:hover,doto-member-find-bnr-btn:hover {  box-shadow: inset 0px -5px 0px 0px rgba(0,0,0,.2); }
+.doto-member-find-btn.back { background: #9eabbb; }
+.doto-member-find-btn.login { background: #3ba0ff; }
+.doto-member-find-bnr-btn {width: 102px; height: 30px; position: absolute; bottom: 10px;right: 50px; padding: 0;font-size: 0;}
+/*
+.btn button,.btn input[type="button"] {   border-radius: 5px;background-color: #eff2f4;border: 1px solid #cfd5da;  }
+.small button, .small input[type="button"] {padding:0 7px;font-size:11px;line-height:20px}
+.medium button, .medium input[type="button"] {padding:0 13px 0 13px;line-height:25px}
+.large button, .large input[type="button"]{padding:0 13px;line-height:31px}
+*/
+
+/* 퍼스트몰 */
+#buttons{padding:50px;text-align:center; display:inline-block;}
+.btn,
+.btn input ,
+.btn a ,
+.btn button {display:inline-block;overflow:visible;position:relative;margin:0;padding:0;border:0;background:url('../../images/common/btnBg.gif') no-repeat;font-size:12px;color:#333 !important;text-decoration:none !important;vertical-align:middle;white-space:nowrap;cursor:pointer}
+/* 사이즈 설정 */
+.small{padding-right:1px; background-position:right 0;}
+.medium{padding-right:1px; background-position:right -100px;}
+.large{padding-right:1px; background-position:right -200px;height:30px;}
+.padding_s{padding-left:8px;}
+
+/* 디테일 */
+.small a,.small input,.small button{height:17px;padding:3px 7px 0;background-position:0 0;font-size:11px;line-height:15px;letter-spacing:-1px}
+.medium a,.medium input,.medium button{height:20px;padding:5px 10px 0;background-position:0 -100px;font-size:12px;line-height:18px;font-weight:bold;letter-spacing:-1px}
+.large a,.large input,.large button{height:25px;padding:7px 10px 0;background-position:0 -200px;font-size:12px;line-height:20px;font-weight:bold;letter-spacing:-1px}
+.small input,.small button {height:20px;padding:0 7px;font-size:11px;line-height:20px}
+.medium input,.medium button {height:25px;padding:0 10px 0 13px;line-height:25px}
+.large input,.large button{height:31px;padding:0 13px;line-height:31px}
+
+/* 오버시 */
+.small:hover{background-position:right -50px}
+.medium:hover{background-position:right -150px}
+.large:hover{background-position:right -250px}
+.small:hover a,.small:hover input,.small:hover button{background-position:0 -50px;color:#ff3232}
+.medium:hover a,.medium:hover input,.medium:hover button{background-position:0 -150px;color:#ff3232}
+.large:hover a,.large:hover input,.large:hover button{background-position:0 -250px;color:#ff3232}
+
+/* 컬러 설정 */
+.small.black{background-position:right -350px}
+.medium.black{background-position:right -450px}
+.large.black{background-position:right -550px}
+
+.small.black a,.small.black input,.small.black button{background-position:0 -350px;color:#FFF !important}
+.medium.black a,.medium.black input,.medium.black button{background-position:0 -450px;color:#FFF !important}
+.large.black a,.large.black input,.large.black button{background-position:0 -550px;color:#FFF !important}
+.small.black input,.small.black button{color:#3c1313  !important}
+.medium.black input,.medium.black button{color:#3c1313  !important}
+.large.black input,.large.black button{color:#fff  !important}
+
+.small.black:hover{background-position:right -400px}
+.medium.black:hover{background-position:right -500px}
+.large.black:hover{background-position:right -600px}
+.small.black:hover a,.small.black:hover input,.small.black:hover button{background-position:0 -400px;color:#DDD !important}
+.medium.black:hover a,.medium.black:hover input,.medium.black:hover button{background-position:0 -500px;color:#DDD !important}
+.large.black:hover a,.large.black:hover input,.large.black:hover button{background-position:0 -600px;color:#DDD !important}
+
+.small.cyanblue{background-position:right -650px}
+.medium.cyanblue{background-position:right -750px}
+.large.cyanblue{background-position:right -850px}
+
+.small.cyanblue a,.small.cyanblue input,.small.cyanblue button{background-position:0 -650px;color:#FFF !important}
+.medium.cyanblue a,.medium.cyanblue input,.medium.cyanblue button{background-position:0 -750px;color:#FFF !important}
+.large.cyanblue a,.large.cyanblue input,.large.cyanblue button{background-position:0 -850px;color:#FFF !important}
+.small.cyanblue input,.small.cyanblue button{color:#FFF !important}
+.medium.cyanblue input,.medium.cyanblue button{color:#FFF !important}
+.large.cyanblue input,.large.cyanblue button{color:#FFF !important}
+
+.small.cyanblue:hover{background-position:right -700px}
+.medium.cyanblue:hover{background-position:right -800px}
+.large.cyanblue:hover{background-position:right -900px}
+.small.cyanblue:hover a,.small.cyanblue:hover input{background-position:0 -700px;color:#EEE}
+.medium.cyanblue:hover a,.medium.cyanblue:hover input{background-position:0 -800px;color:#EEE}
+.large.cyanblue:hover a,.large.cyanblue:hover input{background-position:0 -900px;color:#EEE}
+
+.small.red{background-position:right -950px}
+.medium.red{background-position:right -1050px}
+.large.red{background-position:right -1150px}
+
+.small.red a,.small.red input,.small.red button{background-position:0 -950px;color:#FFF !important}
+.medium.red a,.medium.red input,.medium.red button{background-position:0 -1050px;color:#FFF !important}
+.large.red a,.large.red input,.large.red button{background-position:0 -1150px;color:#FFF !important}
+.small.red input,.small.red button{color:#FFF !important}
+.medium.red input,.small.red button{color:#FFF !important}
+.large.red input,.small.red button{color:#FFF !important}
+
+.small.red:hover{background-position:right -1000px}
+.medium.red:hover{background-position:right -1100px}
+.large.red:hover{background-position:right -1200px}
+.small.red:hover a,.small.red:hover input,.small.red:hover button{background-position:0 -1000px;color:#EEE}
+.medium.red:hover a,.medium.red:hover input,.medium.red:hover button{background-position:0 -1100px;color:#EEE}
+.large.red:hover a,.large.red:hover input,.large.red:hover button{background-position:0 -1200px;color:#EEE}
+
+.black_btn {border:0px; background-color:#777; color:#fff; font-family:dotum; font-size:13px; height:36px; line-height:20px; letter-spacing:-1px; padding:0px 20px; cursor:pointer; vertical-align:middle; }
+.gray_btn {border:0px; background-color:#3ba2ff; color:#fff; font-family:dotum; font-size:13px; height:36px; line-height:20px; letter-spacing:-1px; padding:0 20px; cursor:pointer; }
+.black_btn2 {border:0px; background-color:#4c4c4c; color:#fff; font-family:dotum; margin-top:20px; font-size:13px; height:36px; line-height:20px; letter-spacing:-1px; padding:0 20px; cursor:pointer; }

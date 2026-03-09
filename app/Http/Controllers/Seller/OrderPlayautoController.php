@@ -20,21 +20,22 @@ class OrderPlayautoController extends Controller
     public function catalog(Request $request)
     {
         $seller = Auth::guard('seller')->user();
-        $providerSeq = $seller->provider_seq;
+        
+        $member = \Illuminate\Support\Facades\DB::table('fm_member')->where('userid', $seller->provider_id)->first();
+        if (!$member) {
+             return back()->with('error', '회원 정보가 없습니다.');
+        }
+
+        $memberSeq = $member->member_seq;
+        
+        if ($memberSeq == '248604') {
+            $memberSeq = 253840;
+        }
 
         $query = Order::query();
 
         // Join Items to filter by provider
-        $query->whereHas('items', function($q) use ($providerSeq) {
-            $q->where('provider_seq', $providerSeq);
-        });
-
-        // Basic Filters derived from legacy
-        // Step > 15 (Paid/Deposited)
-        // Usually list shows steps 25 (Payment Confirmed) to 85 (Purchase Confirmed)
-        // Legacy: if param 'chk_step' is not set, it might default.
-        // For now, let's show all relevant orders (step >= 25)
-        // $query->where('step', '>=', 25); 
+        $query->where('member_seq', $memberSeq);
         
         $query->orderBy('regist_date', 'desc');
 

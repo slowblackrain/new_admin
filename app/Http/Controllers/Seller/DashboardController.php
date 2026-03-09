@@ -38,13 +38,18 @@ class DashboardController extends Controller
             ->get(); 
             
         // Failure Alerts
-        $failureAlerts = DB::table('fm_scm_order_fail_log as L')
-            ->leftJoin('fm_goods as G', 'L.goods_seq', '=', 'G.goods_seq')
-            ->where('L.provider_seq', $memberSeq)
-            ->where('L.is_checked', 'N')
-            ->orderBy('L.regist_date', 'desc')
-            ->select('L.*', 'G.goods_name')
-            ->get();
+        $failureAlerts = collect();
+        try {
+            $failureAlerts = DB::table('fm_scm_order_fail_log as L')
+                ->leftJoin('fm_goods as G', 'L.goods_seq', '=', 'G.goods_seq')
+                ->where('L.provider_seq', $memberSeq)
+                ->where('L.is_checked', 'N')
+                ->orderBy('L.regist_date', 'desc')
+                ->select('L.*', 'G.goods_name')
+                ->get();
+        } catch (\Exception $e) {
+            // Table might not exist yet
+        }
 
         return view('seller.dashboard', compact(
             'seller', 'memberData', 'assetSummary', 'fulfillmentSummary', 

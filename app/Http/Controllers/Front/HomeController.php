@@ -33,7 +33,7 @@ class HomeController extends Controller
         if ($bestProducts->isEmpty()) {
             $bestProducts = Goods::where('goods_view', 'look')
                 ->where('goods_status', 'normal')
-                ->with(['option', 'images', 'activeIcons'])
+                ->with(['option', 'images', 'activeIcons', 'defaultOption', 'defaultInfo'])
                 ->orderBy('review_count', 'desc')
                 ->limit(10)
                 ->get();
@@ -44,7 +44,7 @@ class HomeController extends Controller
         if ($newProducts->isEmpty()) {
             $newProducts = Goods::where('goods_view', 'look')
                 ->where('goods_status', 'normal')
-                ->with(['option', 'images', 'activeIcons'])
+                ->with(['option', 'images', 'activeIcons', 'defaultOption', 'defaultInfo'])
                 ->orderBy('regist_date', 'desc')
                 ->limit(10)
                 ->get();
@@ -110,19 +110,34 @@ class HomeController extends Controller
             $middleBannerR = $group13->items()->where('skin', $group13->skin)->get();
         }
 
+        // 9. DaDa Discount Products
+        // 7165: 직수입 할인 (Direct Import) - 4 items
+        $dadaDirectImportProducts = $this->getDisplayProducts(7165);
+        if ($dadaDirectImportProducts->count() > 4) {
+            $dadaDirectImportProducts = $dadaDirectImportProducts->take(4);
+        }
+        
+        // 101932: 땡처리 한정 (Clearance) - 4 items
+        $dadaClearanceProducts = $this->getDisplayProducts(101932);
+        if ($dadaClearanceProducts->count() > 4) {
+             $dadaClearanceProducts = $dadaClearanceProducts->take(4);
+        }
+
         return view('front.main.index', compact(
             'categories', 'bestProducts', 'newProducts', 'mainBanners', 
             'gdfList', 'categoryPlan', 'specialRolling',
-            'middleBannerL', 'middleBannerR'
+            'middleBannerL', 'middleBannerR',
+            'dadaDirectImportProducts', 'dadaClearanceProducts'
         ));
     }
 
     private function getDisplayProducts($displaySeq)
     {
-        // 0. Get Display General Info (for limit calculation)
-        $displayInfo = \Illuminate\Support\Facades\DB::table('fm_design_display')
-            ->where('display_seq', $displaySeq)
-            ->first();
+        return \Illuminate\Support\Facades\Cache::remember("display_products_{$displaySeq}", now()->addMinutes(10), function() use ($displaySeq) {
+            // 0. Get Display General Info (for limit calculation)
+            $displayInfo = \Illuminate\Support\Facades\DB::table('fm_design_display')
+                ->where('display_seq', $displaySeq)
+                ->first();
 
         $limit = 20; // Default
         if ($displayInfo) {
@@ -173,7 +188,7 @@ class HomeController extends Controller
                 if ($event) {
                     $query = Goods::where('goods_view', 'look')
                         ->where('goods_status', 'normal')
-                        ->with(['option', 'images', 'activeIcons']);
+                        ->with(['option', 'images', 'activeIcons', 'defaultOption', 'defaultInfo']);
                     
                     // Apply Event Rules
                     // 1. Specific Goods (goods_view)
@@ -258,11 +273,12 @@ class HomeController extends Controller
 
         $placeholders = implode(',', array_fill(0, count($orderedIds), '?'));
         
-        return Goods::where('goods_view', 'look')
-            ->where('goods_status', 'normal')
-            ->with(['option', 'images', 'activeIcons'])
-            ->whereIn('goods_seq', $orderedIds)
-            ->orderByRaw("FIELD(goods_seq, $placeholders)", $orderedIds)
-            ->get();
+            return Goods::where('goods_view', 'look')
+                ->where('goods_status', 'normal')
+                ->with(['option', 'images', 'activeIcons', 'defaultOption', 'defaultInfo'])
+                ->whereIn('goods_seq', $orderedIds)
+                ->orderByRaw("FIELD(goods_seq, $placeholders)", $orderedIds)
+                ->get();
+        });
     }
 }

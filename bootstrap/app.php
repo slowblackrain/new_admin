@@ -17,6 +17,13 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: [
             'payment/*',
         ]);
+        
+        // SAFE MODE: Rollback transactions on write methods when in local environment
+        if (env('APP_ENV') === 'local') {
+            $middleware->web(append: [
+                \App\Http\Middleware\ForceTransactionRollback::class,
+            ]);
+        }
 
         $middleware->redirectGuestsTo(function ($request) {
             if ($request->is('admin') || $request->is('admin/*')) {

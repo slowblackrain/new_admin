@@ -66,6 +66,7 @@
                                 <p>전체상품</p>
                             </a>
                         </li>
+                        @if($is_admin)
                         <li class="nav-item">
                             <a href="{{ route('seller.ats.catalog', ['ATS_status_plus' => 'ATS_agency']) }}" class="nav-link {{ request()->fullUrlIs(route('seller.ats.catalog', ['ATS_status_plus' => 'ATS_agency'])) ? 'active' : '' }}">
                                 <i class="far fa-circle nav-icon"></i>
@@ -78,6 +79,7 @@
                                 <p>단독상품</p>
                             </a>
                         </li>
+                        @endif
                         <li class="nav-item">
                             <a href="{{ route('seller.ats.social_catalog') }}" class="nav-link {{ request()->routeIs('seller.ats.social_catalog') ? 'active' : '' }}">
                                 <i class="far fa-circle nav-icon"></i>
@@ -96,23 +98,20 @@
 
                 {{-- 관리자 전용 메뉴 --}}
                 @if($is_admin)
-                <li class="nav-header">관리자 메뉴</li>
+                <li class="nav-header">관리자/상품 관리</li>
                 <li class="nav-item">
                     <a href="{{ route('seller.goods.create') }}" class="nav-link {{ request()->routeIs('seller.goods.create') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-plus-square"></i>
                         <p>상품등록</p>
                     </a>
                 </li>
-                @endif
-
-                {{-- 상품 관리 메뉴 (일반 셀러용) --}}
-                <li class="nav-header">상품 관리</li>
                 <li class="nav-item">
                     <a href="{{ route('seller.goods.index') }}" class="nav-link {{ request()->routeIs('seller.goods.index') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-boxes"></i>
                         <p>상품 목록</p>
                     </a>
                 </li>
+                @endif
 
                 {{-- 일반 공급사 메뉴 --}}
                 <li class="nav-header">매출/정산</li>
