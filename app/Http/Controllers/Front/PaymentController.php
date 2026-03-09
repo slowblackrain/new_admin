@@ -136,6 +136,51 @@ class PaymentController extends Controller
         return redirect()->route('cart.index')->withErrors(['msg' => "결제 실패: [{$code}] {$msg}"]);
     }
 
+    public function tossWebhook(Request $request)
+    {
+        // Toss Payments Webhook payload
+        $eventType = $request->input('eventType');
+        $data = $request->input('data');
+        
+        if (!$data || !isset($data['orderId'])) {
+            return response('Invalid Payload', 400);
+        }
+
+        $orderId = $data['orderId'];
+        $status = $data['status']; // e.g., DONE, CANCELED, WAITING_FOR_DEPOSIT
+        $paymentKey = $data['paymentKey'] ?? '';
+        
+        // We only care about deposit completion for virtual accounts
+        if ($status !== 'DONE' && $status !== 'CANCELED') {
+            return response('OK', 200); // Acknowledge receipt
+        }
+
+        Log::info("Toss Webhook Received: {$eventType} for Order: {$orderId}, Status: {$status}");
+
+        /** @var \App\Models\Order|null $order */
+        $order = Order::where('order_seq', $orderId)->first();
+        if (!$order) {
+            return response('Order Not Found', 404);
+        }
+
+        // Only process if the order is not fully paid yet
+        if ($status === 'DONE' && $order->step < Order::STEP_PAYMENT_CONFIRMED) {
+            $order->step = Order::STEP_PAYMENT_CONFIRMED;
+            $order->deposit_yn = 'y';
+            $order->pg_tid = $paymentKey;
+            $order->pg_result_code = '0000';
+            $order->save();
+
+            // Run Fulfillment
+            $this->finalizeOrderFulfillment($order, $paymentKey, 'toss', '가상계좌');
+        } elseif ($status === 'CANCELED' && $order->step < 85) {
+            $order->step = 85; // Cancelled
+            $order->save();
+        }
+
+        return response('OK', 200);
+    }
+
     private function determinePg($order)
     {
         $items = $order->items;

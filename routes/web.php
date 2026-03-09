@@ -381,6 +381,7 @@ Route::prefix('payment')->name('payment.')->group(function () {
     Route::any('/success', [App\Http\Controllers\Front\PaymentController::class, 'success'])->name('success');
     Route::any('/fail', [App\Http\Controllers\Front\PaymentController::class, 'fail'])->name('fail');
     Route::any('/pairing/receive', [App\Http\Controllers\Front\PaymentController::class, 'pairingReceive'])->name('pairing.receive');
+    Route::post('/webhook', [App\Http\Controllers\Front\PaymentController::class, 'tossWebhook'])->name('webhook');
 });
 
 /*
