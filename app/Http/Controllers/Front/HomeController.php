@@ -111,23 +111,44 @@ class HomeController extends Controller
         }
 
         // 9. DaDa Discount Products
-        // 7165: 직수입 할인 (Direct Import) - 4 items
+        // 7165: 직수입 할인 (Direct Import) - 8 items
         $dadaDirectImportProducts = $this->getDisplayProducts(7165);
-        if ($dadaDirectImportProducts->count() > 4) {
-            $dadaDirectImportProducts = $dadaDirectImportProducts->take(4);
+        if ($dadaDirectImportProducts->count() > 8) {
+            $dadaDirectImportProducts = $dadaDirectImportProducts->take(8);
         }
         
-        // 101932: 땡처리 한정 (Clearance) - 4 items
+        // 101932: 땡처리 한정 (Clearance) - 8 items
         $dadaClearanceProducts = $this->getDisplayProducts(101932);
-        if ($dadaClearanceProducts->count() > 4) {
-             $dadaClearanceProducts = $dadaClearanceProducts->take(4);
+        if ($dadaClearanceProducts->count() > 8) {
+             $dadaClearanceProducts = $dadaClearanceProducts->take(8);
+        }
+
+        // 10. Category Popular Products (Display IDs 7155, 7158, 7156, 7159, 7154, 7157)
+        $categoryPopularDisplayIds = [7155, 7158, 7156, 7159, 7154, 7157];
+        $categoryPopularGroups = [];
+        foreach ($categoryPopularDisplayIds as $id) {
+            $displayInfo = \Illuminate\Support\Facades\DB::table('fm_design_display')
+                ->where('display_seq', $id)
+                ->first();
+            
+            $products = $this->getDisplayProducts($id);
+            if ($products->count() > 4) {
+                // Ensure only max 4 products as per 2x2 grid in legacy UI
+                $products = $products->take(4);
+            }
+
+            $categoryPopularGroups[$id] = [
+                'title' => $displayInfo ? $displayInfo->title : '',
+                'products' => $products
+            ];
         }
 
         return view('front.main.index', compact(
             'categories', 'bestProducts', 'newProducts', 'mainBanners', 
             'gdfList', 'categoryPlan', 'specialRolling',
             'middleBannerL', 'middleBannerR',
-            'dadaDirectImportProducts', 'dadaClearanceProducts'
+            'dadaDirectImportProducts', 'dadaClearanceProducts',
+            'categoryPopularGroups'
         ));
     }
 

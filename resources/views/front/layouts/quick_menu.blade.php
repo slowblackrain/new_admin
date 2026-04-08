@@ -10,7 +10,6 @@
 /* Standardize Width */
 .rightQuickMenu { width: 130px; }
 .rightQuickMenu img { vertical-align: top; max-width: 100%; } /* Force images to fit */
-
 /* Common Styles for Box Items */
 .right_item_tel, 
 .doto-right-item, 
@@ -179,8 +178,7 @@ $(document).ready(function() {
     $("#rightScrollLayer").each(function(){
         var scrollLayerTopMargin = 10;
         var scrollLayerObj = $(this);
-        var defaultScrollLayerTop = parseInt(scrollLayerObj.offset().top);
-        var defaultMarginLeft = parseInt($(this).css('margin-left'));
+        var defaultScrollLayerTop = 180; // Hardcoded top to prevent glitching on page reload when already scrolled
         
         // Placeholder to prevent layout jump
         var divisionHiddenLayer = $("<div></div>").css({
@@ -197,19 +195,13 @@ $(document).ready(function() {
             // If scrolled past original top position
             if(scrollTop > defaultScrollLayerTop - scrollLayerTopMargin)
             {
-                var scrollLeft = parseInt($(document).scrollLeft());
-                // Stick to screen
-                // Note: The logic here is simplified from legacy. 
-                // Legacy calculated margin-left dynamically based on scrollLeft to handle horizontal scroll on fixed elements.
-                // For now, simpler fixed positioning:
-                
                 scrollLayerObj.after(divisionHiddenLayer.show()); // Show placeholder
                 scrollLayerObj.css({
                     'position' : 'fixed',
                     'z-index' : 90,
                     'top' : scrollLayerTopMargin + 'px',
                     'left' : '50%',
-                    'margin-left' : defaultMarginLeft + 'px' // Maintain original offset from center
+                    'margin-left' : '620px' // Hardcoded to prevent JS measurement errors
                 });
             }
             else
@@ -219,7 +211,7 @@ $(document).ready(function() {
                     'position' : 'absolute',
                     'top' : '180px', // Original top
                     'left' : '50%',
-                    'margin-left' : defaultMarginLeft + 'px'
+                    'margin-left' : '620px'
                 });
                 divisionHiddenLayer.hide();
             }

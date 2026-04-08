@@ -5,6 +5,65 @@
         <link rel="stylesheet" href="{{ asset('css/main/main.css') }}">
         <link rel="stylesheet" href="{{ asset('css/jquery.bxslider.css') }}">
         <style>
+            /* Restore legacy designDisplay gallery grid widths */
+            #category_nav01, .mdswrap, #section_gtbnr {
+                float: right;
+                width: 991px;
+                clear: none;
+            }
+            #category_nav01 .clearfix,
+            #category_nav02 .clearfix,
+            #category_nav03 .clearfix,
+            #category_nav04 .clearfix {
+                display: grid;
+                grid-template-columns: repeat(5, 1fr);
+                gap: 30px 14px;
+                justify-content: space-between;
+                width: 100%;
+            }
+            #category_nav01 .goodsDisplayItemWrap,
+            #category_nav02 .goodsDisplayItemWrap,
+            #category_nav03 .goodsDisplayItemWrap,
+            #category_nav04 .goodsDisplayItemWrap {
+                width: 100% !important;
+                max-width: 100%;
+                box-sizing: border-box;
+                margin: 0 !important;
+                float: none !important;
+            }
+            #category_nav01 .goodsDisplayImageWrap img,
+            #category_nav02 .goodsDisplayImageWrap img,
+            #category_nav03 .goodsDisplayImageWrap img,
+            #category_nav04 .goodsDisplayImageWrap img {
+                width: 100% !important;
+                height: auto !important;
+                aspect-ratio: 1 / 1;
+            }
+            
+            #category_nav01 .goodsDisplayItemWrap dt.goods-thumb,
+            #category_nav02 .goodsDisplayItemWrap dt.goods-thumb,
+            #category_nav03 .goodsDisplayItemWrap dt.goods-thumb,
+            #category_nav04 .goodsDisplayItemWrap dt.goods-thumb {
+                width: 100% !important;
+                height: auto !important;
+                max-width: 100%;
+            }
+
+            #category_nav01 .goodsDisplayItemWrap .goodsDisplayQuickMenu,
+            #category_nav02 .goodsDisplayItemWrap .goodsDisplayQuickMenu,
+            #category_nav03 .goodsDisplayItemWrap .goodsDisplayQuickMenu,
+            #category_nav04 .goodsDisplayItemWrap .goodsDisplayQuickMenu {
+                width: 100% !important;
+            }
+            
+            /* Fix vertical text bug caused by inline-flex + float wrapping */
+            .marin-tit {
+                display: flex !important;
+                flex-wrap: wrap;
+                width: 100%;
+                clear: both;
+            }
+
             /* bxSlider Pager Customization */
             .bx-wrapper {
                 position: relative;
@@ -90,27 +149,43 @@
     <style>
         /* Legacy Product List Styles */
         /* Legacy Product List Styles Refined for 5-Column Grid */
-        .goodsDisplayItemWrap {
+        #category_nav01 .goodsDisplayItemWrap,
+        #category_nav04 .goodsDisplayItemWrap {
             border: 2px solid transparent !important;
             padding: 7px !important;
             background: #FFF;
             position: relative;
             z-index: 1;
-            float: left;
-            width: 199px !important; /* Legacy width */
+            /* float: left; - handled by grid */
+            width: 100% !important; /* Use 100% of grid column */
             height: 325px !important;
             margin: 0 !important;
             margin-bottom: -1px !important;
             box-sizing: border-box !important; 
         }
 
-        /* Force new line for every 6th item (5 items per row) */
-        .goodsDisplayItemWrap:nth-child(5n+1) {
-            clear: both;
-        }
+        /* Float resets not needed for CSS grid parent */
         
         /* ... Mobile Styles ... */
         @media (max-width: 768px) {
+            #category_nav01 .clearfix,
+            #category_nav02 .clearfix,
+            #category_nav03 .clearfix,
+            #category_nav04 .clearfix {
+                display: block; /* Disable grid on mobile */
+            }
+            .goodsDisplayItemWrap {
+                width: 50% !important;
+                height: auto !important;
+                float: left !important;
+                clear: none !important; /* Reset nth-child clears if any */
+            }
+            .goodsDisplayItemWrap:nth-child(2n+1) {
+                clear: both !important;
+            }
+            .goodsDisplayItemWrap:nth-child(2n) {
+                clear: none !important;
+            }
             .bx-wrapper .bx-viewport {
                 overflow: hidden !important;
                 height: auto !important;
@@ -326,6 +401,12 @@
 
         /* Mobile Responsive Main Grid */
         @media (max-width: 768px) {
+            #category_nav01 .clearfix,
+            #category_nav02 .clearfix,
+            #category_nav03 .clearfix,
+            #category_nav04 .clearfix {
+                display: block;
+            }
             .goodsDisplayItemWrap {
                 width: 50% !important;
                 height: auto !important;
@@ -781,9 +862,10 @@
                         <div style="width:100%; text-align:center; padding:50px;">상품이 없습니다.</div>
                     @endforelse
                 </div>
+            </div> <!-- End of category_nav01 -->
 
-                <!-- 판촉물, 해외직구 -->
-                <div class="mdswrap clearfix">
+            <!-- 판촉물, 해외직구 -->
+            <div class="mdswrap clearfix">
                     <div class="section_mds right" id="category_nav03">
                         <div class="mdsbnr"><a href="/goods/catalog?code=0139"><img
                                     src="{{ asset('images/legacy/main/bnr_free_eve.jpg') }}" alt="프리세일 상품관"
@@ -804,73 +886,80 @@
                     </div>
 
                     <div class="gtq" id="category_nav05">
-                        <a href="/goods/catalog?code=0147" target='_self'><img loading="lazy"
-                                src="{{ asset('images/legacy/main/bnr_gth.jpg') }}" alt="직수입 특가" style="width:100%;" /></a>
-                        <div class="designDisplay">
-                            <div class="container" style="width: 226px; overflow: hidden; margin: 0 auto;">
-                                <ul class="item" style="list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 12px 26px; width: 226px; box-sizing: content-box;">
-                                    @foreach($dadaDirectImportProducts as $product)
-                                        @php
-                                            $imgSrc = asset('images/legacy/common/noimage.gif');
-                                            if ($product->images && $product->images->count() > 0) {
-                                                $img = $product->images->first();
-                                                if (preg_match('/^http/', $img->image)) {
-                                                    $imgSrc = $img->image;
-                                                } else {
-                                                    $imgSrc = 'http://dometopia.com/' . ltrim($img->image, '/');
-                                                }
-                                            } elseif ($product->image1) {
-                                                $imgSrc = 'http://dometopia.com/data/goods/' . substr($product->goods_scode, 0, 3) . '/' . $product->goods_scode . '/' . $product->image1;
-                                            }
-                                        @endphp
-                                        <li class="goodsDisplayItemWrap" style="width: 100px; height: 100px; margin: 0; padding: 0; list-style: none;">
-                                            <div class="thumb" style="width:100px; height:100px; overflow:hidden;">
-                                                <a href="/goods/view?no={{ $product->goods_seq }}">
-                                                    <img src="{{ $imgSrc }}" style="width:100px; height:100px; object-fit: cover;" onerror="this.src='{{ asset('images/legacy/common/noimage.gif') }}'">
-                                                </a>
-                                            </div>
-                                        </li>
-                                    @endforeach
-                                </ul>
-                            </div>
+                        <a href="/goods/catalog?code=0147" target='_self'>
+                            <img loading="lazy" src="{{ asset('images/legacy/main/bnr_gth.jpg') }}" alt="직수입 특가" style="width:100%; display:block;" />
+                        </a>
+                        <div>
+                            <ul style="list-style: none; padding: 0; margin: 0;">
+                                @foreach($dadaDirectImportProducts->take(8) as $product)
+                                    @php
+                                        $imgSrc = asset('images/legacy/common/noimage.gif');
+                                        $targetPath = null;
+                                        if ($product->images && $product->images->count() > 0) {
+                                            $targetImg = $product->images->where('image_type', 'main')->first();
+                                            if (!$targetImg) $targetImg = $product->images->first();
+                                            if ($targetImg) $targetPath = $targetImg->image;
+                                        }
+                                        if (empty($targetPath) && !empty($product->img_s)) $targetPath = $product->img_s;
+                                        if (!empty($targetPath)) {
+                                            $targetPath = trim($targetPath);
+                                            if (preg_match('/^http/', $targetPath)) $imgSrc = $targetPath;
+                                            elseif (Str::startsWith($targetPath, 'images/legacy_synced/')) $imgSrc = asset($targetPath);
+                                            else $imgSrc = 'http://dometopia.com/data/goods/' . $targetPath;
+                                        }
+                                    @endphp
+                                    <li class="goodsDisplayItemWrap" style="padding: 0 !important; border: 0 !important;">
+                                        <div class="dada-thumb">
+                                            <a href="/goods/view?no={{ $product->goods_seq }}" style="display: block; width: 100px; height: 100px;">
+                                                <img src="{{ $imgSrc }}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='{{ asset('images/legacy/common/noimage.gif') }}'">
+                                            </a>
+                                        </div>
+                                    </li>
+                                @endforeach
+                            </ul>
+                            <div style="clear: both;"></div>
                         </div>
                     </div>
-                    <div class="gtq2" id="category_nav06">
-                        <a href="https://dometopia.com/goods/catalog?code=0055" target='_self'><img loading="lazy"
-                                src="{{ asset('images/legacy/main/bnr_gtq.jpg') }}" title="땡처리 상품전" alt="땡처리 상품전" style="width:100%;" /></a>
-                        <div class="designDisplay">
-                            <div class="container" style="width: 226px; overflow: hidden; margin: 0 auto;">
-                                <ul class="item" style="list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 12px 26px; width: 226px; box-sizing: content-box;">
-                                    @foreach($dadaClearanceProducts as $product)
-                                        @php
-                                            $imgSrc = asset('images/legacy/common/noimage.gif');
-                                            if ($product->images && $product->images->count() > 0) {
-                                                $img = $product->images->first();
-                                                if (preg_match('/^http/', $img->image)) {
-                                                    $imgSrc = $img->image;
-                                                } else {
-                                                    $imgSrc = 'http://dometopia.com/' . ltrim($img->image, '/');
-                                                }
-                                            } elseif ($product->image1) {
-                                                $imgSrc = 'http://dometopia.com/data/goods/' . substr($product->goods_scode, 0, 3) . '/' . $product->goods_scode . '/' . $product->image1;
-                                            }
-                                        @endphp
-                                        <li class="goodsDisplayItemWrap" style="width: 100px; height: 100px; margin: 0; padding: 0; list-style: none;">
-                                            <div class="thumb" style="width:100px; height:100px; overflow:hidden;">
-                                                <a href="/goods/view?no={{ $product->goods_seq }}">
-                                                    <img src="{{ $imgSrc }}" style="width:100px; height:100px; object-fit: cover;" onerror="this.src='{{ asset('images/legacy/common/noimage.gif') }}'">
-                                                </a>
-                                            </div>
-                                        </li>
-                                    @endforeach
-                                </ul>
-                            </div>
+
+                    <div class="gtq2" id="category_nav06" style="margin-left:13px;">
+                        <a href="https://dometopia.com/goods/catalog?code=0055" target='_self'>
+                            <img loading="lazy" src="{{ asset('images/legacy/main/bnr_gtq.jpg') }}" title="땡처리 상품전" alt="땡처리 상품전" style="width:100%; display:block;" />
+                        </a>
+                        <div>
+                            <ul style="list-style: none; padding: 0; margin: 0;">
+                                @foreach($dadaClearanceProducts->take(8) as $product)
+                                    @php
+                                        $imgSrc = asset('images/legacy/common/noimage.gif');
+                                        $targetPath = null;
+                                        if ($product->images && $product->images->count() > 0) {
+                                            $targetImg = $product->images->where('image_type', 'main')->first();
+                                            if (!$targetImg) $targetImg = $product->images->first();
+                                            if ($targetImg) $targetPath = $targetImg->image;
+                                        }
+                                        if (empty($targetPath) && !empty($product->img_s)) $targetPath = $product->img_s;
+                                        if (!empty($targetPath)) {
+                                            $targetPath = trim($targetPath);
+                                            if (preg_match('/^http/', $targetPath)) $imgSrc = $targetPath;
+                                            elseif (Str::startsWith($targetPath, 'images/legacy_synced/')) $imgSrc = asset($targetPath);
+                                            else $imgSrc = 'http://dometopia.com/data/goods/' . $targetPath;
+                                        }
+                                    @endphp
+                                    <li class="goodsDisplayItemWrap" style="padding: 0 !important; border: 0 !important;">
+                                        <div class="dada-thumb">
+                                            <a href="/goods/view?no={{ $product->goods_seq }}" style="display: block; width: 100px; height: 100px;">
+                                                <img src="{{ $imgSrc }}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='{{ asset('images/legacy/common/noimage.gif') }}'">
+                                            </a>
+                                        </div>
+                                    </li>
+                                @endforeach
+                            </ul>
+                            <div style="clear: both;"></div>
                         </div>
                     </div>
                 </div>
 
                 <!-- 새로 만나는 신상품 -->
-                <div class="goodsroll best" id="category_nav04" style="margin-top: 50px;"> <!-- Standard spacing -->
+                <div class="goodsroll best" id="category_nav04" style="margin-top: 50px; clear: right; float: right; width: 991px;"> <!-- Clear right to avoid dropping below left sidebar -->
                     <div class="marin-tit">새로 만나는 <b>신상품</b>
                         <p><a href="/goods/search?sort=news">신상품 더 보기</a><img loading="lazy"
                                 src="{{ asset('images/legacy/icon/view_icon_info.gif') }}"
@@ -885,6 +974,80 @@
                         @endforelse
                     </div>
                 </div>
+
+            <!-- 카테고리 인기상품 (Full Width 1200px) -->
+            <div style="clear: both; width: 100%; margin-top: 30px; padding-bottom: 20px;">
+                <div class="marin-tit" style="padding: 20px 0 5px;"><b>카테고리</b>&nbsp; 인기상품</div>
+                <div class="recommend_item" id="category_nav07" style="display: flex; flex-wrap: wrap; justify-content: space-between; width: 100%;">
+                    @foreach([7155, 7158, 7156, 7159, 7154, 7157] as $groupId)
+                        @if(isset($categoryPopularGroups[$groupId]) && $categoryPopularGroups[$groupId]['products']->isNotEmpty())
+                            @php
+                                $group = $categoryPopularGroups[$groupId];
+                                $title = $group['title'];
+                                $products = $group['products'];
+                            @endphp
+                            <div class="group middle" style="width: 32%; background-color: #fff; border: 1px solid #e9ecef; margin-bottom: 25px; box-sizing: border-box; padding: 0 14px 14px 14px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e9ecef; padding: 14px 0 10px;">
+                                    <span style="font-weight: bold; font-size: 16px; color: #333; letter-spacing: -0.025em; word-spacing: -0.045em; font-family: '맑은고딕', 'Malgun Gothic';">{{ $title }}</span>
+                                    <a href="/goods/catalog?code=0177" style="display: inline-flex; align-items: center; justify-content: center; width: 84px; height: 26px; border: 1px solid #e5e5e5; background: #fbfbfb; font-size: 11px; color: #888; text-decoration: none;">
+                                        <span style="color: #bbb; margin-right: 3px; font-weight: bold; font-size: 12px; line-height: 1;">+</span> 자세히 보기
+                                    </a>
+                                </div>
+                                
+                                <div style="display: flex; flex-wrap: wrap; margin-top: 15px;">
+                                    @foreach($products as $product)
+                                        @php
+                                            $imgSrc = asset('images/legacy/common/noimage.gif');
+                                            $targetPath = null;
+                                            
+                                            if ($product->images && $product->images->count() > 0) {
+                                                $targetImg = $product->images->where('image_type', 'list1')->first();
+                                                if (!$targetImg) $targetImg = $product->images->first();
+                                                if ($targetImg) $targetPath = $targetImg->image;
+                                            }
+                                            
+                                            if (empty($targetPath) && !empty($product->img_s)) {
+                                                $targetPath = $product->img_s;
+                                            }
+
+                                            if (!empty($targetPath)) {
+                                                $targetPath = trim($targetPath);
+                                                if (Str::startsWith($targetPath, 'http')) {
+                                                    $imgSrc = $targetPath;
+                                                } elseif (Str::startsWith($targetPath, 'images/legacy_synced/')) {
+                                                    $imgSrc = asset($targetPath);
+                                                } elseif (strpos($targetPath, 'goods_img') !== false) {
+                                                    $suffix = substr($targetPath, strpos($targetPath, 'goods_img') + 9);
+                                                    $imgSrc = "https://dmtusr.vipweb.kr/goods_img" . $suffix;
+                                                } else {
+                                                    $imgSrc = 'http://dometopia.com/data/goods/' . $targetPath;
+                                                }
+                                            }
+                                        @endphp
+                                        <div style="width: 48%; box-sizing: border-box; text-align: left; margin-bottom: 25px; {{ $loop->index % 2 === 0 ? 'margin-right: 4%;' : '' }}">
+                                            <a href="/goods/view?no={{ $product->goods_seq }}" style="display: block; text-decoration: none;">
+                                                <div style="width: 172px; height: 172px; border: 1px solid #f2f3f4; overflow: hidden; margin: 0 auto 8px;">
+                                                    <img src="{{ $imgSrc }}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='{{ asset('images/legacy/common/noimage.gif') }}'">
+                                                </div>
+                                                <div style="padding: 0 4px;">
+                                                    <p style="font-size: 13px; font-weight: bold; color: #297e63; margin: 0 0 4px; font-family: tahoma, sans-serif;">{{ $product->goods_scode }}</p>
+                                                    <h6 style="color: #000; font-weight: normal; font-size: 14px; margin: 0 0 8px; line-height: 1.4; height: 40px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; text-overflow: ellipsis; word-break: keep-all; font-family: '맑은고딕', 'Malgun Gothic';">{{ $product->goods_name }}</h6>
+                                                    <p style="margin: 0; text-align: center;">
+                                                        <span style="color: #333; font-size: 13px; font-weight: normal; margin-right: 4px;">도매가</span>
+                                                        <b style="color: #f8601d; font-size: 16px; font-weight: 800; letter-spacing: -0.5px;">{{ number_format($product->price) }}원</b>
+                                                    </p>
+                                                </div>
+                                            </a>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+                    @endforeach
+                </div>
+            </div>
+            <!-- // 카테고리 인기상품 끝 -->
+
             </div>
         </div>
     </div>
