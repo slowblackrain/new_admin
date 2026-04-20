@@ -979,6 +979,33 @@
             <div style="clear: both; width: 100%; margin-top: 30px; padding-bottom: 20px;">
                 <div class="marin-tit" style="padding: 20px 0 5px;"><b>카테고리</b>&nbsp; 인기상품</div>
                 <div class="recommend_item" id="category_nav07" style="display: flex; flex-wrap: wrap; justify-content: space-between; width: 100%;">
+                    <style>
+                        .designDisplay h5 { font-size:15px; font-weight:500; letter-spacing:-0.5px; margin:0 auto; text-align:left; margin-bottom:15px; color:#333; }
+                        .designDisplay .container2 { margin:0 auto; overflow-y:hidden; }
+                        .designDisplay .item2 { list-style: none; padding: 0; margin: 0; display: block; overflow: hidden; }
+                        .designDisplay .item2 li { float:left; width: 110px; margin:5px; font-family:'맑은고딕', 'Malgun Gothic', sans-serif; margin-bottom:25px;}
+                        .designDisplay .item2 .thumb2 { width:100px; height:100px; overflow:hidden; background-color:#ddd; margin-bottom:10px; border: 1px solid #ededed; }
+                        .designDisplay .item2 .thumb2 img { width:100px; height:100px; object-fit: cover; }
+                        .designDisplay .item2 .code { font-size:12px; line-height:12px; font-weight:bold !important; color:#444 !important; display:block; margin-bottom:2px; font-family:'맑은고딕', 'Malgun Gothic', sans-serif;}
+                        .designDisplay .item2 li:hover h6.title { text-decoration:underline !important; }
+                        .designDisplay .item2 .title {
+                            font-size:12px; line-height:14px; font-weight:bold; height:28px; color:#444 !important;
+                            display: -webkit-box; word-wrap:break-word; overflow-y:hidden;
+                            -webkit-line-clamp: 2; -webkit-box-orient: vertical; margin: 0;
+                            font-family:'맑은고딕', 'Malgun Gothic', sans-serif;
+                        }
+                        .designDisplay .item2 .price { font-size:12px; color:#f7601d; font-weight:800; margin-top:5px; font-family:'맑은고딕', 'Malgun Gothic', sans-serif; word-spacing:-5px; text-align:center;}
+                        .designDisplay .item2 .price b { font-size:12px !important; font-weight:bold !important; letter-spacing:-0.3px; color:#f7601d;}
+                        .designDisplay .title_tab { display: flex; justify-content: space-between; margin: 5px; }
+                        
+                        /* Mobile Responsive Fixes for category popular goods */
+                        @media (max-width: 1219px) {
+                            .recommend_item > .group.middle { width: 100% !important; margin-bottom: 20px; }
+                            .designDisplay .item2 li { width: 30% !important; margin: 1.5%; min-height: 180px; }
+                            .designDisplay .item2 .thumb2 { width: 100%; height: auto; aspect-ratio: 1/1; }
+                            .designDisplay .item2 .thumb2 img { width: 100%; height: 100%; }
+                        }
+                    </style>
                     @foreach([7155, 7158, 7156, 7159, 7154, 7157] as $groupId)
                         @if(isset($categoryPopularGroups[$groupId]) && $categoryPopularGroups[$groupId]['products']->isNotEmpty())
                             @php
@@ -986,60 +1013,67 @@
                                 $title = $group['title'];
                                 $products = $group['products'];
                             @endphp
-                            <div class="group middle" style="width: 32%; background-color: #fff; border: 1px solid #e9ecef; margin-bottom: 25px; box-sizing: border-box; padding: 0 14px 14px 14px;">
-                                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e9ecef; padding: 14px 0 10px;">
-                                    <span style="font-weight: bold; font-size: 16px; color: #333; letter-spacing: -0.025em; word-spacing: -0.045em; font-family: '맑은고딕', 'Malgun Gothic';">{{ $title }}</span>
-                                    <a href="/goods/catalog?code=0177" style="display: inline-flex; align-items: center; justify-content: center; width: 84px; height: 26px; border: 1px solid #e5e5e5; background: #fbfbfb; font-size: 11px; color: #888; text-decoration: none;">
-                                        <span style="color: #bbb; margin-right: 3px; font-weight: bold; font-size: 12px; line-height: 1;">+</span> 자세히 보기
-                                    </a>
-                                </div>
-                                
-                                <div style="display: flex; flex-wrap: wrap; margin-top: 15px;">
-                                    @foreach($products as $product)
-                                        @php
-                                            $imgSrc = asset('images/legacy/common/noimage.gif');
-                                            $targetPath = null;
-                                            
-                                            if ($product->images && $product->images->count() > 0) {
-                                                $targetImg = $product->images->where('image_type', 'list1')->first();
-                                                if (!$targetImg) $targetImg = $product->images->first();
-                                                if ($targetImg) $targetPath = $targetImg->image;
-                                            }
-                                            
-                                            if (empty($targetPath) && !empty($product->img_s)) {
-                                                $targetPath = $product->img_s;
-                                            }
-
-                                            if (!empty($targetPath)) {
-                                                $targetPath = trim($targetPath);
-                                                if (Str::startsWith($targetPath, 'http')) {
-                                                    $imgSrc = $targetPath;
-                                                } elseif (Str::startsWith($targetPath, 'images/legacy_synced/')) {
-                                                    $imgSrc = asset($targetPath);
-                                                } elseif (strpos($targetPath, 'goods_img') !== false) {
-                                                    $suffix = substr($targetPath, strpos($targetPath, 'goods_img') + 9);
-                                                    $imgSrc = "https://dmtusr.vipweb.kr/goods_img" . $suffix;
-                                                } else {
-                                                    $imgSrc = 'http://dometopia.com/data/goods/' . $targetPath;
-                                                }
-                                            }
-                                        @endphp
-                                        <div style="width: 48%; box-sizing: border-box; text-align: left; margin-bottom: 25px; {{ $loop->index % 2 === 0 ? 'margin-right: 4%;' : '' }}">
-                                            <a href="/goods/view?no={{ $product->goods_seq }}" style="display: block; text-decoration: none;">
-                                                <div style="width: 172px; height: 172px; border: 1px solid #f2f3f4; overflow: hidden; margin: 0 auto 8px;">
-                                                    <img src="{{ $imgSrc }}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='{{ asset('images/legacy/common/noimage.gif') }}'">
-                                                </div>
-                                                <div style="padding: 0 4px;">
-                                                    <p style="font-size: 13px; font-weight: bold; color: #297e63; margin: 0 0 4px; font-family: tahoma, sans-serif;">{{ $product->goods_scode }}</p>
-                                                    <h6 style="color: #000; font-weight: normal; font-size: 14px; margin: 0 0 8px; line-height: 1.4; height: 40px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; text-overflow: ellipsis; word-break: keep-all; font-family: '맑은고딕', 'Malgun Gothic';">{{ $product->goods_name }}</h6>
-                                                    <p style="margin: 0; text-align: center;">
-                                                        <span style="color: #333; font-size: 13px; font-weight: normal; margin-right: 4px;">도매가</span>
-                                                        <b style="color: #f8601d; font-size: 16px; font-weight: 800; letter-spacing: -0.5px;">{{ number_format($product->price) }}원</b>
-                                                    </p>
-                                                </div>
-                                            </a>
+                            <div class="group middle" style="width: 386px; background-color: #fff; margin-bottom: 25px; box-sizing: border-box; padding: 15px 10px 0;">
+                                <div class="designDisplay">
+                                    <div class='title_tab'>
+                                        <div>
+                                            <h5>{{ $title }}</h5>
                                         </div>
-                                    @endforeach
+                                        <div>
+                                            <!-- Fallback more link to main category page or search based on legacy UX -->
+                                            <a href='/goods/catalog?code=0177'><img loading="lazy" src="{{ asset('data/icon/main_more.jpg') }}" alt="더보기" onerror="this.src='{{ asset('images/legacy/icon/main_more.jpg') }}'" style="margin-top:-3px;"></a>
+                                        </div>
+                                    </div>
+                                    <table class="displayTabContentsContainer" width="100%" cellpadding="0" cellspacing="0" border="0" style="table-layout:fixed">
+                                        <tr>
+                                            <td>
+                                                <div class="container2">
+                                                    <ul class="item2">
+                                                        @foreach($products as $product)
+                                                            @php
+                                                                $imgSrc = asset('images/legacy/common/noimage.gif');
+                                                                $targetPath = null;
+                                                                
+                                                                if ($product->images && $product->images->count() > 0) {
+                                                                    $targetImg = $product->images->where('image_type', 'main')->first();
+                                                                    if (!$targetImg) $targetImg = $product->images->first();
+                                                                    if ($targetImg) $targetPath = $targetImg->image;
+                                                                }
+                                                                
+                                                                if (empty($targetPath) && !empty($product->img_s)) {
+                                                                    $targetPath = $product->img_s;
+                                                                }
+                    
+                                                                if (!empty($targetPath)) {
+                                                                    $targetPath = trim($targetPath);
+                                                                    if (Str::startsWith($targetPath, 'http')) {
+                                                                        $imgSrc = $targetPath;
+                                                                    } elseif (Str::startsWith($targetPath, 'images/legacy_synced/')) {
+                                                                        $imgSrc = asset($targetPath);
+                                                                    } elseif (strpos($targetPath, 'goods_img') !== false) {
+                                                                        $suffix = substr($targetPath, strpos($targetPath, 'goods_img') + 9);
+                                                                        $imgSrc = "https://dmtusr.vipweb.kr/goods_img" . $suffix;
+                                                                    } else {
+                                                                        $imgSrc = 'http://dometopia.com/data/goods/' . $targetPath;
+                                                                    }
+                                                                }
+                                                            @endphp
+                                                            <li class="goodsDisplayItemWrap2">
+                                                                <a href="/goods/view?no={{ $product->goods_seq }}" style="display: block; text-decoration: none;">
+                                                                    <div class="thumb2">
+                                                                        <img src="{{ $imgSrc }}" onerror="this.src='{{ asset('images/legacy/common/noimage.gif') }}'">
+                                                                    </div>
+                                                                    <span class="code">{{ $product->goods_scode }}</span>
+                                                                    <h6 class="title">{{ $product->goods_name }}</h6>
+                                                                    <p class="price"><b>{{ number_format($product->price) }}</b></p>
+                                                                </a>
+                                                            </li>
+                                                        @endforeach
+                                                    </ul>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </table>
                                 </div>
                             </div>
                         @endif

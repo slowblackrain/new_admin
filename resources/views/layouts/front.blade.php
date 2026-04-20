@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ $title ?? '도매토피아' }}</title>
+    <title>{{ $title ?? '도매토피아 - 대한민국 최대 도매 쇼핑몰' }}</title>
 
     <!-- Legacy CSS -->
     <link rel="stylesheet" href="{{ asset('css/legacy/common.css') }}">

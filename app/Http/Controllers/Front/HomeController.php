@@ -132,9 +132,9 @@ class HomeController extends Controller
                 ->first();
             
             $products = $this->getDisplayProducts($id);
-            if ($products->count() > 4) {
-                // Ensure only max 4 products as per 2x2 grid in legacy UI
-                $products = $products->take(4);
+            if ($products->count() > 6) {
+                // Main Category List grid (3x2 grid)
+                $products = $products->take(6);
             }
 
             $categoryPopularGroups[$id] = [
