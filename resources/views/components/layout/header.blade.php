@@ -451,11 +451,17 @@
 
                 /* Reset sub-elements if they were hidden */
                 #doto_scrollmenu .menu_box_r .icon_login {
-                    display: block !important;
+                    display: flex !important;
+                    align-items: center;
+                    justify-content: center;
                     float: right !important;
                     /* Keep internal float if needed, or flex */
                     width: 82px !important;
                     height: 50px !important;
+                    background: #f8f9fa;
+                    border-left: 1px solid #eaeaea;
+                    border-right: 1px solid #eaeaea;
+                    box-sizing: border-box;
                 }
 
                 /* New Admin Category Dropdown Styles (Ported from common_bk.css/.dometopia.css) */
