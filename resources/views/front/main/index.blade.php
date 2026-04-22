@@ -1010,14 +1010,14 @@
                         @if(isset($categoryPopularGroups[$groupId]) && $categoryPopularGroups[$groupId]['products']->isNotEmpty())
                             @php
                                 $group = $categoryPopularGroups[$groupId];
-                                $title = $group['title'];
+                                $groupTitle = $group['title'];
                                 $products = $group['products'];
                             @endphp
                             <div class="group middle" style="width: 386px; background-color: #fff; margin-bottom: 25px; box-sizing: border-box; padding: 15px 10px 0;">
                                 <div class="designDisplay">
                                     <div class='title_tab'>
                                         <div>
-                                            <h5>{{ $title }}</h5>
+                                            <h5>{{ $groupTitle }}</h5>
                                         </div>
                                         <div>
                                             <!-- Fallback more link to main category page or search based on legacy UX -->
