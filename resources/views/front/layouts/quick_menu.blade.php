@@ -41,11 +41,60 @@
 .doto-right-item i.red_arrow { background: url(/images/legacy/icon/tiny_red.png); width: 3px; height: 5px !important; display: inline-block; margin-left: 5px; vertical-align: middle; }
 
 /* MyPage Section */
-.right_item_mypage { background-image: url(/images/legacy/common/quick-pattern.jpg); padding: 0; border-top: none; }
-.right_item_mypage a { display: block; color: #FFF; font-size: 12px; text-decoration: none; line-height: 28px; }
-.right_item_mypage i.red_arrow_mid { background: url(/images/legacy/icon/arrow_r_tiny_red.png); width: 4px; height: 7px !important; display: inline-block; margin-left: 10px; }
-.right_item_mypage .quick_cart_total { color: #f8601d; margin-left: 10px; font-weight: bold; }
-.right_item_line { border-top: 1px solid rgba(255,255,255,0.05); border-bottom: 1px solid #2d313d; margin: 0; height: 0; }
+.right_item_mypage { background: #353a45; padding: 10px 0; border: none; margin-bottom: 5px; }
+.right_item_mypage a { display: block; color: #9ea4b3; font-size: 12px; text-decoration: none; line-height: 24px; }
+.right_item_mypage a:hover { color: #fff; }
+.right_item_mypage .quick_cart_total { color: #f8601d; margin-left: 5px; font-weight: bold; }
+.right_item_line { border-top: 1px solid rgba(255,255,255,0.1); border-bottom: none; margin: 5px 15px; height: 0; }
+
+/* New Contact Box Styles */
+.right_item_box {
+    width: 130px;
+    box-sizing: border-box;
+    background: #fff;
+    border: 1px solid #cfd5da;
+    border-top: none;
+    text-align: center;
+    padding: 12px 0;
+}
+.right_item_box.cs_box { margin-bottom: 5px; }
+.right_item_box .tel {
+    font-size: 14px;
+    color: #f44336;
+    font-weight: bold;
+    margin: 0 0 5px 0;
+    line-height: 1;
+    letter-spacing: -0.5px;
+}
+.right_item_box .desc {
+    font-size: 11px;
+    color: #666;
+    line-height: 1.4;
+    margin: 0;
+    letter-spacing: -0.5px;
+}
+.right_item_box .btn_cs {
+    display: inline-block;
+    border: 1px solid #e0e0e0;
+    font-size: 11px;
+    color: #666;
+    padding: 2px 10px;
+    margin-top: 8px;
+    text-decoration: none;
+    border-radius: 2px;
+}
+.rightQuickMenuBottom .rightTop {
+    background: #353a45;
+    text-align: center;
+    padding: 10px 0;
+}
+.rightQuickMenuBottom .rightTop a {
+    color: #fff;
+    text-decoration: none;
+    font-size: 12px;
+}
+.rightQuickMenuBottom .rightTop a img { display: none; }
+.rightQuickMenuBottom .rightTop a::after { content: "Top ↑"; }
 
 /* Recent Items Section */
 .right_item_recent { padding: 5px; border-top: none; }
@@ -106,32 +155,32 @@
              <a href="#"><img src="/images/legacy/common/member_special_quick.png" alt="기업회원 우대정책"></a>
         </div>
 
-        <!-- Tel -->
-        <div class="right_item_tel">
-            <h4>대표전화</h4>
-            <p>02-2026-2754</p>
-            <span class="question"><a href="/board/?id=mbqna">1:1고객문의</a></span>
+        <!-- Academy -->
+        <div class="right_item_box">
+            <p class="tel">02-2026-2754</p>
+            <p class="desc">도매 아카데미<br>쇼핑몰 창업상담</p>
         </div>
 
-        <!-- B2B / Shop -->
-        <div class="doto-right-item">
-            <a href="/board/?id=bulkorder">
-                <p class="tit">B2B대량견적<i class="red_arrow"></i></p>
-                <p>02-2026-2754</p>
-            </a>
-            <a href="http://pf.kakao.com/_GPpPK/chat" target="_blank">
-                <p class="tit">쇼핑몰창업<br>가입상담<i class="red_arrow"></i></p>
-                <p>02-2026-2759</p>
-            </a>
+        <!-- B2B -->
+        <div class="right_item_box">
+            <p class="tel">02-2026-2754</p>
+            <p class="desc">대량 판촉 특판<br>OEM 견적 상담</p>
+        </div>
+
+        <!-- CS -->
+        <div class="right_item_box cs_box">
+            <p class="tel">1566-6779</p>
+            <p class="desc">상품 주문·배송 문의</p>
+            <a href="/board/?id=mbqna" class="btn_cs">1:1 고객문의</a>
         </div>
 
         <!-- My Page / Cart -->
         <div class="right_item_mypage">
-            <a href="/mypage" class="mypage"><p class="patt_tit">마이페이지<i class="red_arrow_mid"></i></p></a>
+            <a href="/mypage">마이페이지 &gt;</a>
             <p class="right_item_line"></p>
-            <a href="/cart" class="cart"><p class="qcr_tit">장바구니<span class="quick_cart_total" id="right_cart_total">0</span></p></a>
+            <a href="/cart">장바구니 <span class="quick_cart_total" id="right_cart_total">0</span></a>
             <p class="right_item_line"></p>
-            <a href="/mypage/order_catalog" class="mypage"><p class="patt_tit">주문/배송</p></a>
+            <a href="/mypage/order_catalog">주문/배송</a>
         </div>
 
         <!-- Recent Items -->

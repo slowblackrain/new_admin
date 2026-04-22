@@ -101,7 +101,7 @@
                 <div class="inner_search">
                     <form action="/goods/search" style="margin:0;" onSubmit="return Checkform(this)">
                         <input type="text" list="search_list" name="search_text" id="inner_search" title="검색어 입력"
-                            class="search_input" value="{{ request('search_text') }}" required />
+                            class="search_input" value="{{ request('search_text') }}" placeholder="검색어 입력" required />
                         <datalist id="search_list">
                             {{-- @search_list placeholder --}}
                             {{--
@@ -134,7 +134,6 @@
                     @endif
                     <li><a href="/mypage">마이페이지</a></li>
                 @else
-                    <li><a href="/member/login">로그인</a></li>
                     <li><a href="/member/agreement">회원가입</a></li>
                 @endauth
 
@@ -328,7 +327,6 @@
                     <li><a href="/goods/newlist">신상품</a></li>
                     <li><a href="/board/?id=bulkorder">대량견적</a></li>
                     <li><a href="/page/index?tpl=etc/school_29.html">아카데미</a></li>
-                    <li><a href="https://www.youtube.com/@dometopia-tv" target="_blank">도매토피아TV</a></li>
                 </ul>
             </div><!--menu_box-->
             <div class="menu_box_r">
