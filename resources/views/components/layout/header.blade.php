@@ -450,6 +450,21 @@
                 }
 
                 /* Reset sub-elements if they were hidden */
+                #doto_scrollmenu .menu_box_r .icon_login a {
+                    position: relative !important;
+                    top: 0 !important;
+                    right: 0 !important;
+                    left: auto !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    font-size: 13px !important;
+                    font-weight: bold;
+                    text-indent: 0 !important;
+                    width: auto !important;
+                    height: auto !important;
+                    background: none !important;
+                }
+
                 #doto_scrollmenu .menu_box_r .icon_login {
                     display: flex !important;
                     align-items: center;

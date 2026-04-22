@@ -529,7 +529,7 @@
             <div class="notice mobile-full-width"
                 style="width: 291px; margin: 0; background-color: transparent; box-shadow: none;">
                 <div class="notice_list mobile-full-width" onclick="location.href='/goods/catalog?code=0177';"
-                    style="background-image: url('{{ asset('images/legacy/main/img/main_top_right1.png') }}'); width: 291px; height: 194px; cursor: pointer; position: relative;">
+                    style="background-image: url('{{ asset('images/legacy/main/img/main_top_right1.png') }}?v={{ time() }}'); width: 291px; height: 194px; cursor: pointer; position: relative;">
 
                     <div
                         style="position: absolute; top: 80px; width: 100%; display: flex; justify-content: center; padding-top: 14px;">
@@ -583,7 +583,7 @@
 
                 <!-- Bottom Part: Green Nature Slider -->
                 <div class="mds_recommand_roll mobile-full-width" onclick="location.href='/goods/catalog?code=01740017';"
-                    style="background-image: url('{{ asset('images/legacy/main/img/main_top_right2.png') }}'); width: 291px; height: 194px; margin-top: 12px; cursor: pointer; position: relative;">
+                    style="background-image: url('{{ asset('images/legacy/main/img/main_top_right2.png') }}?v={{ time() }}'); width: 291px; height: 194px; margin-top: 12px; cursor: pointer; position: relative;">
 
                     <div class="innerBox" style="position: absolute; bottom: 0;">
                         <div id="right_banner_slider_container" class="mobile-full-width" style="width: 291px;">
