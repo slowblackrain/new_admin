@@ -152,26 +152,16 @@
 
         <!-- Special Banners -->
         <div class="special">
-             <a href="#"><img src="/images/legacy/common/member_special_quick.png" alt="기업회원 우대정책"></a>
+            <a href="/page/index?tpl=etc/business_info.html"><img src="{{ asset('images/legacy/asset/member_special_quick2.png') }}" onerror="this.src='https://dometopia.com/data/skin/beauty/images/asset/member_special_quick2.png'"></a>
         </div>
-
-        <!-- Academy -->
-        <div class="right_item_box">
-            <p class="tel">02-2026-2754</p>
-            <p class="desc">도매 아카데미<br>쇼핑몰 창업상담</p>
+        <div class="special">
+            <img src="{{ asset('images/legacy/asset/academy_quick.png') }}" onerror="this.src='https://dometopia.com/data/skin/beauty/images/asset/academy_quick.png'">
         </div>
-
-        <!-- B2B -->
-        <div class="right_item_box">
-            <p class="tel">02-2026-2754</p>
-            <p class="desc">대량 판촉 특판<br>OEM 견적 상담</p>
+        <div class="special">
+            <img src="{{ asset('images/legacy/asset/OEM_quick.png') }}" onerror="this.src='https://dometopia.com/data/skin/beauty/images/asset/OEM_quick.png'">
         </div>
-
-        <!-- CS -->
-        <div class="right_item_box cs_box">
-            <p class="tel">1566-6779</p>
-            <p class="desc">상품 주문·배송 문의</p>
-            <a href="/board/?id=mbqna" class="btn_cs">1:1 고객문의</a>
+        <div class="special">
+            <a href="/board/?id=mbqna"><img src="{{ asset('images/legacy/asset/oder_quick.png') }}" onerror="this.src='https://dometopia.com/data/skin/beauty/images/asset/oder_quick.png'"></a>
         </div>
 
         <!-- My Page / Cart -->

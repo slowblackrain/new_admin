@@ -525,140 +525,18 @@
                 </div>
             </div>
 
-            <!-- GTD 베스트 // 롤링 -->
-            <div class="notice mobile-full-width"
-                style="width: 291px; margin: 0; background-color: transparent; box-shadow: none;">
-                <div class="notice_list mobile-full-width" onclick="location.href='/goods/catalog?code=0177';"
-                    style="background-image: url('{{ asset('images/legacy/main/img/main_top_right1.png') }}?v={{ time() }}'); width: 291px; height: 194px; cursor: pointer; position: relative;">
+            <!-- GTD 베스트 // 롤링 (Removed to match live site) -->
+            <!--<div class="notice mobile-full-width" style="width: 291px; margin: 0; background-color: transparent; box-shadow: none;">
+                ...
+            </div>-->
 
-                    <div
-                        style="position: absolute; top: 80px; width: 100%; display: flex; justify-content: center; padding-top: 14px;">
-                        @forelse($gdfList as $product)
-                            @php
-                                $imgSrc = asset('images/legacy/common/noimage.gif');
-                                $targetPath = null;
-                                
-                                // 1. Try relation
-                                if ($product->images && $product->images->count() > 0) {
-                                    $targetImg = $product->images->where('image_type', 'list1')->first();
-                                    if (!$targetImg) $targetImg = $product->images->first();
-                                    if ($targetImg) $targetPath = $targetImg->image;
-                                }
-                                
-                                // 2. Fallback to img_s
-                                if (empty($targetPath) && !empty($product->img_s)) {
-                                    $targetPath = $product->img_s;
-                                }
-
-                                // 3. Resolve URL
-                                if (!empty($targetPath)) {
-                                    $targetPath = trim($targetPath);
-                                    if (Str::startsWith($targetPath, 'http')) {
-                                        $imgSrc = $targetPath;
-                                    } elseif (Str::startsWith($targetPath, 'images/legacy_synced/')) {
-                                        $imgSrc = asset($targetPath);
-                                    } elseif (strpos($targetPath, 'goods_img') !== false) {
-                                        $suffix = substr($targetPath, strpos($targetPath, 'goods_img') + 9);
-                                        $imgSrc = "https://dmtusr.vipweb.kr/goods_img" . $suffix;
-                                    } else {
-                                        $imgSrc = 'http://dometopia.com/data/goods/' . $targetPath;
-                                    }
-                                }
-                            @endphp
-                            <!-- Product {{ $loop->iteration }} -->
-                            <div style="width: 32%; padding: 10px 6px;">
-                                <a href="/goods/view?no={{ $product->goods_seq }}" style="display: block; position: relative;">
-                                    <span class="best_ab" style="position: absolute; z-index: 1; top: 0; left: 0;"><img
-                                            src="{{ asset('images/legacy/main/best_c_icon.png') }}"></span>
-                                    <img src="{{ $imgSrc }}"
-                                        style="width: 100%; height: 80px; border-radius: 15%; object-fit: cover;"
-                                        onerror="this.src='{{ asset('images/legacy/common/noimage.gif') }}';">
-                                </a>
-                            </div>
-                        @empty
-                             <!-- Fallback or Empty State -->
-                        @endforelse
-                    </div>
-                </div>
-
-                <!-- Bottom Part: Green Nature Slider -->
-                <div class="mds_recommand_roll mobile-full-width" onclick="location.href='/goods/catalog?code=01740017';"
-                    style="background-image: url('{{ asset('images/legacy/main/img/main_top_right2.png') }}?v={{ time() }}'); width: 291px; height: 194px; margin-top: 12px; cursor: pointer; position: relative;">
-
-                    <div class="innerBox" style="position: absolute; bottom: 0;">
-                        <div id="right_banner_slider_container" class="mobile-full-width" style="width: 291px;">
-                            <ul class="right_banner_slider">
-                                @forelse($specialRolling as $product)
-                                    @php
-                                        $imgSrc = asset('images/legacy/common/noimage.gif');
-                                        $targetPath = null;
-                                        
-                                        if ($product->images && $product->images->count() > 0) {
-                                            $targetImg = $product->images->where('image_type', 'list1')->first();
-                                            if (!$targetImg) $targetImg = $product->images->first();
-                                            if ($targetImg) $targetPath = $targetImg->image;
-                                        }
-                                        
-                                        if (empty($targetPath) && !empty($product->img_s)) {
-                                            $targetPath = $product->img_s;
-                                        }
-
-                                        if (!empty($targetPath)) {
-                                            $targetPath = trim($targetPath);
-                                            if (Str::startsWith($targetPath, 'http')) {
-                                                $imgSrc = $targetPath;
-                                            } elseif (Str::startsWith($targetPath, 'images/legacy_synced/')) {
-                                                $imgSrc = asset($targetPath);
-                                            } elseif (strpos($targetPath, 'goods_img') !== false) {
-                                                $suffix = substr($targetPath, strpos($targetPath, 'goods_img') + 9);
-                                                $imgSrc = "https://dmtusr.vipweb.kr/goods_img" . $suffix;
-                                            } else {
-                                                $imgSrc = 'http://dometopia.com/data/goods/' . $targetPath;
-                                            }
-                                        }
-
-                                        $priceLabel = '도매가';
-                                        if (Str::startsWith($product->goods_scode, 'GUS')) $priceLabel = '소매가';
-                                        elseif (Str::startsWith($product->goods_scode, 'GKQ')) $priceLabel = '특가';
-                                    @endphp
-                                    <li class="slide">
-                                        <table width="100%" border="0" style="table-layout: fixed;">
-                                            <tr>
-                                                <td align="left" width="100">
-                                                    <span style="display: block; width: 86px; height: 86px; overflow: hidden;">
-                                                        <a href="/goods/view?no={{ $product->goods_seq }}">
-                                                            <img src="{{ $imgSrc }}"
-                                                                width="86" height="86"
-                                                                style="object-fit: cover;"
-                                                                onerror="this.src='{{ asset('images/legacy/common/noimage.gif') }}';">
-                                                        </a>
-                                                    </span>
-                                                </td>
-                                                <td valign="top">
-                                                    <div style="margin-left: 5px; padding-right: 10px;">
-                                                        <p style="text-align: left; font-size: 12px; line-height: 12px; font-weight: bold; color: #444; display: block; margin-top: 0; margin-bottom: 5px; font-family: '맑은고딕','Malgun Gothic'; letter-spacing: -0.5px;">
-                                                            <a href="/goods/view?no={{ $product->goods_seq }}" style="color: #444; text-decoration: none;">{{ $product->goods_scode }}</a>
-                                                        </p>
-                                                        <h6 style="margin: 5px 0; font-size: 13px; line-height: 1.4; width: 100%; max-height: 2.8em; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; word-break: break-all; font-family: '맑은고딕','Malgun Gothic'; letter-spacing: -0.5px;">
-                                                            <a href="/goods/view?no={{ $product->goods_seq }}" style="color: #333; text-decoration: none;">{{ $product->goods_name }}</a>
-                                                        </h6>
-                                                        <p style="font-size: 12px; color: #888; font-family: '맑은고딕','Malgun Gothic'; margin-top: 5px; margin-bottom: 0; letter-spacing: -0.5px;">
-                                                            {{ $priceLabel }} <b style="color: #333; font-size: 14px;">{{ number_format($product->price) }}</b> 원
-                                                        </p>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </li>
-                                @empty
-                                    <li class="slide">
-                                        <div style="text-align: center; padding: 30px;">준비된 상품이 없습니다.</div>
-                                    </li>
-                                @endforelse
-                            </ul>
-                        </div>
-                    </div>
-                </div>
+            <!-- Replaced with Live Static Banners -->
+            <div style="width: 291px; margin-bottom: 12px;">
+                <a href="/goods/catalog?code=0177"><img src="{{ asset('images/legacy/main/img/main_top_right1_fruit.jpg') }}" onerror="this.src='https://dometopia.com/data/skin/beauty/main/img/main_top_right1_fruit.jpg'" style="width: 100%;"></a>
+            </div>
+            
+            <div style="width: 291px; margin-top: 12px;">
+                <a href="/goods/catalog?code=000500360008" target='_self'><img src="{{ asset('images/legacy/main/img/main_top_right2.jpg') }}" onerror="this.src='https://dometopia.com/data/skin/beauty/main/img/main_top_right2.jpg'" style="width: 100%;" title="썬캡" alt="썬캡"></a>
             </div>
         </div>
         
@@ -998,13 +876,7 @@
                         .designDisplay .item2 .price b { font-size:12px !important; font-weight:bold !important; letter-spacing:-0.3px; color:#f7601d;}
                         .designDisplay .title_tab { display: flex; justify-content: space-between; margin: 5px; }
                         
-                        /* Mobile Responsive Fixes for category popular goods */
-                        @media (max-width: 1219px) {
-                            .recommend_item > .group.middle { width: 100% !important; margin-bottom: 20px; }
-                            .designDisplay .item2 li { width: 30% !important; margin: 1.5%; min-height: 180px; }
-                            .designDisplay .item2 .thumb2 { width: 100%; height: auto; aspect-ratio: 1/1; }
-                            .designDisplay .item2 .thumb2 img { width: 100%; height: 100%; }
-                        }
+                        /* Removed @media query to force fixed desktop layout parity */
                     </style>
                     @foreach([7155, 7158, 7156, 7159, 7154, 7157] as $groupId)
                         @if(isset($categoryPopularGroups[$groupId]) && $categoryPopularGroups[$groupId]['products']->isNotEmpty())
@@ -1065,7 +937,7 @@
                                                                     </div>
                                                                     <span class="code">{{ $product->goods_scode }}</span>
                                                                     <h6 class="title">{{ $product->goods_name }}</h6>
-                                                                    <p class="price"><b>{{ number_format($product->price) }}</b></p>
+                                                                    <p class="price" style="text-align:center; word-spacing: normal;"><span style="color:#666; font-weight:normal;">도매가</span> <b>{{ number_format($product->price) }}</b>원</p>
                                                                 </a>
                                                             </li>
                                                         @endforeach
