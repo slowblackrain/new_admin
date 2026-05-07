@@ -779,6 +779,10 @@
                                             $targetPath = trim($targetPath);
                                             if (preg_match('/^http/', $targetPath)) $imgSrc = $targetPath;
                                             elseif (Str::startsWith($targetPath, 'images/legacy_synced/')) $imgSrc = asset($targetPath);
+                                            elseif (strpos($targetPath, 'goods_img') !== false) {
+                                                $suffix = substr($targetPath, strpos($targetPath, 'goods_img') + 9);
+                                                $imgSrc = "https://dmtusr.vipweb.kr/goods_img" . $suffix;
+                                            }
                                             else $imgSrc = 'http://dometopia.com/data/goods/' . $targetPath;
                                         }
                                     @endphp
@@ -815,6 +819,10 @@
                                             $targetPath = trim($targetPath);
                                             if (preg_match('/^http/', $targetPath)) $imgSrc = $targetPath;
                                             elseif (Str::startsWith($targetPath, 'images/legacy_synced/')) $imgSrc = asset($targetPath);
+                                            elseif (strpos($targetPath, 'goods_img') !== false) {
+                                                $suffix = substr($targetPath, strpos($targetPath, 'goods_img') + 9);
+                                                $imgSrc = "https://dmtusr.vipweb.kr/goods_img" . $suffix;
+                                            }
                                             else $imgSrc = 'http://dometopia.com/data/goods/' . $targetPath;
                                         }
                                     @endphp
