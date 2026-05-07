@@ -865,7 +865,7 @@
                         .designDisplay h5 { font-size:15px; font-weight:500; letter-spacing:-0.5px; margin:0 auto; text-align:left; margin-bottom:15px; color:#333; }
                         .designDisplay .container2 { margin:0 auto; overflow-y:hidden; }
                         .designDisplay .item2 { list-style: none; padding: 0; margin: 0; display: block; overflow: hidden; }
-                        .designDisplay .item2 li { float:left; width: 110px; margin:5px; font-family:'맑은고딕', 'Malgun Gothic', sans-serif; margin-bottom:25px;}
+                        .designDisplay .item2 li { float:left; width: 110px; margin:0 4px 25px 4px; font-family:'맑은고딕', 'Malgun Gothic', sans-serif;}
                         .designDisplay .item2 .thumb2 { width:100px; height:100px; overflow:hidden; background-color:#ddd; margin-bottom:10px; border: 1px solid #ededed; }
                         .designDisplay .item2 .thumb2 img { width:100px; height:100px; object-fit: cover; }
                         .designDisplay .item2 .code { font-size:12px; line-height:12px; font-weight:bold !important; color:#444 !important; display:block; margin-bottom:2px; font-family:'맑은고딕', 'Malgun Gothic', sans-serif;}
