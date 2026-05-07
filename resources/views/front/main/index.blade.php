@@ -759,13 +759,13 @@
                         <p>직수입 특가, 땡처리 상품은 한정 기간에만 판매되는 할인 상품입니다.</p>
                     </div>
 
-                    <div class="gtq" id="category_nav05">
+                    <div class="gtq" id="category_nav05" style="height: auto !important; padding-bottom: 15px;">
                         <a href="/goods/catalog?code=0147" target='_self'>
                             <img loading="lazy" src="{{ asset('images/legacy/main/bnr_gth.jpg') }}" alt="직수입 특가" style="width:100%; display:block;" />
                         </a>
                         <div>
                             <ul style="list-style: none; padding: 0; margin: 0;">
-                                @foreach($dadaDirectImportProducts->take(4) as $product)
+                                @foreach($dadaDirectImportProducts->take(8) as $product)
                                     @php
                                         $imgSrc = asset('images/legacy/common/noimage.gif');
                                         $targetPath = null;
@@ -803,13 +803,13 @@
                         </div>
                     </div>
 
-                    <div class="gtq2" id="category_nav06" style="margin-left:13px;">
+                    <div class="gtq2" id="category_nav06" style="margin-left:13px; height: auto !important; padding-bottom: 15px;">
                         <a href="https://dometopia.com/goods/catalog?code=0055" target='_self'>
                             <img loading="lazy" src="{{ asset('images/legacy/main/bnr_gtq.jpg') }}" title="땡처리 상품전" alt="땡처리 상품전" style="width:100%; display:block;" />
                         </a>
                         <div>
                             <ul style="list-style: none; padding: 0; margin: 0;">
-                                @foreach($dadaClearanceProducts->take(4) as $product)
+                                @foreach($dadaClearanceProducts->take(8) as $product)
                                     @php
                                         $imgSrc = asset('images/legacy/common/noimage.gif');
                                         $targetPath = null;
