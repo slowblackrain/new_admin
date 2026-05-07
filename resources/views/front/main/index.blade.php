@@ -782,12 +782,20 @@
                                             else $imgSrc = 'http://dometopia.com/data/goods/' . $targetPath;
                                         }
                                     @endphp
-                                    <li class="goodsDisplayItemWrap" style="padding: 0 !important; border: 0 !important;">
-                                        <div class="dada-thumb">
+                                    <li class="goodsDisplayItemWrap" style="padding: 0 !important; border: 0 !important; height: auto !important;">
+                                        <div class="dada-thumb" style="width:100px; height:100px; overflow:hidden; background-color:#ddd; margin-bottom:10px; border:1px solid #ededed;">
                                             <a href="/goods/view?no={{ $product->goods_seq }}" style="display: block; width: 100px; height: 100px;">
                                                 <img src="{{ $imgSrc }}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='{{ asset('images/legacy/common/noimage.gif') }}'">
                                             </a>
                                         </div>
+                                        <a href="/goods/view?no={{ $product->goods_seq }}" style="text-decoration:none;">
+                                            <h6 class="title" style="font-size:12px; line-height:14px; font-weight:bold; height:28px; color:#444 !important; display:-webkit-box; overflow:hidden; -webkit-line-clamp:2; -webkit-box-orient:vertical; margin:0; word-break:keep-all;">
+                                                {{ $product->goods_name }}
+                                            </h6>
+                                            <div class="price" style="font-size:13px; color:#f7601d; font-weight:800; margin-top:5px; font-family:'맑은고딕', 'Malgun Gothic', sans-serif;">
+                                                {{ number_format($product->price ?? $product->sale_price ?? 0) }}원
+                                            </div>
+                                        </a>
                                     </li>
                                 @endforeach
                             </ul>
@@ -818,12 +826,20 @@
                                             else $imgSrc = 'http://dometopia.com/data/goods/' . $targetPath;
                                         }
                                     @endphp
-                                    <li class="goodsDisplayItemWrap" style="padding: 0 !important; border: 0 !important;">
-                                        <div class="dada-thumb">
+                                    <li class="goodsDisplayItemWrap" style="padding: 0 !important; border: 0 !important; height: auto !important;">
+                                        <div class="dada-thumb" style="width:100px; height:100px; overflow:hidden; background-color:#ddd; margin-bottom:10px; border:1px solid #ededed;">
                                             <a href="/goods/view?no={{ $product->goods_seq }}" style="display: block; width: 100px; height: 100px;">
                                                 <img src="{{ $imgSrc }}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='{{ asset('images/legacy/common/noimage.gif') }}'">
                                             </a>
                                         </div>
+                                        <a href="/goods/view?no={{ $product->goods_seq }}" style="text-decoration:none;">
+                                            <h6 class="title" style="font-size:12px; line-height:14px; font-weight:bold; height:28px; color:#444 !important; display:-webkit-box; overflow:hidden; -webkit-line-clamp:2; -webkit-box-orient:vertical; margin:0; word-break:keep-all;">
+                                                {{ $product->goods_name }}
+                                            </h6>
+                                            <div class="price" style="font-size:13px; color:#f7601d; font-weight:800; margin-top:5px; font-family:'맑은고딕', 'Malgun Gothic', sans-serif;">
+                                                {{ number_format($product->price ?? $product->sale_price ?? 0) }}원
+                                            </div>
+                                        </a>
                                     </li>
                                 @endforeach
                             </ul>
