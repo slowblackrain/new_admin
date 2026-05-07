@@ -284,7 +284,6 @@ class HomeController extends Controller
             ->where('display_seq', $displaySeq)
             ->where('display_tab_index', 0)
             ->orderBy('display_tab_item_seq')
-            ->limit($limit)
             ->pluck('goods_seq')
             ->toArray();
 
@@ -294,12 +293,13 @@ class HomeController extends Controller
 
         $placeholders = implode(',', array_fill(0, count($orderedIds), '?'));
         
-            return Goods::where('goods_view', 'look')
-                ->where('goods_status', 'normal')
-                ->with(['option', 'images', 'activeIcons', 'defaultOption', 'defaultInfo'])
-                ->whereIn('goods_seq', $orderedIds)
-                ->orderByRaw("FIELD(goods_seq, $placeholders)", $orderedIds)
-                ->get();
+        return Goods::where('goods_view', 'look')
+            ->where('goods_status', 'normal')
+            ->with(['option', 'images', 'activeIcons', 'defaultOption', 'defaultInfo'])
+            ->whereIn('goods_seq', $orderedIds)
+            ->orderByRaw("FIELD(goods_seq, $placeholders)", $orderedIds)
+            ->limit($limit)
+            ->get();
         });
     }
 }
