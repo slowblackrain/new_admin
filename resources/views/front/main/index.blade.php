@@ -525,18 +525,14 @@
                 </div>
             </div>
 
-            <!-- GTD 베스트 // 롤링 (Removed to match live site) -->
-            <!--<div class="notice mobile-full-width" style="width: 291px; margin: 0; background-color: transparent; box-shadow: none;">
-                ...
-            </div>-->
-
-            <!-- Replaced with Live Static Banners -->
-            <div style="width: 291px; margin-bottom: 12px;">
-                <a href="/goods/catalog?code=0177"><img src="{{ asset('images/legacy/main/img/main_top_right1_fruit.jpg') }}" onerror="this.src='https://dometopia.com/data/skin/beauty/main/img/main_top_right1_fruit.jpg'" style="width: 100%;"></a>
-            </div>
-            
-            <div style="width: 291px; margin-top: 12px;">
-                <a href="/goods/catalog?code=000500360008" target='_self'><img src="{{ asset('images/legacy/main/img/main_top_right2.jpg') }}" onerror="this.src='https://dometopia.com/data/skin/beauty/main/img/main_top_right2.jpg'" style="width: 100%;" title="썬캡" alt="썬캡"></a>
+            <!-- GTD 베스트 // 롤링 (Legacy Parity) -->
+            <div class="notice" style="width: 291px !important;margin:0 !important;background-color: transparent !important;box-shadow: none !important; float:left;">
+                <div style="margin-top:0px;">
+                    <a href="/goods/catalog?code=0177"><img src="{{ asset('images/legacy/main/img/main_top_right1_fruit.jpg') }}" onerror="this.src='https://dometopia.com/data/skin/beauty/main/img/main_top_right1_fruit.jpg'" style="width: 100%;"></a>
+                </div>
+                <div style="margin-top:12px;">
+                    <a href="/goods/catalog?code=000500360008" target='_self'><img src="{{ asset('images/legacy/main/img/main_top_right2.jpg') }}" onerror="this.src='https://dometopia.com/data/skin/beauty/main/img/main_top_right2.jpg'" style="width: 100%;" title="썬캡" alt="썬캡"></a>
+                </div>
             </div>
         </div>
         
