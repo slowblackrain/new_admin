@@ -765,7 +765,7 @@
                         </a>
                         <div>
                             <ul style="list-style: none; padding: 0; margin: 0;">
-                                @foreach($dadaDirectImportProducts->take(8) as $product)
+                                @foreach($dadaDirectImportProducts->take(4) as $product)
                                     @php
                                         $imgSrc = asset('images/legacy/common/noimage.gif');
                                         $targetPath = null;
@@ -789,10 +789,10 @@
                                             </a>
                                         </div>
                                         <a href="/goods/view?no={{ $product->goods_seq }}" style="text-decoration:none;">
-                                            <h6 class="title" style="font-size:12px; line-height:14px; font-weight:bold; height:28px; color:#444 !important; display:-webkit-box; overflow:hidden; -webkit-line-clamp:2; -webkit-box-orient:vertical; margin:0; word-break:keep-all;">
+                                            <h6 class="title" style="font-size:12px; line-height:14px; font-weight:bold; height:28px; color:#444 !important; display:-webkit-box; overflow:hidden; -webkit-line-clamp:2; -webkit-box-orient:vertical; margin:0; word-break:keep-all; text-align:center;">
                                                 {{ $product->goods_name }}
                                             </h6>
-                                            <div class="price" style="font-size:13px; color:#f7601d; font-weight:800; margin-top:5px; font-family:'맑은고딕', 'Malgun Gothic', sans-serif;">
+                                            <div class="price" style="font-size:13px; color:#f7601d; font-weight:800; margin-top:5px; font-family:'맑은고딕', 'Malgun Gothic', sans-serif; text-align:center;">
                                                 {{ number_format($product->price ?? $product->sale_price ?? 0) }}원
                                             </div>
                                         </a>
@@ -809,7 +809,7 @@
                         </a>
                         <div>
                             <ul style="list-style: none; padding: 0; margin: 0;">
-                                @foreach($dadaClearanceProducts->take(8) as $product)
+                                @foreach($dadaClearanceProducts->take(4) as $product)
                                     @php
                                         $imgSrc = asset('images/legacy/common/noimage.gif');
                                         $targetPath = null;
@@ -833,10 +833,10 @@
                                             </a>
                                         </div>
                                         <a href="/goods/view?no={{ $product->goods_seq }}" style="text-decoration:none;">
-                                            <h6 class="title" style="font-size:12px; line-height:14px; font-weight:bold; height:28px; color:#444 !important; display:-webkit-box; overflow:hidden; -webkit-line-clamp:2; -webkit-box-orient:vertical; margin:0; word-break:keep-all;">
+                                            <h6 class="title" style="font-size:12px; line-height:14px; font-weight:bold; height:28px; color:#444 !important; display:-webkit-box; overflow:hidden; -webkit-line-clamp:2; -webkit-box-orient:vertical; margin:0; word-break:keep-all; text-align:center;">
                                                 {{ $product->goods_name }}
                                             </h6>
-                                            <div class="price" style="font-size:13px; color:#f7601d; font-weight:800; margin-top:5px; font-family:'맑은고딕', 'Malgun Gothic', sans-serif;">
+                                            <div class="price" style="font-size:13px; color:#f7601d; font-weight:800; margin-top:5px; font-family:'맑은고딕', 'Malgun Gothic', sans-serif; text-align:center;">
                                                 {{ number_format($product->price ?? $product->sale_price ?? 0) }}원
                                             </div>
                                         </a>
