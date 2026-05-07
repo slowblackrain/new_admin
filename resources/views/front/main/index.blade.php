@@ -858,14 +858,14 @@
                 </div>
 
             <!-- 카테고리 인기상품 (Full Width 1200px) -->
-            <div style="clear: both; width: 100%; margin-top: 30px; padding-bottom: 20px;">
-                <div class="marin-tit" style="padding: 20px 0 5px;"><b>카테고리</b>&nbsp; 인기상품</div>
-                <div class="recommend_item" id="category_nav07" style="display: flex; flex-wrap: wrap; justify-content: space-between; width: 100%;">
+            <div style="clear: both; width: 100%; padding-bottom: 20px;">
+                <div class="marin-tit"><b>카테고리</b>&nbsp; 인기상품</div>
+                <div class="recommend_item" id="category_nav07" style="display: flex; flex-wrap: wrap; justify-content: space-between; width: 100%; margin-top: 10px;">
                     <style>
                         .designDisplay h5 { font-size:15px; font-weight:500; letter-spacing:-0.5px; margin:0 auto; text-align:left; margin-bottom:15px; color:#333; }
                         .designDisplay .container2 { margin:0 auto; overflow-y:hidden; }
                         .designDisplay .item2 { list-style: none; padding: 0; margin: 0; display: block; overflow: hidden; }
-                        .designDisplay .item2 li { float:left; width: 110px; margin:0 4px 25px 4px !important; font-family:'맑은고딕', 'Malgun Gothic', sans-serif;}
+                        .designDisplay .item2 li { float:left; width: 110px; margin: 5px; font-family:'맑은고딕', 'Malgun Gothic', sans-serif; margin-bottom: 25px;}
                         .designDisplay .item2 .thumb2 { width:100px; height:100px; overflow:hidden; background-color:#ddd; margin-bottom:10px; border: 1px solid #ededed; }
                         .designDisplay .item2 .thumb2 img { width:100px; height:100px; object-fit: cover; }
                         .designDisplay .item2 .code { font-size:12px; line-height:12px; font-weight:bold !important; color:#444 !important; display:block; margin-bottom:2px; font-family:'맑은고딕', 'Malgun Gothic', sans-serif;}
@@ -878,7 +878,7 @@
                         }
                         .designDisplay .item2 .price { font-size:12px; color:#f7601d; font-weight:800; margin-top:5px; font-family:'맑은고딕', 'Malgun Gothic', sans-serif; word-spacing:-5px; text-align:center;}
                         .designDisplay .item2 .price b { font-size:12px !important; font-weight:bold !important; letter-spacing:-0.3px; color:#f7601d;}
-                        .designDisplay .title_tab { display: flex; justify-content: space-between; margin: 5px; }
+                        .designDisplay .title_tab { display: flex; justify-content: space-between; margin: 15px 10px 5px 0; }
                         
                         /* Removed @media query to force fixed desktop layout parity */
                     </style>
@@ -889,7 +889,7 @@
                                 $groupTitle = $group['title'];
                                 $products = $group['products'];
                             @endphp
-                            <div class="group middle" style="width: 386px; background-color: #fff; margin-bottom: 25px; box-sizing: border-box; padding: 15px 10px 0;">
+                            <div class="group middle" style="width: 32%; background-color: #fff; margin-bottom: 15px; border: 1px solid #e9ecef; padding-left: 12px; box-sizing: content-box;">
                                 <div class="designDisplay">
                                     <div class='title_tab'>
                                         <div>
