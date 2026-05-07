@@ -154,7 +154,7 @@ class HomeController extends Controller
 
     private function getDisplayProducts($displaySeq)
     {
-        return \Illuminate\Support\Facades\Cache::remember("display_products_{$displaySeq}", now()->addMinutes(10), function() use ($displaySeq) {
+        return \Illuminate\Support\Facades\Cache::remember("display_products_v2_{$displaySeq}", now()->addMinutes(10), function() use ($displaySeq) {
             // 0. Get Display General Info (for limit calculation)
             $displayInfo = \Illuminate\Support\Facades\DB::table('fm_design_display')
                 ->where('display_seq', $displaySeq)
