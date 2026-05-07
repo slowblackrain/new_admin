@@ -759,7 +759,7 @@
                         <p>직수입 특가, 땡처리 상품은 한정 기간에만 판매되는 할인 상품입니다.</p>
                     </div>
 
-                    <div class="gtq" id="category_nav05" style="height: auto !important; padding-bottom: 15px;">
+                    <div class="gtq" id="category_nav05">
                         <a href="/goods/catalog?code=0147" target='_self'>
                             <img loading="lazy" src="{{ asset('images/legacy/main/bnr_gth.jpg') }}" alt="직수입 특가" style="width:100%; display:block;" />
                         </a>
@@ -782,20 +782,12 @@
                                             else $imgSrc = 'http://dometopia.com/data/goods/' . $targetPath;
                                         }
                                     @endphp
-                                    <li class="goodsDisplayItemWrap" style="padding: 0 !important; border: 0 !important; height: auto !important;">
-                                        <div class="dada-thumb" style="width:100px; height:100px; overflow:hidden; background-color:#ddd; margin-bottom:10px; border:1px solid #ededed;">
+                                    <li class="goodsDisplayItemWrap" style="padding: 0 !important; border: 0 !important;">
+                                        <div class="dada-thumb">
                                             <a href="/goods/view?no={{ $product->goods_seq }}" style="display: block; width: 100px; height: 100px;">
                                                 <img src="{{ $imgSrc }}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='{{ asset('images/legacy/common/noimage.gif') }}'">
                                             </a>
                                         </div>
-                                        <a href="/goods/view?no={{ $product->goods_seq }}" style="text-decoration:none;">
-                                            <h6 class="title" style="font-size:12px; line-height:14px; font-weight:bold; height:28px; color:#444 !important; display:-webkit-box; overflow:hidden; -webkit-line-clamp:2; -webkit-box-orient:vertical; margin:0; word-break:keep-all; text-align:center;">
-                                                {{ $product->goods_name }}
-                                            </h6>
-                                            <div class="price" style="font-size:13px; color:#f7601d; font-weight:800; margin-top:5px; font-family:'맑은고딕', 'Malgun Gothic', sans-serif; text-align:center;">
-                                                {{ number_format($product->price ?? $product->sale_price ?? 0) }}원
-                                            </div>
-                                        </a>
                                     </li>
                                 @endforeach
                             </ul>
@@ -803,7 +795,7 @@
                         </div>
                     </div>
 
-                    <div class="gtq2" id="category_nav06" style="margin-left:13px; height: auto !important; padding-bottom: 15px;">
+                    <div class="gtq2" id="category_nav06" style="margin-left:13px;">
                         <a href="https://dometopia.com/goods/catalog?code=0055" target='_self'>
                             <img loading="lazy" src="{{ asset('images/legacy/main/bnr_gtq.jpg') }}" title="땡처리 상품전" alt="땡처리 상품전" style="width:100%; display:block;" />
                         </a>
@@ -826,20 +818,12 @@
                                             else $imgSrc = 'http://dometopia.com/data/goods/' . $targetPath;
                                         }
                                     @endphp
-                                    <li class="goodsDisplayItemWrap" style="padding: 0 !important; border: 0 !important; height: auto !important;">
-                                        <div class="dada-thumb" style="width:100px; height:100px; overflow:hidden; background-color:#ddd; margin-bottom:10px; border:1px solid #ededed;">
+                                    <li class="goodsDisplayItemWrap" style="padding: 0 !important; border: 0 !important;">
+                                        <div class="dada-thumb">
                                             <a href="/goods/view?no={{ $product->goods_seq }}" style="display: block; width: 100px; height: 100px;">
                                                 <img src="{{ $imgSrc }}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='{{ asset('images/legacy/common/noimage.gif') }}'">
                                             </a>
                                         </div>
-                                        <a href="/goods/view?no={{ $product->goods_seq }}" style="text-decoration:none;">
-                                            <h6 class="title" style="font-size:12px; line-height:14px; font-weight:bold; height:28px; color:#444 !important; display:-webkit-box; overflow:hidden; -webkit-line-clamp:2; -webkit-box-orient:vertical; margin:0; word-break:keep-all; text-align:center;">
-                                                {{ $product->goods_name }}
-                                            </h6>
-                                            <div class="price" style="font-size:13px; color:#f7601d; font-weight:800; margin-top:5px; font-family:'맑은고딕', 'Malgun Gothic', sans-serif; text-align:center;">
-                                                {{ number_format($product->price ?? $product->sale_price ?? 0) }}원
-                                            </div>
-                                        </a>
                                     </li>
                                 @endforeach
                             </ul>
