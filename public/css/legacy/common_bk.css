@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css?family=Nanum+Gothic|Roboto');
+@import url('https://fonts.googleapis.com/css?family=Nanum+Gothic|Roboto&display=swap');
 
 /*Edge 배경픽스 버그 해결*/
 @supports ( -ms-accelerator:true )

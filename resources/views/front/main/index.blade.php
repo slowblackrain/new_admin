@@ -589,28 +589,28 @@
         <!-- Live site uses a specific 4-image banner section here instead of the dynamic middle banners -->
         <div class="mt13" style="padding-top: 12px !important; display: flex; justify-content: space-between; margin-bottom: 20px;">
             <a href="/goods/catalog?code=004200200001" target='_self'>
-                <img src="{{ asset('images/legacy/main/main_top_B1.jpg') }}" title="크리스마스 장식품" alt="크리스마스 장식품" style="width:100%;">
+                <img loading="lazy" decoding="async" src="{{ asset('images/legacy/main/main_top_B1.jpg') }}" title="크리스마스 장식품" alt="크리스마스 장식품" style="width:100%;">
             </a>
             <a href="/goods/catalog?code=00420033" target='_self'>
-                <img src="{{ asset('images/legacy/main/main_top_B2.jpg') }}" title="산타복" alt="산타복" style="width:100%;">
+                <img loading="lazy" decoding="async" src="{{ asset('images/legacy/main/main_top_B2.jpg') }}" title="산타복" alt="산타복" style="width:100%;">
             </a>
             <a href="/goods/search?search_text=칫솔" target='_self'>
-                <img src="{{ asset('images/legacy/main/main_top_B3.jpg') }}" title="수제 장식용 볼" alt="수제 장식용 볼" style="width:100%;">
+                <img loading="lazy" decoding="async" src="{{ asset('images/legacy/main/main_top_B3.jpg') }}" title="수제 장식용 볼" alt="수제 장식용 볼" style="width:100%;">
             </a>
             <a href="/goods/catalog?code=0020002300010001" target='_self'>
-                <img src="{{ asset('images/legacy/main/main_top_B4.jpg') }}" title="LED 트리" alt="LED 트리" style="width:100%;">
+                <img loading="lazy" decoding="async" src="{{ asset('images/legacy/main/main_top_B4.jpg') }}" title="LED 트리" alt="LED 트리" style="width:100%;">
             </a>
         </div>
 
         <!-- 사업부 4가지 -->
         <div class="bnr_slide1">
-            <a href="/board/?id=bulkorder" target="_self"><img src="{{ asset('images/legacy/main/n_bnr_tile01.jpg') }}"
+            <a href="/board/?id=bulkorder" target="_self"><img loading="lazy" decoding="async" src="{{ asset('images/legacy/main/n_bnr_tile01.jpg') }}"
                     title="띠배너01" alt="B2B 대량구매ㆍ대량견적 상담"></a>
-            <a href="/page/index?tpl=etc/school_29.html#academy-3" target="_self"><img
+            <a href="/page/index?tpl=etc/school_29.html#academy-3" target="_self"><img loading="lazy" decoding="async" 
                     src="{{ asset('images/legacy/main/n_bnr_tile02.jpg') }}" title="띠배너03" alt="쿠팡 로켓그로스 브랜드 개발"></a>
-            <a href="/page/index?tpl=etc/school_29.html" target="_self"><img
+            <a href="/page/index?tpl=etc/school_29.html" target="_self"><img loading="lazy" decoding="async" 
                     src="{{ asset('images/legacy/main/n_bnr_tile03.jpg') }}" title="띠배너03" alt="오토셀러"></a>
-            <a href="https://www.youtube.com/@dometopia-tv" target="_blank"><img
+            <a href="https://www.youtube.com/@dometopia-tv" target="_blank"><img loading="lazy" decoding="async" 
                     src="{{ asset('images/legacy/main/n_bnr_tile04.jpg') }}" title="띠배너03" alt="도토창업아카데미"></a>
         </div>
 
@@ -741,13 +741,13 @@
             <!-- 판촉물, 해외직구 -->
             <div class="mdswrap clearfix">
                     <div class="section_mds right" id="category_nav03">
-                        <div class="mdsbnr"><a href="/goods/catalog?code=0139"><img
+                        <div class="mdsbnr"><a href="/goods/catalog?code=0139"><img loading="lazy" decoding="async" 
                                     src="{{ asset('images/legacy/main/bnr_free_eve.jpg') }}" alt="프리세일 상품관"
                                     style="width:100%;" /></a></div>
                     </div>
 
                     <div class="section_mds left" id="category_nav02">
-                        <div class="mdsbnr"><a href="/gift" target='_self'><img
+                        <div class="mdsbnr"><a href="/gift" target='_self'><img loading="lazy" decoding="async" 
                                     src="{{ asset('images/legacy/main/bnr_mds_gift.jpg') }}" alt="인쇄 판촉물"
                                     style="width:100%;" /></a></div>
                     </div>
@@ -789,7 +789,7 @@
                                     <li class="goodsDisplayItemWrap" style="padding: 0 !important; border: 0 !important;">
                                         <div class="dada-thumb">
                                             <a href="/goods/view?no={{ $product->goods_seq }}" style="display: block; width: 100px; height: 100px;">
-                                                <img src="{{ $imgSrc }}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='{{ asset('images/legacy/common/noimage.gif') }}'">
+                                                <img src="{{ $imgSrc }}" loading="lazy" decoding="async" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='{{ asset('images/legacy/common/noimage.gif') }}'">
                                             </a>
                                         </div>
                                     </li>

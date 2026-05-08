@@ -68,7 +68,7 @@
                     }
                     // ------------------------
                 @endphp
-                <img src="{{ $imgSrc }}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='{{ asset('images/legacy/common/noimage.gif') }}'">
+                <img src="{{ $imgSrc }}" loading="lazy" decoding="async" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='{{ asset('images/legacy/common/noimage.gif') }}'">
             </a>
             <div class="goodsDisplayQuickMenu">
                 <span class="goodsDisplayQuickIcon">

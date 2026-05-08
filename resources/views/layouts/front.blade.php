@@ -39,8 +39,8 @@
     <x-layout.footer />
 
     @stack('scripts')
-    <script src="{{ asset('js/legacy/goods-display-doto.js') }}"></script>
-    <script src="{{ asset('js/quick_menu.js') }}"></script>
+    <script src="{{ asset('js/legacy/goods-display-doto.js') }}" defer></script>
+    <script src="{{ asset('js/quick_menu.js') }}" defer></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             QuickMenu.init('{{ csrf_token() }}');
