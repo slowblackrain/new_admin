@@ -1,18 +1,22 @@
 <?php
-require __DIR__ . '/vendor/autoload.php';
-$app = require_once __DIR__ . '/bootstrap/app.php';
-$kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
-$kernel->handle(Illuminate\Http\Request::capture());
+require 'c:\dometopia\new_admin\vendor\autoload.php';
+$app = require_once 'c:\dometopia\new_admin\bootstrap\app.php';
+$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
+$kernel->bootstrap();
 
 use Illuminate\Support\Facades\DB;
 
-$tables = DB::select('SHOW TABLES LIKE "fm_%"');
-$found = [];
-foreach ($tables as $t) {
-    $val = array_values((array)$t)[0];
-    if (strpos($val, 'offer') !== false || strpos($val, 'scm_order') !== false || strpos($val, 'autoorder') !== false) {
-        $found[] = $val;
-    }
-}
-$tables = DB::select('DESCRIBE fm_manager');
-print_r($tables);
+$cols1 = DB::select("SHOW COLUMNS FROM fm_scm_order");
+echo "fm_scm_order columns:\n";
+foreach($cols1 as $c) echo $c->Field . ", ";
+echo "\n\n";
+
+$cols2 = DB::select("SHOW COLUMNS FROM fm_scm_order_goods");
+echo "fm_scm_order_goods columns:\n";
+foreach($cols2 as $c) echo $c->Field . ", ";
+echo "\n\n";
+
+$cols3 = DB::select("SHOW COLUMNS FROM fm_scm_autoorder_order");
+echo "fm_scm_autoorder_order columns:\n";
+foreach($cols3 as $c) echo $c->Field . ", ";
+echo "\n\n";
