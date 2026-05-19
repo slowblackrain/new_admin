@@ -259,28 +259,31 @@
         .paging_area nav {
             display: inline-block;
         }
-        .paging_area ul.pagination {
+        .paging_area ul {
             list-style: none !important;
-            padding: 0;
-            margin: 0;
-            display: flex;
+            padding: 0 !important;
+            margin: 0 !important;
+            display: flex !important;
+            flex-direction: row !important;
             justify-content: center;
             align-items: center;
         }
-        .paging_area ul.pagination li {
-            margin: 0;
-            padding: 0;
-            width: auto;
-            border: none;
+        .paging_area ul li {
+            margin: 0 2px !important;
+            padding: 0 !important;
+            width: auto !important;
+            border: none !important;
+            display: block !important;
         }
-        .paging_area ul.pagination li::before {
-            content: none;
+        .paging_area ul li::before {
+            content: none !important;
+            display: none !important;
         }
         /* Style links */
-        .paging_area a.page-link, .paging_area span.page-link {
+        .paging_area a, .paging_area span, .paging_area a.page-link, .paging_area span.page-link {
             display: inline-block;
             padding: 5px 10px;
-            margin: 0 2px;
+            margin: 0;
             border: 1px solid #ddd;
             color: #666;
             text-decoration: none;
@@ -289,13 +292,13 @@
             background: #fff;
             line-height: 1.5;
         }
-        .paging_area .active span.page-link {
+        .paging_area .active span, .paging_area .active span.page-link {
             background-color: #444;
             color: #fff;
             border: 1px solid #444;
             font-weight: bold;
         }
-        .paging_area a.page-link:hover {
+        .paging_area a:hover, .paging_area a.page-link:hover {
             border-color: #888;
             color: #333;
         }
