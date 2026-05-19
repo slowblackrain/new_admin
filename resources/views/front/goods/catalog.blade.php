@@ -259,16 +259,25 @@
         .paging_area nav {
             display: inline-block;
         }
-        .paging_area .relative { 
-            display: inline-flex; 
+        .paging_area ul.pagination {
+            list-style: none !important;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
-        /* Hide the huge SVG/Tailwind default arrows if they appear unstyled */
-        .paging_area svg {
-            width: 15px; height: 15px; display: inline-block; vertical-align: middle;
-            color: #555;
+        .paging_area ul.pagination li {
+            margin: 0;
+            padding: 0;
+            width: auto;
+            border: none;
+        }
+        .paging_area ul.pagination li::before {
+            content: none;
         }
         /* Style links */
-        .paging_area a, .paging_area span {
+        .paging_area a.page-link, .paging_area span.page-link {
             display: inline-block;
             padding: 5px 10px;
             margin: 0 2px;
@@ -277,14 +286,16 @@
             text-decoration: none;
             font-size: 12px;
             border-radius: 0; /* Legacy square style */
+            background: #fff;
+            line-height: 1.5;
         }
-        .paging_area span[aria-current="page"], .paging_area .active {
+        .paging_area .active span.page-link {
             background-color: #444;
             color: #fff;
             border: 1px solid #444;
             font-weight: bold;
         }
-        .paging_area a:hover {
+        .paging_area a.page-link:hover {
             border-color: #888;
             color: #333;
         }

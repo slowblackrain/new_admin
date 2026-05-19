@@ -317,5 +317,48 @@
             text-align: center;
             margin-top: 30px;
         }
+        .paging_area nav {
+            display: inline-block;
+        }
+        .paging_area ul.pagination {
+            list-style: none !important;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .paging_area ul.pagination li {
+            margin: 0;
+            padding: 0;
+            width: auto;
+            border: none;
+            float: none;
+        }
+        .paging_area ul.pagination li::before {
+            content: none;
+        }
+        .paging_area a.page-link, .paging_area span.page-link {
+            display: inline-block;
+            padding: 5px 10px;
+            margin: 0 2px;
+            border: 1px solid #ddd;
+            color: #666;
+            text-decoration: none;
+            font-size: 12px;
+            border-radius: 0;
+            background: #fff;
+            line-height: 1.5;
+        }
+        .paging_area .active span.page-link {
+            background-color: #444;
+            color: #fff;
+            border: 1px solid #444;
+            font-weight: bold;
+        }
+        .paging_area a.page-link:hover {
+            border-color: #888;
+            color: #333;
+        }
     </style>
 @endsection
