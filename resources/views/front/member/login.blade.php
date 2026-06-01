@@ -38,7 +38,16 @@
 
                 {{-- Right Side / Banner --}}
                 <div class="fright" style="width: 300px; padding-top: 20px;">
-                    <div class="non-member-wrap" style="background: #f9f9f9; padding: 20px; text-align: center;">
+                    @if(request('return_url'))
+                        <div class="non-member-wrap" style="background: #f9f9f9; padding: 20px; text-align: center; margin-bottom: 20px; border: 1px solid #ddd;">
+                            <h3 style="font-size: 16px; font-weight: bold; color: #333;">비회원 주문</h3>
+                            <p style="font-size: 12px; color: #888; margin: 10px 0; line-height: 1.4;">비회원으로 구매하시면 할인 등의<br>회원 혜택이 적용되지 않습니다.</p>
+                            <a href="{{ request('return_url') }}" class="btn"
+                                style="display: inline-block; padding: 10px 20px; background: #ef305e; color: #fff; font-size: 14px; font-weight: bold; text-decoration: none; border-radius: 3px;">비회원으로 구매하기</a>
+                        </div>
+                    @endif
+
+                    <div class="non-member-wrap" style="background: #f9f9f9; padding: 20px; text-align: center; border: 1px solid #ddd;">
                         <h3>비회원 주문조회</h3>
                         <p style="font-size: 12px; color: #888; margin: 10px 0;">비회원은 주문번호와 이메일로<br>조회할 수 있습니다.</p>
                         <a href="#" class="btn"

@@ -429,6 +429,14 @@ class CartController extends Controller
 
             DB::commit();
 
+            if ($request->input('direct_buy') === 'Y') {
+                $orderUrl = route('order.form_get', ['cart_seq' => $createdCartSeqs ?? []]);
+                if (!Auth::check()) {
+                    return redirect()->route('login', ['return_url' => $orderUrl]);
+                }
+                return redirect($orderUrl);
+            }
+
             if ($request->ajax()) {
                 return response()->json([
                     'status' => 'success', 
