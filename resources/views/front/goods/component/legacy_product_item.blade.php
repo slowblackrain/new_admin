@@ -22,10 +22,10 @@
     }
     if (!$imagePath) $imagePath = asset('images/no_image.gif');
 
-    // Thumbnail Logic (Get up to 3 distinct 'thumb' images)
+    // Thumbnail Logic (Get up to 5 distinct 'thumb' images)
     $thumbs = $product->images->filter(function($img) {
         return \Illuminate\Support\Str::startsWith($img->image_type, 'thumb');
-    })->take(3);
+    })->take(5);
     
     // Price Logic (Fallback handling)
     $price = $product->price; 
