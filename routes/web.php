@@ -36,8 +36,8 @@ Route::get('/test/force-login/{userid}', function ($userid) {
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
-Route::get('/login', function () {
-    return redirect()->route('member.login');
+Route::get('/login', function (\Illuminate\Http\Request $request) {
+    return redirect()->route('member.login', $request->query());
 })->name('login');
 
 // Front & Member Routes
@@ -382,6 +382,11 @@ Route::prefix('payment')->name('payment.')->group(function () {
     Route::any('/fail', [App\Http\Controllers\Front\PaymentController::class, 'fail'])->name('fail');
     Route::any('/pairing/receive', [App\Http\Controllers\Front\PaymentController::class, 'pairingReceive'])->name('pairing.receive');
     Route::post('/webhook', [App\Http\Controllers\Front\PaymentController::class, 'tossWebhook'])->name('webhook');
+    
+    // PortOne V2 Routes
+    Route::any('/portone/success', [App\Http\Controllers\Front\PaymentController::class, 'portoneSuccess'])->name('portone.success');
+    Route::any('/portone/fail', [App\Http\Controllers\Front\PaymentController::class, 'portoneFail'])->name('portone.fail');
+    Route::post('/portone/webhook', [App\Http\Controllers\Front\PaymentController::class, 'portoneWebhook'])->name('portone.webhook');
 });
 
 /*
