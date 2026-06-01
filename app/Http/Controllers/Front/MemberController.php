@@ -79,6 +79,10 @@ class MemberController extends Controller
             // Login Success
             \Illuminate\Support\Facades\Auth::login($member);
 
+            if ($request->filled('return_url')) {
+                return redirect($request->input('return_url'));
+            }
+
             return redirect()->route('home');
         } else {
             // [방어 로직 3] 로그인 실패 시 fm_member_login_fail 에 기록
