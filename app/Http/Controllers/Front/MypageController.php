@@ -12,8 +12,53 @@ class MypageController extends Controller
 {
     public function index()
     {
-        // For now, redirect to order list as the main dashboard feature
-        return redirect()->route('mypage.order.list');
+        $user = Auth::user();
+
+        // 1. 진행중인 주문 수 (step 15, 25, 35, 45, 55)
+        $orderCount = Order::where('member_seq', $user->member_seq)
+            ->whereIn('step', [15, 25, 35, 45, 55])
+            ->count();
+
+        // 2. 교환, 반품 (step 81, 82, 91, 95)
+        $claimCount = Order::where('member_seq', $user->member_seq)
+            ->whereIn('step', [81, 82, 91, 95])
+            ->count();
+
+        // 3. 할인쿠폰 수
+        $couponCount = \App\Models\CouponDownload::where('member_seq', $user->member_seq)
+            ->where('use_status', 'unused')
+            ->count();
+
+        // 4. 장바구니 수
+        $cartCount = \App\Models\Cart::currentUser()->count();
+
+        // 5. 위시리스트 수
+        $wishCount = \App\Models\Wish::currentUser()->count();
+
+        // 6. 최근 주문내역 (5건)
+        $recentOrders = Order::where('member_seq', $user->member_seq)
+            ->with(['items'])
+            ->orderBy('regist_date', 'desc')
+            ->take(5)
+            ->get();
+
+        // 7. 최근 문의사항 (5건)
+        $recentQuestions = \App\Models\Board::where('boardid', 'mbqna')
+            ->where('mseq', $user->member_seq)
+            ->orderBy('r_date', 'desc')
+            ->take(5)
+            ->get();
+
+        return view('front.mypage.index', compact(
+            'user',
+            'orderCount',
+            'claimCount',
+            'couponCount',
+            'cartCount',
+            'wishCount',
+            'recentOrders',
+            'recentQuestions'
+        ))->with('title', '마이페이지');
     }
 
     public function withdrawForm()
