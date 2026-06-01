@@ -115,6 +115,33 @@
         font-weight: bold;
     }
 
+    /* 인쇄시안 문의 및 대량견적 계좌 수직 정렬(Vertical Align) 정밀 보정 */
+    #doto_footer .footer-contents .foot_left .foot-middle {
+        display: flex !important;
+        align-items: center !important;
+        flex-wrap: wrap !important;
+        height: auto !important;
+        padding: 15px 0 !important;
+    }
+    #doto_footer .footer-contents .foot_left .foot-middle .print_left,
+    #doto_footer .footer-contents .foot_left .foot-middle .print_right {
+        display: inline-flex !important;
+        align-items: center !important;
+        height: 25px !important;
+    }
+    #doto_footer .footer-contents .foot_left .foot-middle * {
+        display: inline-flex !important;
+        align-items: center !important;
+        vertical-align: middle !important;
+    }
+    #doto_footer .footer-contents .foot_left .foot-middle i {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin: 0 14px !important;
+        height: 25px !important;
+    }
+
     .mobile-footer {
         display: none;
         background: #f9f9f9;
