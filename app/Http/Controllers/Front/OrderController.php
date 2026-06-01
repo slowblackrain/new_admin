@@ -34,6 +34,12 @@ class OrderController extends Controller
 
     public function index(Request $request)
     {
+        // [비회원 가드] 로그인하지 않은 유저가 guest 파라미터 없이 결제창에 진입하면 로그인창으로 리다이렉트
+        if (!Auth::check() && !$request->has('guest')) {
+            $returnUrl = route('order.form_get', ['cart_seq' => $request->input('cart_seq') ?? []]);
+            return redirect()->route('login', ['return_url' => $returnUrl]);
+        }
+
         // 1. Validate Input (Cart Seqs)
         // If coming from cart form submit or from a validation redirect back()
         $cart_seqs = $request->input('cart_seq') ?? old('cart_seq');
@@ -43,10 +49,20 @@ class OrderController extends Controller
         }
 
         // 2. Fetch Cart Items
-        $cartItems = Cart::currentUser()
-            ->whereIn('cart_seq', $cart_seqs)
-            ->with(['goods.images', 'goods.option', 'options'])
-            ->get();
+        // 비회원 세션 유실 방어: 명시적인 cart_seqs가 전달된 경우, 세션 ID 불일치 이슈를 우회하기 위해
+        // 비회원(member_seq = 0) 데이터이거나 로그인한 본인 데이터라면 안전하게 조회를 허용합니다.
+        $query = Cart::whereIn('cart_seq', $cart_seqs);
+        
+        if (Auth::check()) {
+            $query->where('member_seq', Auth::id());
+        } else {
+            $query->where(function($q) {
+                $q->where('session_id', \Illuminate\Support\Facades\Session::getId())
+                  ->orWhere('member_seq', 0);
+            });
+        }
+
+        $cartItems = $query->with(['goods.images', 'goods.option', 'options'])->get();
 
         if ($cartItems->isEmpty()) {
             return redirect()->route('cart.index')->withErrors(['msg' => '선택된 상품이 존재하지 않습니다.']);
