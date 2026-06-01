@@ -110,6 +110,21 @@
 </div>
 
 <style>
+    /* Footer Menu Parity Refinement */
+    #doto_footer .f_nav .menu a {
+        text-decoration: none !important;
+        color: #666;
+        transition: color 0.15s ease-in-out;
+    }
+    #doto_footer .f_nav .menu a:hover {
+        color: #117fc6 !important;
+        text-decoration: underline !important;
+    }
+    #doto_footer .f_nav .menu li a b {
+        color: #111;
+        font-weight: bold;
+    }
+
     .mobile-footer {
         display: none;
         background: #f9f9f9;
