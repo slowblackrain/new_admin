@@ -128,15 +128,6 @@
                     <div class="slides_container"
                         style="position: relative; border:1px solid #E2E2E2; margin:auto; width:100%; min-height:300px; text-align:center;">
                         
-                        {{-- Absolute overlay for badges --}}
-                        @if(!empty($icons))
-                        <div style="position: absolute; top: 10px; left: 10px; z-index: 10; display: flex; flex-direction: column; gap: 4px; text-align: left;">
-                            @foreach($icons as $iconSrc)
-                                <img src="{{ $iconSrc }}" alt="icon" style="vertical-align:top;" />
-                            @endforeach
-                        </div>
-                        @endif
-
                         @php
                             $viewImage = $product->images->where('image_type', 'view')->first();
                             $imgSrc = '/images/no_image.gif';
@@ -454,19 +445,18 @@
                                                     </thead>
                                                     <tbody>
                                                         <tr>
-                                                            <td class="gst_td">
+                                                            <td class="gst_td" style="font-size: 13px; color: #666; font-weight: normal; border-right:1px solid #eee; text-align: center;">
                                                                 @if($hundred_ea > 0) {{ number_format($hundred_price) }} 원 @else
                                                                 {{ number_format($sale_price) }} 원 @endif
                                                             </td>
-                                                            <td class="gst_td">
+                                                            <td class="gst_td" style="font-size: 13px; color: #666; font-weight: normal; border-right:1px solid #eee; text-align: center;">
                                                                 @if($fifty_ea > 0) {{ number_format($fifty_price) }} 원 @else
                                                                 {{ number_format($sale_price) }} 원 @endif
                                                             </td>
-                                                            <td class="gst_td">
-                                                                <span
-                                                                    class="price_red" style="color: #d32f2f; font-weight: bold; font-size: 15px;">{{ number_format($ori_price - $mtype_discount) }} 원</span>
+                                                            <td class="gst_td" style="font-size: 17px; color: #d32f2f; font-weight: bold; border-right:1px solid #eee; text-align: center;">
+                                                                {{ number_format($ori_price - $mtype_discount) }} 원
                                                             </td>
-                                                            <td class="gst_td">
+                                                            <td class="gst_td" style="font-size: 13px; color: #888; font-weight: normal; text-align: center;">
                                                                 {{ number_format($ori_price) }} 원
                                                             </td>
                                                         </tr>
