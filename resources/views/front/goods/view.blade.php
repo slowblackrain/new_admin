@@ -252,6 +252,18 @@
                             @endif
                         </div>
 
+                        @php
+                            // Dedup options based on name and price
+                            $optionsRaw = $product->option;
+                            $options = $optionsRaw->unique(function ($item) {
+                                return $item->option1 . $item->option2 . $item->option3 . $item->option4 . $item->option5 . $item->price;
+                            });
+
+                            $hasOptions = $options->count() > 1; 
+                            $defaultOption = $options->first();
+                            $defaultSeq = $defaultOption ? $defaultOption->option_seq : '';
+                        @endphp
+
                         {{-- Price Info Table --}}
                         <table class="goods_spec_table" width="100%">
                             <tr style="width:15%; border-top: 2px solid #000;">
@@ -467,11 +479,28 @@
                                     </td>
                                 @endif
                             </tr>
+                        </table> {{-- 1차 스펙 테이블(단가표) 즉시 종료 --}}
 
-                            {{-- [LEGACY PARITY] Minimum Purchase Quantity Row --}}
+                        {{-- [LEGACY PARITY] 기업회원 우대 정책 배너를 단가표 바로 아래로 전격 이동 --}}
+                        @if(!session('gubun'))
+                        <div class="option-box2" style="margin-top:15px; padding:10px 0; border-top: 1px solid #eee; text-align: left;">
+                            <a href="/page/index?tpl=etc/business_info.html" target="_blank" style="display: inline-block; vertical-align: middle;">
+                                <img src="/images/legacy/asset/wholesale6.jpg" alt="기업회원 우대 정책">
+                            </a>
+                            <span style="font-size:12px; color:#666; margin: 0 10px; display: inline-block; vertical-align: middle;">
+                                ※기업(판매, 구매) 회원가입시 수량과 관계없이 <span style="color:red; font-weight:bold;">도매가</span>로 구매할 수 있습니다.
+                            </span>
+                            <a href="/member/agreement" target="_blank" style="display: inline-block; vertical-align: middle;">
+                                <img src="/images/legacy/asset/agreement6.jpg" alt="회원가입">
+                            </a>
+                        </div>
+                        @endif
+
+                        {{-- [LEGACY PARITY] 최소구매수량, 구매수량, 상품정보를 묶은 2차 통합 스펙 테이블 신설 --}}
+                        <table class="goods_spec_table" width="100%" style="margin-top: 15px; border-top: 1px solid #eee;">
                             <tr>
-                                <th class="gst_th">최소구매수량</th>
-                                <td colspan="6" class="gst_td">
+                                <th class="gst_th" style="width:15%;">최소구매수량</th>
+                                <td class="gst_td" style="padding-left:10px; text-align: left;">
                                     @if($product->min_purchase_limit == 'limit' && $product->min_purchase_ea > 0)
                                         {{ number_format($product->min_purchase_ea) }}개
                                     @else
@@ -479,39 +508,28 @@
                                     @endif
                                 </td>
                             </tr>
-
-                            {{-- Shipping Info Row --}}
+                            @if(!$hasOptions)
                             <tr>
-                                <th class="gst_th">배송비</th>
-                                <td colspan="6" class="gst_td">
-                                    @if($shippingInfo['is_free'])
-                                        <span class="price_blue" style="font-weight:bold;">무료배송</span>
-                                        (주문금액 {{ number_format($shippingInfo['threshold']) }}원 이상)
-                                    @else
-                                        <span style="font-weight:bold;">{{ number_format($shippingInfo['base_cost']) }}원</span>
-                                        <span
-                                            style="color:#888; font-size:12px;">({{ number_format($shippingInfo['threshold']) }}원
-                                            이상 구매 시 무료)</span>
-                                    @endif
+                                <th class="gst_th" style="width:15%;">구매수량</th>
+                                <td class="gst_td" style="padding-left:10px; text-align: left;">
+                                    <div class="quantity-controller" style="display: inline-flex; align-items: center; border: 1px solid #ccc; border-radius: 3px; overflow: hidden; height: 32px; background: #fff;">
+                                        <button type="button" onclick="decreaseQty()" style="width: 32px; height: 100%; border: none; background: #fff; font-size: 16px; font-weight: bold; cursor: pointer; color: #555; display: flex; align-items: center; justify-content: center; outline: none; border-right: 1px solid #ccc;">-</button>
+                                        <input type="text" id="default_qty" value="1" readonly style="width: 50px; height: 100%; border: none; text-align: center; font-size: 14px; font-weight: bold; outline: none; background: #fff; color:#333;">
+                                        <button type="button" onclick="increaseQty()" style="width: 32px; height: 100%; border: none; background: #fff; font-size: 16px; font-weight: bold; cursor: pointer; color: #555; display: flex; align-items: center; justify-content: center; outline: none; border-left: 1px solid #ccc;">+</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            @endif
+                            <tr>
+                                <th class="gst_th" style="width:15%;">상품정보</th>
+                                <td class="gst_td" style="padding-left:10px; text-align: left;">
+                                    <a href="#detail" style="color: #666; text-decoration: none; display: inline-flex; align-items: center; justify-content: space-between; width: 100%; max-width: 250px;" onclick="switchTab('detail')">
+                                        <span>전자상거래 상품정보 제공 정보</span>
+                                        <span style="font-weight: bold; font-family: monospace; margin-left: 8px;">&gt;</span>
+                                    </a>
                                 </td>
                             </tr>
                         </table>
-                        
-                        {{-- Corporate Member Promo (Legacy Parity) --}}
-                        @if(!session('gubun'))
-                        <div class="option-box2" style="margin-top:10px; border-top:1px solid #ddd; padding:10px 0;">
-                            <a href="/page/index?tpl=etc/business_info.html" target="_blank">
-                                <img src="/images/legacy/asset/wholesale6.jpg" alt="기업회원 우대 정책">
-                            </a>
-                            <br>
-                            <span style="font-size:12px; color:#666;">
-                                ※기업(판매, 구매) 회원가입시 수량과 관계없이 <span style="color:red; font-weight:bold;">도매가</span>로 구매할 수 있습니다.
-                            </span>
-                            <a href="/member/agreement" target="_blank" style="vertical-align:middle;">
-                                <img src="/images/legacy/asset/agreement6.jpg" alt="회원가입">
-                            </a>
-                        </div>
-                        @endif
 
                         {{-- Options Area --}}
                         <div id="select_option_lay">
@@ -640,18 +658,6 @@
                         </div>
 
                         {{-- Options Select --}}
-                        @php
-                            // Dedup options based on name and price
-                            $optionsRaw = $product->option;
-                            $options = $optionsRaw->unique(function ($item) {
-                                return $item->option1 . $item->option2 . $item->option3 . $item->option4 . $item->option5 . $item->price;
-                            });
-
-                            $hasOptions = $options->count() > 1; 
-                            $defaultOption = $options->first();
-                            $defaultSeq = $defaultOption ? $defaultOption->option_seq : '';
-                        @endphp
-
                         @if($hasOptions)
                             <div class="option_area" style="margin-top:20px;">
                                 <select class="option_select" id="option_select_box" onchange="addOption()"
@@ -665,25 +671,6 @@
                                         </option>
                                     @endforeach
                                 </select>
-                            </div>
-                        @else
-                            {{-- [LEGACY PARITY] No Options: Quantity Input directly --}}
-                            <div class="default_qty_area"
-                                style="padding: 15px 0; border-bottom: 1px solid #eee; margin-top:20px; display: flex; align-items: center; justify-content: space-between;">
-                                <div style="display: flex; align-items: center;">
-                                    <span style="font-weight:bold; margin-right:20px; font-size:14px; color:#333;">구매수량</span>
-                                    <div class="quantity-controller" style="display: inline-flex; align-items: center; border: 1px solid #ccc; border-radius: 3px; overflow: hidden; height: 32px; background: #fff;">
-                                        <button type="button" onclick="decreaseQty()" style="width: 32px; height: 100%; border: none; background: #fff; font-size: 16px; font-weight: bold; cursor: pointer; color: #555; display: flex; align-items: center; justify-content: center; outline: none; border-right: 1px solid #ccc;">-</button>
-                                        <input type="text" id="default_qty" value="1" readonly style="width: 50px; height: 100%; border: none; text-align: center; font-size: 14px; font-weight: bold; outline: none; background: #fff; color:#333;">
-                                        <button type="button" onclick="increaseQty()" style="width: 32px; height: 100%; border: none; background: #fff; font-size: 16px; font-weight: bold; cursor: pointer; color: #555; display: flex; align-items: center; justify-content: center; outline: none; border-left: 1px solid #ccc;">+</button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div style="padding: 12px; background: #f8f9fa; border: 1px solid #eaeaea; margin-top: 10px; font-size: 13px;">
-                                <a href="#detail" style="color: #666; text-decoration: none; display: flex; align-items: center; justify-content: space-between;" onclick="switchTab('detail')">
-                                    <span>상품정보 전자상거래 상품정보 제공 정보</span>
-                                    <span style="font-weight: bold; font-family: monospace;">&gt;</span>
-                                </a>
                             </div>
                         @endif
 
