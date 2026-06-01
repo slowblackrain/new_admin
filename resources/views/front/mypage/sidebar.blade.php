@@ -49,7 +49,7 @@
                     <li><a href="{{ route('mypage.member.check_password') }}"
                             style="display: block; padding: 10px 15px; color: #666; text-decoration: none; border-bottom: 1px solid #eee;">회원정보
                             수정</a></li>
-                    <li><a href="{{ route('mypage.member.drop') }}"
+                    <li><a href="{{ route('mypage.withdraw') }}"
                             style="display: block; padding: 10px 15px; color: #666; text-decoration: none; border-bottom: 1px solid #eee;">회원탈퇴</a>
                     </li>
                 </ul>
