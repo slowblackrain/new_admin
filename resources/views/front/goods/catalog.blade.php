@@ -25,62 +25,135 @@
                      </div>
                 @endif
 
-                {{-- Sub Category Nav (Toggle Style) --}}
+                {{-- [LEGACY PARITY] 하위 카테고리 리스트 가로 격자형 7열 그리드 패널 (Immediate visibility) --}}
                 @if(isset($childCategories) && $childCategories->count() > 0)
-                    <div class="sub_category_nav_wrapper" style="position: relative; margin-bottom: 20px;">
-                        <button type="button" class="sub_category_btn" onclick="toggleSubCategory()" style="width: 100%; padding: 10px; background: #f9f9f9; border: 1px solid #ddd; text-align: left; font-weight: bold; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
-                            <span>하위 카테고리 선택</span>
-                            <i id="sub_cate_arrow" class="fas fa-chevron-down"></i>
-                        </button>
-                        <div id="sub_category_list" class="sub_category_list" style="display: none; border: 1px solid #ddd; border-top: none; background: #fff; padding: 10px;">
-                            <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap;">
-                                <li style="width: 50%; padding: 5px; box-sizing: border-box;">
-                                    <a href="{{ route('goods.catalog', ['code' => substr($categoryCode, 0, 4)]) }}" style="text-decoration: none; color: #555; display: block;">전체보기</a>
+                    <div class="legacy-sub-category-grid" style="border: 1px solid #e9ecef; background: #fff; margin-bottom: 25px; font-family: '맑은고딕', 'Malgun Gothic', sans-serif;">
+                        <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; text-align: left;">
+                            {{-- 전체보기 --}}
+                            <li style="width: 14.28%; border-right: 1px solid #e9ecef; border-bottom: 1px solid #e9ecef; box-sizing: border-box; padding: 12px 15px; font-size: 13px;">
+                                <a href="{{ route('goods.catalog', ['code' => substr($categoryCode, 0, 4)]) }}" style="text-decoration: none; color: #555; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                    전체보기
+                                </a>
+                            </li>
+                            @foreach($childCategories as $index => $child)
+                                <li style="width: 14.28%; border-right: {{ ($index + 2) % 7 == 0 ? 'none' : '1px solid #e9ecef' }}; border-bottom: 1px solid #e9ecef; box-sizing: border-box; padding: 12px 15px; font-size: 13px; background: {{ request('code') == $child->category_code ? '#fafafa' : '#fff' }};">
+                                    <a href="{{ route('goods.catalog', ['code' => $child->category_code]) }}" style="text-decoration: none; color: {{ request('code') == $child->category_code ? '#f25e1a' : '#555' }}; font-weight: {{ request('code') == $child->category_code ? 'bold' : 'normal' }}; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                        {{ $child->title }}
+                                    </a>
                                 </li>
-                                @foreach($childCategories as $child)
-                                    <li class="{{ request('code') == $child->category_code ? 'on' : '' }}" style="width: 50%; padding: 5px; box-sizing: border-box;">
-                                        <a href="{{ route('goods.catalog', ['code' => $child->category_code]) }}" style="text-decoration: none; color: {{ request('code') == $child->category_code ? '#d00' : '#555' }}; font-weight: {{ request('code') == $child->category_code ? 'bold' : 'normal' }}; display: block;">
-                                            {{ $child->title }}
-                                        </a>
-                                    </li>
-                                @endforeach
-                            </ul>
-                        </div>
+                            @endforeach
+                            {{-- 빈 공간 메우기용 더미 셀 채우기 --}}
+                            @php
+                                $totalCells = $childCategories->count() + 1;
+                                $rem = $totalCells % 7;
+                                $dummyCount = $rem > 0 ? (7 - $rem) : 0;
+                            @endphp
+                            @for($i = 0; $i < $dummyCount; $i++)
+                                <li style="width: 14.28%; border-bottom: 1px solid #e9ecef; border-right: {{ (($totalCells + $i + 1) % 7 == 0) ? 'none' : '1px solid #e9ecef' }}; box-sizing: border-box; padding: 12px 15px; background:#fff;"></li>
+                            @endfor
+                        </ul>
                     </div>
-                    <script>
-                        function toggleSubCategory() {
-                            var list = document.getElementById('sub_category_list');
-                            var arrow = document.getElementById('sub_cate_arrow');
-                            if (list.style.display === 'none') {
-                                list.style.display = 'block';
-                                arrow.classList.remove('fa-chevron-down');
-                                arrow.classList.add('fa-chevron-up');
-                            } else {
-                                list.style.display = 'none';
-                                arrow.classList.remove('fa-chevron-up');
-                                arrow.classList.add('fa-chevron-down');
-                            }
-                        }
-                    </script>
                 @endif
-                {{-- Search Within Category --}}
-                <div class="result_search_area" style="text-align:right; margin-bottom:10px;">
+
+                {{-- [LEGACY PARITY] 상세 통합검색 및 엑셀다운로드 패널 --}}
+                <div class="legacy-filter-section" style="border: 1px solid #ddd; background: #fff; padding: 18px 20px; margin-bottom: 25px; font-size: 12px; color: #333; font-family: '맑은고딕', 'Malgun Gothic', sans-serif;">
                     <form name="frmListSearch" method="get" action="{{ url()->current() }}">
                         <input type="hidden" name="code" value="{{ request('code') }}">
-                        <input type="text" name="search_text" value="{{ $keyword ?? '' }}" placeholder="결과 내 검색" style="border:1px solid #ddd; height:24px; padding:0 5px; font-size:12px;">
-                        <button type="submit" style="background:#555; color:#fff; border:none; height:26px; padding:0 10px; cursor:pointer; font-size:12px;">검색</button>
+                        <input type="hidden" name="sort" value="{{ request('sort') }}">
+
+                        {{-- 결과내 재검색, 가격별, 등록일 --}}
+                        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 20px; margin-bottom: 18px; text-align: left;">
+                            
+                            {{-- 결과내 재검색 --}}
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <span style="font-weight: bold; color: #f25e1a; font-size:13px; margin-right:5px;">결과내 재검색</span>
+                                <label style="display: inline-flex; align-items: center; gap: 3px; cursor: pointer; font-size:12px;">
+                                    <input type="radio" name="search_type" value="include" checked style="margin: 0; vertical-align: middle;"> 포함
+                                </label>
+                                <label style="display: inline-flex; align-items: center; gap: 3px; cursor: pointer; font-size:12px; margin-left:5px;">
+                                    <input type="radio" name="search_type" value="exclude" style="margin: 0; vertical-align: middle;"> 제외
+                                </label>
+                                <input type="text" name="search_text" value="{{ request('search_text') }}" placeholder="검색어 입력" style="border: 1px solid #ccc; height: 26px; width: 150px; padding: 0 5px; margin-left: 8px; outline: none; box-sizing: border-box;">
+                            </div>
+
+                            {{-- 가격별 검색 --}}
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <select name="price_type" style="border: 1px solid #ccc; height: 26px; padding: 0 5px; outline: none; background: #fff; font-size:12px;">
+                                    <option value="sell">가격별 검색</option>
+                                </select>
+                                <input type="text" name="price_start" value="{{ request('price_start') }}" style="border: 1px solid #ccc; height: 26px; width: 80px; padding: 0 5px; outline: none; text-align: right; box-sizing: border-box;">
+                                <span>~</span>
+                                <input type="text" name="price_end" value="{{ request('price_end') }}" style="border: 1px solid #ccc; height: 26px; width: 80px; padding: 0 5px; outline: none; text-align: right; box-sizing: border-box;">
+                                <span>원</span>
+                            </div>
+
+                            {{-- 등록일 검색 --}}
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <select name="date_type" style="border: 1px solid #ccc; height: 26px; padding: 0 5px; outline: none; background: #fff; font-size:12px;">
+                                    <option value="regist">등록일 검색</option>
+                                </select>
+                                <input type="text" name="date_start" value="{{ request('date_start') }}" placeholder="YYYY-MM-DD" style="border: 1px solid #ccc; height: 26px; width: 90px; padding: 0 5px; outline: none; text-align: center; box-sizing: border-box;">
+                                <span>~</span>
+                                <input type="text" name="date_end" value="{{ request('date_end') }}" placeholder="YYYY-MM-DD" style="border: 1px solid #ccc; height: 26px; width: 90px; padding: 0 5px; outline: none; text-align: center; box-sizing: border-box;">
+                            </div>
+                        </div>
+
+                        {{-- 전체선택 / 엑셀다운로드 / 통합검색 --}}
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed #eee; padding-top: 15px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <label style="display: inline-flex; align-items: center; gap: 5px; cursor: pointer; border: 1px solid #ccc; padding: 5px 12px; background: #fdfdfd; font-size: 11px; font-weight: bold; border-radius: 2px;">
+                                    <input type="checkbox" id="check_all_products" onclick="toggleAllProducts(this)" style="margin: 0; vertical-align: middle;"> 전체선택
+                                </label>
+                                <button type="button" onclick="excelDownload()" style="display: inline-flex; align-items: center; gap: 5px; border: 1px solid #ccc; padding: 5px 12px; background: #fdfdfd; font-size: 11px; cursor: pointer; color: #555; font-weight: bold; border-radius: 2px;">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: #028df4;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                    엑셀다운로드
+                                </button>
+                            </div>
+                            
+                            <div>
+                                <button type="submit" style="background: #f15f23; color: #fff; border: none; font-size: 13px; font-weight: bold; padding: 8px 50px; cursor: pointer; border-radius: 2px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
+                                    통합검색
+                                </button>
+                            </div>
+                            <div style="width: 160px;" class="hidden-mobile"></div>
+                        </div>
                     </form>
                 </div>
 
-                {{-- Sort Bar --}}
-                 <div class="sort_area">
-                    <ul>
-                        <li class="{{ $sort == '' || $sort == 'new' ? 'on' : '' }}"><a href="{{ route('goods.catalog', array_merge(request()->all(), ['sort' => 'new'])) }}">신상품순</a></li>
-                        <li class="{{ $sort == 'price_asc' ? 'on' : '' }}"><a href="{{ route('goods.catalog', array_merge(request()->all(), ['sort' => 'price_asc'])) }}">낮은가격순</a></li>
-                        <li class="{{ $sort == 'price_desc' ? 'on' : '' }}"><a href="{{ route('goods.catalog', array_merge(request()->all(), ['sort' => 'price_desc'])) }}">높은가격순</a></li>
-                        <li class="{{ $sort == 'A' ? 'on' : '' }}"><a href="{{ route('goods.catalog', array_merge(request()->all(), ['sort' => 'A'])) }}">박스상품</a></li>
-                        <li class="{{ $sort == 'G' ? 'on' : '' }}"><a href="{{ route('goods.catalog', array_merge(request()->all(), ['sort' => 'G'])) }}">낱개상품</a></li>
+                {{-- [LEGACY PARITY] 라디오버튼형 정렬 바 및 노출개수 설정 영역 --}}
+                <div class="sort_area" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #555; padding-bottom: 10px; margin-bottom: 20px; font-family:'Dotum', sans-serif; font-size:12px;">
+                    <ul style="list-style: none; padding: 0; margin: 0; display: flex; align-items: center; gap: 15px;">
+                        <li style="display: inline-flex; align-items: center; gap: 4px;">
+                            <span style="color: {{ $sort == '' || $sort == 'new' ? '#f15f23' : '#bbb' }}; font-size: 10px;">●</span>
+                            <a href="{{ route('goods.catalog', array_merge(request()->all(), ['sort' => 'new'])) }}" style="text-decoration: none; color: {{ $sort == '' || $sort == 'new' ? '#333' : '#888' }}; font-weight: {{ $sort == '' || $sort == 'new' ? 'bold' : 'normal' }};">신상품순</a>
+                        </li>
+                        <li style="display: inline-flex; align-items: center; gap: 4px;">
+                            <span style="color: {{ $sort == 'G' ? '#f15f23' : '#bbb' }}; font-size: 10px;">✔</span>
+                            <a href="{{ route('goods.catalog', array_merge(request()->all(), ['sort' => 'G'])) }}" style="text-decoration: none; color: {{ $sort == 'G' ? '#333' : '#888' }}; font-weight: {{ $sort == 'G' ? 'bold' : 'normal' }};">낱개판매순</a>
+                        </li>
+                        <li style="display: inline-flex; align-items: center; gap: 4px;">
+                            <span style="color: #bbb; font-size: 10px;">●</span>
+                            <a href="javascript:void(0)" style="text-decoration: none; color: #888;">판매량순</a>
+                        </li>
+                        <li style="display: inline-flex; align-items: center; gap: 4px;">
+                            <span style="color: #bbb; font-size: 10px;">●</span>
+                            <a href="javascript:void(0)" style="text-decoration: none; color: #888;">클릭순</a>
+                        </li>
+                        <li style="display: inline-flex; align-items: center; gap: 4px;">
+                            <span style="color: {{ $sort == 'price_asc' ? '#f15f23' : '#bbb' }}; font-size: 10px;">●</span>
+                            <a href="{{ route('goods.catalog', array_merge(request()->all(), ['sort' => 'price_asc'])) }}" style="text-decoration: none; color: {{ $sort == 'price_asc' ? '#333' : '#888' }}; font-weight: {{ $sort == 'price_asc' ? 'bold' : 'normal' }};">낮은가격순</a>
+                        </li>
+                        <li style="display: inline-flex; align-items: center; gap: 4px;">
+                            <span style="color: {{ $sort == 'price_desc' ? '#f15f23' : '#bbb' }}; font-size: 10px;">●</span>
+                            <a href="{{ route('goods.catalog', array_merge(request()->all(), ['sort' => 'price_desc'])) }}" style="text-decoration: none; color: {{ $sort == 'price_desc' ? '#333' : '#888' }}; font-weight: {{ $sort == 'price_desc' ? 'bold' : 'normal' }};">높은가격순</a>
+                        </li>
                     </ul>
+
+                    <div>
+                        <select name="per_page" style="border: 1px solid #ccc; height: 26px; padding: 0 5px; outline: none; background: #fff; font-size: 12px; font-family:'Dotum';">
+                            <option value="75">75개씩 보기</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="goods_list_area">
