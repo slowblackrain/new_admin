@@ -138,7 +138,7 @@ Route::middleware(['auth'])->prefix('mypage')->name('mypage.')->group(function (
     Route::post('/order/confirm/{orderSeq}', [MypageController::class, 'confirmPurchase'])->name('order.confirm');
 
     // Claim Routes
-    Route::get('/order/claim', [MypageController::class, 'orderClaimList'])->name('order.claim');
+    Route::get('/order/claim_list', [MypageController::class, 'orderClaimList'])->name('order.claim');
     Route::get('/claim/apply/{orderSeq}/{type}', [MypageController::class, 'claimApply'])->name('claim.apply');
     Route::post('/claim/store/{orderSeq}', [MypageController::class, 'claimStore'])->name('claim.store');
 
