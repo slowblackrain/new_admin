@@ -138,7 +138,51 @@ class OrderController extends Controller
                 ->get();
         }
 
-        return view('front.order.order', compact('cartItems', 'user', 'totalPrice', 'user', 'cart_seqs', 'tax', 'finalPrice', 'shipping', 'packagingCost', 'coupons', 'hasExempt'));
+        // [NEW] 적립금(E-money) 한도 산출 (레거시 get_usable_emoney 100% 포팅)
+        $usableEmoney = 0;
+        $errReserve = "";
+        if (Auth::check() && $user) {
+            $reserves = DB::table('fm_config')->where('groupcd', 'reserve')->get()->pluck('value', 'codecd')->toArray();
+            $minEmoney = (int) ($reserves['min_emoney'] ?? 100);          // 최소 사용 적립금
+            $useLimit = (int) ($reserves['emoney_use_limit'] ?? 100);     // 최소 보유 적립금
+            $maxPolicy = $reserves['max_emoney_policy'] ?? 'unlimit';
+            
+            $memberEmoney = (int) $user->emoney;
+            $settlePrice = $finalPrice; // 최종 결제 예정 금액
+            
+            $usableEmoney = $memberEmoney;
+            if ($usableEmoney > $settlePrice) {
+                $usableEmoney = $settlePrice;
+            }
+            
+            if ($memberEmoney >= $useLimit) {
+                if ($maxPolicy === 'percent_limit' && isset($reserves['max_emoney_percent'])) {
+                    $maxEmoney = (int) ($settlePrice * (int)$reserves['max_emoney_percent'] / 100);
+                } else if ($maxPolicy === 'price_limit' && isset($reserves['max_emoney'])) {
+                    $maxEmoney = (int) $reserves['max_emoney'];
+                } else {
+                    $maxEmoney = $settlePrice;
+                }
+                
+                if ($maxEmoney > $settlePrice) {
+                    $maxEmoney = $settlePrice;
+                }
+                
+                if ($usableEmoney < $minEmoney) {
+                    $usableEmoney = 0;
+                    $errReserve = "적립금은 최소 " . number_format($minEmoney) . "원부터 사용가능 합니다.";
+                }
+                
+                if ($usableEmoney > $maxEmoney && $maxPolicy !== 'unlimit') {
+                    $usableEmoney = $maxEmoney;
+                }
+            } else {
+                $usableEmoney = 0;
+                $errReserve = number_format($useLimit) . "원 이상 적립하여야 합니다.";
+            }
+        }
+
+        return view('front.order.order', compact('cartItems', 'user', 'totalPrice', 'cart_seqs', 'tax', 'finalPrice', 'shipping', 'packagingCost', 'coupons', 'hasExempt', 'usableEmoney', 'errReserve'));
     }
 
     public function calculateShipping(Request $request)
@@ -366,12 +410,48 @@ class OrderController extends Controller
             $useCash = $request->input('use_cash', 0);
 
             if ($useEmoney > 0) {
+                if (!$user) {
+                    throw new \Exception("회원만 적립금을 사용할 수 있습니다.");
+                }
+                
+                $reserves = DB::table('fm_config')->where('groupcd', 'reserve')->get()->pluck('value', 'codecd')->toArray();
+                $minEmoney = (int) ($reserves['min_emoney'] ?? 100);          // 최소 사용 적립금
+                $useLimit = (int) ($reserves['emoney_use_limit'] ?? 100);     // 최소 보유 적립금
+                $maxPolicy = $reserves['max_emoney_policy'] ?? 'unlimit';
+                
+                $memberEmoney = (int) $user->emoney;
+                
+                if ($memberEmoney < $useLimit) {
+                    throw new \Exception(number_format($useLimit) . "원 이상 적립하여야 합니다.");
+                }
+                if ($useEmoney < $minEmoney) {
+                    throw new \Exception("적립금은 최소 " . number_format($minEmoney) . "원부터 사용가능 합니다.");
+                }
                 if ($user->emoney < $useEmoney) {
                     throw new \Exception("보유 적립금이 부족합니다.");
                 }
-                if ($useEmoney > $finalSettlePrice) {
-                    throw new \Exception("결제 금액보다 많은 적립금을 사용할 수 없습니다.");
+                
+                // 최대 한도 계산
+                if ($maxPolicy === 'percent_limit' && isset($reserves['max_emoney_percent'])) {
+                    $maxEmoney = (int) ($finalSettlePrice * (int)$reserves['max_emoney_percent'] / 100);
+                } else if ($maxPolicy === 'price_limit' && isset($reserves['max_emoney'])) {
+                    $maxEmoney = (int) $reserves['max_emoney'];
+                } else {
+                    $maxEmoney = $finalSettlePrice;
                 }
+                
+                if ($maxEmoney > $finalSettlePrice) {
+                    $maxEmoney = $finalSettlePrice;
+                }
+                
+                if ($useEmoney > $maxEmoney) {
+                    if ($maxPolicy === 'unlimit') {
+                        throw new \Exception("결제 금액보다 많은 적립금을 사용할 수 없습니다.");
+                    } else {
+                        throw new \Exception("사용 가능한 최대 적립금(" . number_format($maxEmoney) . "원)을 초과하였습니다.");
+                    }
+                }
+                
                 $finalSettlePrice -= $useEmoney;
                 $user->decrement('emoney', $useEmoney);
                 $order->emoney = $useEmoney; // 'emoney' column holds USED emoney

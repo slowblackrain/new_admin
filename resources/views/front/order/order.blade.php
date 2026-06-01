@@ -273,7 +273,12 @@
                                 <td>
                                     <input type="number" name="use_emoney" id="use_emoney" class="input_text" value="{{ old('use_emoney', 0) }}" style="text-align:right;"> 원
                                     <span style="color:#888; margin-left:10px;">(보유: <strong>{{ number_format($user->emoney ?? 0) }}</strong>원)</span>
-                                    <button type="button" class="btn_base" onclick="useAll('emoney', {{ $user->emoney ?? 0 }})">전액사용</button>
+                                    <button type="button" class="btn_base" onclick="useAll('emoney', {{ $usableEmoney ?? 0 }})">전액사용</button>
+                                    @if(isset($errReserve) && $errReserve)
+                                        <div style="color: #d00; font-size:11px; margin-top:4px;">※ {{ $errReserve }}</div>
+                                    @else
+                                        <div style="color: #666; font-size:11px; margin-top:4px;">※ 적립금은 100원 이상 보유 시, 최소 100원부터 사용 가능합니다.</div>
+                                    @endif
                                 </td>
                             </tr>
                             <tr>
@@ -541,7 +546,7 @@
     </div>
 
     {{-- Daum Address API --}}
-    <script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+    <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
     <script>
         document.getElementById('copy_user_info').addEventListener('change', function () {
             if (this.checked) {
@@ -694,7 +699,7 @@
         // Initial PHP values passing to JS
         const initialFinalPrice = {{ $totalPrice + $shipping + $packagingCost + $tax }};
         const initialGoodsPrice = {{ $totalPrice }};
-        const maxEmoney = {{ $user->emoney ?? 0 }};
+        const maxEmoney = {{ $usableEmoney ?? 0 }};
         const maxCash = {{ $user->cash ?? 0 }};
         let extraShippingCost = 0; // 추가 배송비 저장 변수
 
@@ -801,10 +806,24 @@
             }
 
             // Validation Max Holding
-            if (useEmoney > maxEmoney) {
-                alert('보유 적립금을 초과할 수 없습니다.');
-                useEmoney = maxEmoney;
-                document.getElementById('use_emoney').value = useEmoney;
+            if (useEmoney > 0) {
+                const minEmoney = 100;
+                const emoneyUseLimit = 100;
+                const userEmoneyTotal = {{ $user->emoney ?? 0 }};
+                
+                if (userEmoneyTotal < emoneyUseLimit) {
+                    alert(new Intl.NumberFormat().format(emoneyUseLimit) + '원 이상 적립하여야 합니다.');
+                    useEmoney = 0;
+                    document.getElementById('use_emoney').value = 0;
+                } else if (useEmoney < minEmoney) {
+                    alert('적립금은 최소 ' + new Intl.NumberFormat().format(minEmoney) + '원부터 사용가능 합니다.');
+                    useEmoney = 0;
+                    document.getElementById('use_emoney').value = 0;
+                } else if (useEmoney > maxEmoney) {
+                    alert('사용 가능한 적립금을 초과할 수 없습니다.');
+                    useEmoney = maxEmoney;
+                    document.getElementById('use_emoney').value = useEmoney;
+                }
             }
             if (useCash > maxCash) {
                 alert('보유 예치금을 초과할 수 없습니다.');
