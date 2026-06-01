@@ -104,6 +104,8 @@
                 @endif
             </div>
         @endforeach
+        {{-- [LEGACY PARITY] 좌측 사이드바 하단 고객센터 배너 이미지 복원 --}}
+        <img src="/data/skin/beauty/images/main/side_bnr_left.jpg" alt="고객센터">
     </div>
     <div class="cate2" style="display:none;"></div>
     <div class="cate3" style="display:none;"></div>

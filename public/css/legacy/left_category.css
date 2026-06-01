@@ -53,7 +53,7 @@ input[id="menuicon"]:checked+label {
 
 
 .sidebar{overflow-x:hidden; overflow-y: scroll; padding-bottom:25px;}
-.sidebar a{position: relative; display:block; line-height: 2.8; font-size: 13px; padding: 0 0 2px 20px; color:#333;}
+.sidebar a{position: relative; display:block; line-height: 2.8; font-size: 13px; padding: 0 0 2px 20px; color:#333; text-decoration: none !important;}
 .sidebar a > i{
 	position: absolute;
     top: 40%;
@@ -137,7 +137,7 @@ input[id="menuicon"]:checked+label+div {
 
 .cate1 { position: relative; display: block;}
 .cate2 { position: fixed; top: 110px; background: #fff; left: 220px; padding-top:5px; border: 1px solid #ddd; width: 200px; height: 809px; overflow: hidden; z-index: 999; overflow-y: scroll;box-shadow: 4px 0px 7px 1px rgb(0 0 0 / 10%); }
-.cate2 a, .cate3 a{ display: flex; position: relative; top: 10px; line-height: 2.55; font-size: 13px; padding: 0 0 2px 20px; color: #333;}
+.cate2 a, .cate3 a{ display: flex; position: relative; top: 10px; line-height: 2.55; font-size: 13px; padding: 0 0 2px 20px; color: #333; text-decoration: none !important; outline: none;}
 .cate3 { position: fixed; top: 110px; background: #fff; left: 419px; border: 1px solid #ddd; width: 180px; height: 809px; overflow: hidden; z-index: 999; overflow-y: scroll; 
 box-shadow: 4px 0px 7px 1px rgb(0 0 0 / 10%);}
 .cate2::-webkit-scrollbar { width: 10px; }
@@ -148,7 +148,7 @@ box-shadow: 4px 0px 7px 1px rgb(0 0 0 / 10%);}
 .cate3::-webkit-scrollbar-track { background-color: #f6f6f6; border-radius: 10px; box-shadow: inset 0px 0px 5px white; }
 
 /* .cate1 a:hover{color:#fff; font-weight: 500; background-color:#3ba0ff;} */
-.cate2 a:hover, .cate3 a:hover{color:#3ba0ff; font-weight: 500; background-color:#fff;}
+.cate2 a:hover, .cate3 a:hover{color:#3ba0ff; font-weight: 500; background-color:#fff; text-decoration: none !important;}
 
 /*移댄??怨?由??닿린 留?????*/
 
