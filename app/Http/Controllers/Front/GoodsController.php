@@ -137,9 +137,23 @@ class GoodsController extends Controller
                       ->distinct();
                 break;
             case 'new': 
-            case '': // [LEGACY PARITY] Default sorting must be 'new' (regist_date desc)
-                $query->orderBy('regist_date', 'desc')
-                      ->orderBy('goods_seq', 'desc');
+            case '': // [LEGACY PARITY] Default sorting must be 'new' (newly sorting)
+                if ($code) {
+                    $query->select('fm_goods.*')
+                          ->leftJoin('fm_goods_orderby as ordby', function ($join) use ($code) {
+                              $join->on('fm_goods.goods_seq', '=', 'ordby.goods_seq')
+                                   ->where('ordby.cate_seq', '=', $code);
+                          })
+                          ->orderBy('fm_goods.goods_status', 'asc')
+                          ->orderByRaw('CASE WHEN ordby.ob_seq IS NULL THEN 0 ELSE 1 END DESC')
+                          ->orderBy('ordby.ob_seq', 'desc')
+                          ->orderBy('fm_goods.disp_date', 'desc')
+                          ->orderBy('fm_goods.goods_seq', 'desc');
+                } else {
+                    $query->orderBy('fm_goods.goods_status', 'asc')
+                          ->orderBy('fm_goods.disp_date', 'desc')
+                          ->orderBy('fm_goods.goods_seq', 'desc');
+                }
                 break;
             default:
                 $query->orderBy('goods_seq', 'desc');
@@ -235,7 +249,24 @@ class GoodsController extends Controller
             $query->where('regist_date', '<=', $request->input('date_end') . ' 23:59:59');
         }
 
-        $goodsList = $query->orderBy('regist_date', 'desc')->orderBy('goods_seq', 'desc')->get();
+        if ($code) {
+            $query->select('fm_goods.*')
+                  ->leftJoin('fm_goods_orderby as ordby', function ($join) use ($code) {
+                      $join->on('fm_goods.goods_seq', '=', 'ordby.goods_seq')
+                           ->where('ordby.cate_seq', '=', $code);
+                  })
+                  ->orderBy('fm_goods.goods_status', 'asc')
+                  ->orderByRaw('CASE WHEN ordby.ob_seq IS NULL THEN 0 ELSE 1 END DESC')
+                  ->orderBy('ordby.ob_seq', 'desc')
+                  ->orderBy('fm_goods.disp_date', 'desc')
+                  ->orderBy('fm_goods.goods_seq', 'desc');
+        } else {
+            $query->orderBy('fm_goods.goods_status', 'asc')
+                  ->orderBy('fm_goods.disp_date', 'desc')
+                  ->orderBy('fm_goods.goods_seq', 'desc');
+        }
+
+        $goodsList = $query->get();
 
         $filename = "catalog_goods_" . date('Ymd_His') . ".csv";
 
