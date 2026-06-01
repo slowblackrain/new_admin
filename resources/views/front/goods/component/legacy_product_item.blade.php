@@ -23,7 +23,9 @@
     if (!$imagePath) $imagePath = asset('images/no_image.gif');
 
     // Thumbnail Logic (Get up to 3 distinct 'thumb' images)
-    $thumbs = $product->images->where('image_type', 'like', 'thumb%')->take(3);
+    $thumbs = $product->images->filter(function($img) {
+        return \Illuminate\Support\Str::startsWith($img->image_type, 'thumb');
+    })->take(3);
     
     // Price Logic (Fallback handling)
     $price = $product->price; 
@@ -88,6 +90,8 @@
                 $tPath = $thumb->image;
                 if (strpos($tPath, '/data/goods/goods_img') !== false) {
                     $tPath = str_replace('/data/goods/goods_img', 'https://dmtusr.vipweb.kr/goods_img', $tPath);
+                } elseif ($tPath && !\Illuminate\Support\Str::startsWith($tPath, 'http')) {
+                    $tPath = asset($tPath);
                 }
             @endphp
             <img src="{{ $tPath }}" width="35" height="35" style="border:1px solid #ddd; margin:1px; cursor:pointer;" onmouseover="this.closest('dl').querySelector('.goodsDisplayImageWrap img').src='{{ $tPath }}'">
