@@ -1,74 +1,45 @@
-<div id="mypage_sidebar" class="mypage-sidebar-responsive">
-    <div class="mypage_menu" style="border: 1px solid #ddd; background: #fff;">
-        <h2
-            style="background: #333; color: #fff; padding: 15px; font-size: 16px; font-weight: bold; text-align: center; margin: 0;">
-            MY PAGE</h2>
-        <ul style="list-style: none; padding: 0; margin: 0;">
-            <li class="menu_group">
-                <div style="padding: 12px 15px; font-weight: bold; background: #f9f9f9; border-bottom: 1px solid #eee;">
-                    쇼핑정보</div>
-                <ul style="list-style: none; padding: 0; margin: 0;">
-                    <li><a href="{{ route('mypage.order.list') }}"
-                            style="display: block; padding: 10px 15px; color: #666; text-decoration: none; border-bottom: 1px solid #eee;">주문/배송
-                            조회</a></li>
-                    <li><a href="{{ route('mypage.order.claim_list') }}"
-                            style="display: block; padding: 10px 15px; color: #666; text-decoration: none; border-bottom: 1px solid #eee;">취소/반품/교환
-                            내역</a></li>
-                    <li><a href="{{ route('cart.index') }}"
-                            style="display: block; padding: 10px 15px; color: #666; text-decoration: none; border-bottom: 1px solid #eee;">장바구니</a>
-                    </li>
-                    <li><a href="{{ route('mypage.wishlist') }}"
-                            style="display: block; padding: 10px 15px; color: #666; text-decoration: none; border-bottom: 1px solid #eee;">관심상품</a>
-                    </li>
-                    <li><a href="{{ route('board.index', ['id' => 'mbqna']) }}"
-                            style="display: block; padding: 10px 15px; color: #666; text-decoration: none; border-bottom: 1px solid #eee;">1:1 문의내역</a>
-                    </li>
-                </ul>
-            </li>
-            <li class="menu_group">
-                <div style="padding: 12px 15px; font-weight: bold; background: #f9f9f9; border-bottom: 1px solid #eee;">
-                    혜택관리</div>
-                <ul style="list-style: none; padding: 0; margin: 0;">
-                    <li><a href="{{ route('mypage.coupon') }}"
-                            style="display: block; padding: 10px 15px; color: #666; text-decoration: none; border-bottom: 1px solid #eee;">쿠폰
-                            내역</a></li>
-                    <li><a href="{{ route('mypage.emoney') }}"
-                            style="display: block; padding: 10px 15px; color: #666; text-decoration: none; border-bottom: 1px solid #eee;">적립금
-                            내역</a></li>
-                    <li><a href="{{ route('mypage.point') }}"
-                            style="display: block; padding: 10px 15px; color: #666; text-decoration: none; border-bottom: 1px solid #eee;">포인트
-                            내역</a></li>
-                </ul>
-            </li>
-            <li class="menu_group">
-                <div style="padding: 12px 15px; font-weight: bold; background: #f9f9f9; border-bottom: 1px solid #eee;">
-                    회원정보</div>
-                <ul style="list-style: none; padding: 0; margin: 0;">
-                    <li><a href="{{ route('mypage.delivery_address.index') }}"
-                            style="display: block; padding: 10px 15px; color: #666; text-decoration: none; border-bottom: 1px solid #eee;">배송지 관리</a></li>
-                    <li><a href="{{ route('mypage.member.check_password') }}"
-                            style="display: block; padding: 10px 15px; color: #666; text-decoration: none; border-bottom: 1px solid #eee;">회원정보
-                            수정</a></li>
-                    <li><a href="{{ route('mypage.withdraw') }}"
-                            style="display: block; padding: 10px 15px; color: #666; text-decoration: none; border-bottom: 1px solid #eee;">회원탈퇴</a>
-                    </li>
-                </ul>
-            </li>
-        </ul>
-    </div>
-
-    <!-- Customer Service Banner -->
-    <div style="margin-top: 20px; border: 1px solid #ddd; padding: 15px; text-align: center;">
-        <strong style="display: block; font-size: 14px; margin-bottom: 10px;">고객센터</strong>
-        <span
-            style="display: block; font-size: 20px; font-weight: bold; color: #d00; margin-bottom: 5px;">02-1234-5678</span>
-        <span style="display: block; font-size: 12px; color: #888;">평일 09:00 ~ 18:00</span>
-    </div>
+<div id="mypage_sidebar" class="mypage-sidebar-responsive" style="text-align: left; font-family: '맑은고딕', 'Malgun Gothic', sans-serif;">
+    <ul style="list-style: none; padding: 0; margin: 0; line-height: 2.2; font-size: 13px;">
+        <li style="margin-bottom: 5px; border-bottom: 1px solid #eee; padding-bottom: 5px;">
+            <a href="{{ route('mypage.index') }}" style="font-size: 15px; font-weight: bold; color: #f25e1a; text-decoration: none;">마이페이지</a>
+        </li>
+        <li style="margin-bottom: 3px;">
+            <a href="{{ route('mypage.emoney') }}" style="color: #444; text-decoration: none;">적립금내역</a>
+        </li>
+        <li style="margin-bottom: 3px;">
+            <a href="#" style="color: #444; text-decoration: none;">개인결제</a>
+        </li>
+        <li style="margin-bottom: 12px;">
+            <a href="{{ route('mypage.delivery_address.index') }}" style="color: #444; text-decoration: none;">내 배송지 관리</a>
+        </li>
+        
+        <li style="font-weight: bold; color: #666; font-size: 13px; border-top: 1px solid #eee; padding-top: 10px; margin-bottom: 5px;">
+            주문관련
+        </li>
+        <li style="margin-bottom: 3px; padding-left: 5px;">
+            <a href="{{ route('mypage.order.list') }}" style="color: #666; text-decoration: none;">· 주문리스트</a>
+        </li>
+        <li style="margin-bottom: 3px; padding-left: 5px;">
+            <a href="{{ route('mypage.order.claim_list') }}" style="color: #666; text-decoration: none;">· 반품내역</a>
+        </li>
+        <li style="margin-bottom: 3px; padding-left: 5px;">
+            <a href="{{ route('mypage.order.claim_list') }}" style="color: #666; text-decoration: none;">· 환불내역</a>
+        </li>
+        <li style="margin-bottom: 3px; padding-left: 5px;">
+            <a href="{{ route('mypage.wishlist') }}" style="color: #666; text-decoration: none;">· 위시리스트</a>
+        </li>
+        <li style="margin-bottom: 3px; padding-left: 5px;">
+            <a href="#" style="color: #666; text-decoration: none;">· 세금계산서 신청</a>
+        </li>
+    </ul>
 </div>
 
 <style>
-    .mypage_menu a:hover {
+    #mypage_sidebar a {
+        transition: color 0.1s;
+    }
+    #mypage_sidebar a:hover {
+        color: #f25e1a !important;
         text-decoration: underline;
-        color: #333;
     }
 </style>
