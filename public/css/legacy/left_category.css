@@ -169,6 +169,7 @@ input[id="menuicon"]:checked+label .arrow_box{
 	border-radius: 2px;
     line-height: 2;
 	box-shadow: 2px 2px 3px 0 rgb(0 0 0 / 20%);
+	z-index: 999 !important;
 	animation: motion 0.8s /* ???? */
                linear 0s   /* 泥???遺?????源?吏? ?쇱?? ????濡? 吏??? */
                infinite alternate; /* 臾댄?? 諛?蹂?*/

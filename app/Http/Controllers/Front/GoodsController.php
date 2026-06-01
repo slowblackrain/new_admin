@@ -199,6 +199,24 @@ class GoodsController extends Controller
         // Fetch categories for sidebar
         $categories = Category::whereRaw('length(category_code) = 4')->orderBy('position')->limit(20)->get();
 
+        // [LEGACY PARITY] Build Breadcrumbs for Category
+        $breadcrumbs = [];
+        $categoryLink = $product->categories()->first();
+        if ($categoryLink) {
+            $fullCode = $categoryLink->category_code;
+            $len = strlen($fullCode);
+            for ($i = 4; $i <= $len; $i += 4) {
+                $subCode = substr($fullCode, 0, $i);
+                $cat = Category::where('category_code', $subCode)->first();
+                if ($cat) {
+                    $breadcrumbs[] = [
+                        'code' => $subCode,
+                        'title' => $cat->title
+                    ];
+                }
+            }
+        }
+
         // [New] Recent Viewed Items Logic (Cookie)
         $todayGoods = json_decode($request->cookie('goods_today', '[]'), true);
         if (!is_array($todayGoods)) {
@@ -227,7 +245,8 @@ class GoodsController extends Controller
             'gusImg',
             'makerName',
             'detailImgMap',
-            'title'
+            'title',
+            'breadcrumbs'
         ))->withCookie($cookie);
     }
 

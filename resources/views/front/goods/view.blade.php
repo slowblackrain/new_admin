@@ -111,6 +111,17 @@
     <div class="cate3" style="display:none;"></div>
 
     <div id="goods_view_wrap">
+        {{-- [LEGACY PARITY] 카테고리 브레드크럼(Breadcrumb) 복원 --}}
+        @if(!empty($breadcrumbs))
+            <div class="goods_breadcrumb" style="font-size: 13px; color: #555; margin-bottom: 20px; font-family: '맑은고딕', 'Malgun Gothic', sans-serif; text-align: left;">
+                <a href="/" style="color: #666; text-decoration: none;">Home</a>
+                @foreach($breadcrumbs as $bc)
+                    <span style="margin: 0 6px; color: #aaa;">&gt;</span>
+                    <a href="/goods/catalog?code={{ $bc['code'] }}" style="color: #333; text-decoration: none; font-weight: {{ $loop->last ? 'bold' : 'normal' }};">{{ $bc['title'] }}</a>
+                @endforeach
+            </div>
+        @endif
+
         <div id="info">
             <div id="goods_thumbs" class="clearbox">
                 <div class="box" style="width:100%; max-width:580px; margin:0 auto; height:auto;">
@@ -242,7 +253,7 @@
                                 {{ $product->goods_name }}
                             </h2>
                             <div class="pl_icon" onclick='goods_view_wish({{ $product->goods_seq }})'>
-                                <p>찜하기</p>
+                                <p>위시리스트</p>
                                 <i class="fas fa-heart btn-wish" title="위시리스트 추가"></i>
                             </div>
                             @if($product->summary)
@@ -322,7 +333,7 @@
                                                             <tr style="text-align:center;">
                                                                 <td
                                                                     style="padding:10px; border-bottom:1px solid #eee; border-right:1px solid #eee;">
-                                                                    <span class="price_red">{{ number_format($hundred_price) }} 원</span>
+                                                                    <span class="price_red" style="color: #d32f2f; font-weight: bold; font-size: 15px;">{{ number_format($hundred_price) }} 원</span>
                                                                 </td>
                                                                 <td
                                                                     style="padding:10px; border-bottom:1px solid #eee; border-right:1px solid #eee;">
@@ -330,9 +341,7 @@
                                                                 </td>
                                                                 <td
                                                                     style="padding:10px; border-bottom:1px solid #eee; border-right:1px solid #eee;">
-                                                                    <span
-                                                                        class="price_red">{{ number_format($ori_price - $mtype_discount) }}
-                                                                        원</span>
+                                                                    <span class="price_red" style="color: #d32f2f; font-weight: bold; font-size: 15px;">{{ number_format($ori_price - $mtype_discount) }} 원</span>
                                                                 </td>
                                                                 <td style="padding:10px; border-bottom:1px solid #eee;">
                                                                     {{ number_format($ori_price) }} 원
@@ -455,8 +464,7 @@
                                                             </td>
                                                             <td class="gst_td">
                                                                 <span
-                                                                    class="price_red">{{ number_format($ori_price - $mtype_discount) }}
-                                                                    원</span>
+                                                                    class="price_red" style="color: #d32f2f; font-weight: bold; font-size: 15px;">{{ number_format($ori_price - $mtype_discount) }} 원</span>
                                                             </td>
                                                             <td class="gst_td">
                                                                 {{ number_format($ori_price) }} 원
@@ -530,7 +538,7 @@
                                         style="width:31px; height:31px; border:none; cursor:pointer; background: url('/images/legacy/icon/cl_m.jpg') no-repeat; vertical-align:middle; margin-left:12px;"></button>
                                     
                                     <button type="button" class="button bgblue" style="color:white;padding:5px; margin-left:5px;" onclick="location.href='/etc/print_info'">인쇄비용안내</button>
-                                    <button type="button" class="button" style="color: red;padding:5px;background: yellow;font-weight: bold;font-size: 13px; margin-left:5px;" >50만원 이상 구매시 1도인쇄/몰드 비용 무료입니다.</button>
+                                    <span style="color: red; padding: 4px 8px; background: #ffff00; font-weight: bold; font-size: 12px; margin-left: 8px; border-radius: 2px; display: inline-block; vertical-align: middle;">50만원 이상 구매시 1도인쇄/몰드 비용 무료입니다.</span>
                                 </h3>
                                 <div class="goods_option_table" id="goods_option_input_area"
                                     style="display:block; border: 1px solid #e9ecef; border-bottom: none;">
@@ -614,7 +622,13 @@
                                                         @endif
                                                     </th>
                                                     <td style="padding:0 10px;" colspan="2">
-                                                        <input type="file" name="inputs[{{ $input->input_seq }}]" class="input_file">
+                                                        <div style="display: flex; align-items: center; width: 100%;">
+                                                            <input type="text" id="file_text_{{ $fileInputCount }}" readonly placeholder="선택된 파일 없음"
+                                                                style="flex: 1; height: 25px; border: 1px solid #ddd; padding: 0 8px; font-size: 13px; color: #555; background: #f8f9fa;">
+                                                            <button type="button" onclick="triggerFileInput('{{ $fileInputCount }}')"
+                                                                style="margin-left: 6px; height: 27px; line-height: 25px; padding: 0 12px; background: #eff2f4; border: 1px solid #dbe0e5; font-size: 13px; color: #333; font-weight: bold; cursor: pointer; outline: none; border-radius: 2px;">찾아보기..</button>
+                                                        </div>
+                                                        <input type="file" id="file_input_{{ $fileInputCount }}" name="inputs[{{ $input->input_seq }}]" class="input_file" style="display: none;" onchange="updateFileName('{{ $fileInputCount }}')">
                                                     </td>
                                                 </tr>
                                             @endif
@@ -1049,6 +1063,23 @@
 
         function increaseQty() {
             changeDefaultQty(1);
+        }
+
+        function triggerFileInput(idx) {
+            const fileInput = document.getElementById(`file_input_${idx}`);
+            if (fileInput) fileInput.click();
+        }
+
+        function updateFileName(idx) {
+            const fileInput = document.getElementById(`file_input_${idx}`);
+            const textInput = document.getElementById(`file_text_${idx}`);
+            if (fileInput && textInput) {
+                if (fileInput.files.length > 0) {
+                    textInput.value = fileInput.files[0].name;
+                } else {
+                    textInput.value = '선택된 파일 없음';
+                }
+            }
         }
 
         document.addEventListener('DOMContentLoaded', function () {
