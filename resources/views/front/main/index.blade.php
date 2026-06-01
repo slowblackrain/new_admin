@@ -526,12 +526,90 @@
             </div>
 
             <!-- GTD 베스트 // 롤링 (Legacy Parity) -->
-            <div class="notice" style="width: 291px !important;margin:0 !important;background-color: transparent !important;box-shadow: none !important; float:left;">
-                <div style="margin-top:0px;">
-                    <a href="/goods/catalog?code=0177"><img src="{{ asset('images/legacy/main/img/main_top_right1_fruit.jpg') }}" onerror="this.src='https://dometopia.com/data/skin/beauty/main/img/main_top_right1_fruit.jpg'" style="width: 100%;"></a>
+            <!-- GTD 베스트 // 롤링 (Legacy Parity) -->
+            <div class="notice" style="width: 291px !important; margin: 0 !important; background-color: transparent !important; box-shadow: none !important; float: left; position: relative;">
+                
+                <!-- 1. 초록자연 신선과일 배너 (GDF 기획전 가로 상품 3개 노출) -->
+                <div class="notice_list" onclick="location.href='/goods/catalog?code=01740017';" style="width: 291px !important; height: 194px; cursor: pointer; position: relative; overflow: hidden; border-radius: 3px;">
+                    <!-- Background Image with onerror fallback -->
+                    <img src="{{ asset('images/legacy/main/img/main_top_right1_fruit.jpg') }}" onerror="this.src='https://dometopia.com/data/skin/beauty/main/img/main_top_right1_fruit.jpg'" style="position: absolute; z-index: 1; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;">
+                    
+                    <!-- Dynamic Products Layer -->
+                    <div style="position: absolute; z-index: 2; top: 96px; width: 100%; display: flex; justify-content: center; gap: 8px; padding: 0 10px; box-sizing: border-box;" onclick="event.stopPropagation();">
+                        @foreach($gdfList->take(3) as $product)
+                            @php
+                                $imgSrc = asset('images/legacy/common/noimage.gif');
+                                $targetPath = null;
+                                if ($product->images && $product->images->count() > 0) {
+                                    $targetImg = $product->images->where('image_type', 'main')->first();
+                                    if (!$targetImg) $targetImg = $product->images->first();
+                                    if ($targetImg) $targetPath = $targetImg->image;
+                                }
+                                if (empty($targetPath) && !empty($product->img_s)) $targetPath = $product->img_s;
+                                if (!empty($targetPath)) {
+                                    $targetPath = trim($targetPath);
+                                    if (preg_match('/^http/', $targetPath)) $imgSrc = $targetPath;
+                                    elseif (Str::startsWith($targetPath, 'images/legacy_synced/')) $imgSrc = asset($targetPath);
+                                    elseif (strpos($targetPath, 'goods_img') !== false) {
+                                        $suffix = substr($targetPath, strpos($targetPath, 'goods_img') + 9);
+                                        $imgSrc = "https://dmtusr.vipweb.kr/goods_img" . $suffix;
+                                    }
+                                    else $imgSrc = 'http://dometopia.com/data/goods/' . $targetPath;
+                                }
+                            @endphp
+                            <div class="gdf-item" style="width: 78px; height: 78px; border-radius: 12px; overflow: hidden; background: #fff; border: 1px solid #e0e0e0; display: flex; justify-content: center; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                                <a href="/goods/view?no={{ $product->goods_seq }}" style="display: block; width: 100%; height: 100%;">
+                                    <img src="{{ $imgSrc }}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='{{ asset('images/legacy/common/noimage.gif') }}'">
+                                </a>
+                            </div>
+                        @endforeach
+                    </div>
                 </div>
-                <div style="margin-top:12px;">
-                    <a href="/goods/catalog?code=000500360008" target='_self'><img src="{{ asset('images/legacy/main/img/main_top_right2.jpg') }}" onerror="this.src='https://dometopia.com/data/skin/beauty/main/img/main_top_right2.jpg'" style="width: 100%;" title="썬캡" alt="썬캡"></a>
+
+                <!-- 2. 자외선 완벽차단 썬캡 배너 (초록자연 롤링 상품들 노출) -->
+                <div class="mds_recommand_roll" onclick="location.href='/goods/catalog?code=000500360008';" style="width: 291px !important; height: 194px; margin-top: 12px; cursor: pointer; position: relative; overflow: hidden; border-radius: 3px;">
+                    <!-- Background Image using 32KB highly optimized local suncap image -->
+                    <img src="/main_top_right2.jpg" style="position: absolute; z-index: 1; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;" onerror="this.src='https://dometopia.com/data/skin/beauty/main/img/main_top_f_right2.jpg'">
+                    
+                    <!-- Dynamic Rolling Products Layer -->
+                    <div class="innerBox" style="position: absolute; z-index: 2; width: 265px; height: 86px; overflow: hidden; left: 13px; bottom: 10px;" onclick="event.stopPropagation();">
+                        <ul class="right_banner_slider" style="list-style: none; padding: 0; margin: 0;">
+                            @foreach($specialRolling as $product)
+                                @php
+                                    $imgSrc = asset('images/legacy/common/noimage.gif');
+                                    $targetPath = null;
+                                    if ($product->images && $product->images->count() > 0) {
+                                        $targetImg = $product->images->where('image_type', 'main')->first();
+                                        if (!$targetImg) $targetImg = $product->images->first();
+                                        if ($targetImg) $targetPath = $targetImg->image;
+                                    }
+                                    if (empty($targetPath) && !empty($product->img_s)) $targetPath = $product->img_s;
+                                    if (!empty($targetPath)) {
+                                        $targetPath = trim($targetPath);
+                                        if (preg_match('/^http/', $targetPath)) $imgSrc = $targetPath;
+                                        elseif (Str::startsWith($targetPath, 'images/legacy_synced/')) $imgSrc = asset($targetPath);
+                                        elseif (strpos($targetPath, 'goods_img') !== false) {
+                                            $suffix = substr($targetPath, strpos($targetPath, 'goods_img') + 9);
+                                            $imgSrc = "https://dmtusr.vipweb.kr/goods_img" . $suffix;
+                                        }
+                                        else $imgSrc = 'http://dometopia.com/data/goods/' . $targetPath;
+                                    }
+                                @endphp
+                                <li>
+                                    <a href="/goods/view?no={{ $product->goods_seq }}" style="display: flex; align-items: center; text-decoration: none; width: 100%; height: 86px;">
+                                        <div style="width: 72px; height: 72px; border-radius: 12px; overflow: hidden; border: 1px solid #e0e0e0; background: #fff; display: flex; justify-content: center; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); flex-shrink: 0;">
+                                            <img src="{{ $imgSrc }}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='{{ asset('images/legacy/common/noimage.gif') }}'">
+                                        </div>
+                                        <div style="flex: 1; padding-left: 10px; text-align: left; overflow: hidden;">
+                                            <span style="font-size: 11px; color: #888; font-weight: bold; font-family: '맑은고딕', sans-serif;">[HOT]</span>
+                                            <h6 style="font-size: 12px; color: #333; margin: 2px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: bold; font-family: '맑은고딕', sans-serif;">{{ $product->goods_name }}</h6>
+                                            <p style="font-size: 12px; color: #f8601d; margin: 0; font-weight: 800; font-family: '맑은고딕', sans-serif;">도매가 {{ number_format($product->price) }}원</p>
+                                        </div>
+                                    </a>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
