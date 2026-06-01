@@ -38,8 +38,15 @@ class GoodsController extends Controller
                 ->get();
         }
 
-        // 3. Build Goods Query
-        $query = Goods::active()->excludeHiddenCodes()->with(['option', 'images']);
+        // 3. Build Goods Query (LEGACY PARITY: Allow normal AND runout status)
+        $query = Goods::where('goods_view', 'look')
+            ->whereIn('goods_status', ['normal', 'runout']) // Allow sold out items in catalog list
+            ->where('provider_status', '1')
+            ->whereHas('provider', function ($q) {
+                $q->where('provider_status', 'Y');
+            })
+            ->excludeHiddenCodes()
+            ->with(['option', 'images']);
 
         // [Parity] Filter private/ATS goods
         // Legacy logic: if member_seq is set, show (ATS=0 OR ATS=me). If guest, show ATS=0 only.
@@ -130,7 +137,9 @@ class GoodsController extends Controller
                       ->distinct();
                 break;
             case 'new': 
-                $query->orderBy('regist_date', 'desc');
+            case '': // [LEGACY PARITY] Default sorting must be 'new' (regist_date desc)
+                $query->orderBy('regist_date', 'desc')
+                      ->orderBy('goods_seq', 'desc');
                 break;
             default:
                 $query->orderBy('goods_seq', 'desc');
@@ -159,7 +168,15 @@ class GoodsController extends Controller
         $seqsStr = $request->input('seqs');
         $code = $request->input('code');
 
-        $query = Goods::active()->excludeHiddenCodes()->with(['option']);
+        // [LEGACY PARITY] Allow normal AND runout status
+        $query = Goods::where('goods_view', 'look')
+            ->whereIn('goods_status', ['normal', 'runout'])
+            ->where('provider_status', '1')
+            ->whereHas('provider', function ($q) {
+                $q->where('provider_status', 'Y');
+            })
+            ->excludeHiddenCodes()
+            ->with(['option']);
 
         // Filter private/ATS goods (Match legacy catalog logic)
         $memberSeq = auth()->check() ? auth()->user()->member_seq : 0;
@@ -218,7 +235,7 @@ class GoodsController extends Controller
             $query->where('regist_date', '<=', $request->input('date_end') . ' 23:59:59');
         }
 
-        $goodsList = $query->orderBy('goods_seq', 'desc')->get();
+        $goodsList = $query->orderBy('regist_date', 'desc')->orderBy('goods_seq', 'desc')->get();
 
         $filename = "catalog_goods_" . date('Ymd_His') . ".csv";
 
