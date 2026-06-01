@@ -51,6 +51,7 @@ Route::get('/popup/designpopup', [App\Http\Controllers\Front\PopupController::cl
 Route::prefix('goods')->name('goods.')->group(function () {
     Route::get('/view', [GoodsController::class, 'view'])->name('view');
     Route::get('/catalog', [GoodsController::class, 'catalog'])->name('catalog');
+    Route::get('/catalog/excel', [GoodsController::class, 'catalogExcel'])->name('catalog.excel');
     Route::get('/search', [GoodsController::class, 'search'])->name('search');
     Route::get('/restock/register', [App\Http\Controllers\Front\RestockController::class, 'register'])->name('restock.register');
     Route::post('/restock/store', [App\Http\Controllers\Front\RestockController::class, 'store'])->name('restock.store');

@@ -60,6 +60,7 @@
                     <form name="frmListSearch" method="get" action="{{ url()->current() }}">
                         <input type="hidden" name="code" value="{{ request('code') }}">
                         <input type="hidden" name="sort" value="{{ request('sort') }}">
+                        <input type="hidden" name="per_page" value="{{ request('per_page', 20) }}">
 
                         {{-- 결과내 재검색, 가격별, 등록일 --}}
                         <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 20px; margin-bottom: 18px; text-align: left;">
@@ -68,10 +69,10 @@
                             <div style="display: flex; align-items: center; gap: 5px;">
                                 <span style="font-weight: bold; color: #f25e1a; font-size:13px; margin-right:5px;">결과내 재검색</span>
                                 <label style="display: inline-flex; align-items: center; gap: 3px; cursor: pointer; font-size:12px;">
-                                    <input type="radio" name="search_type" value="include" checked style="margin: 0; vertical-align: middle;"> 포함
+                                    <input type="radio" name="search_type" value="include" {{ request('search_type') !== 'exclude' ? 'checked' : '' }} style="margin: 0; vertical-align: middle;"> 포함
                                 </label>
                                 <label style="display: inline-flex; align-items: center; gap: 3px; cursor: pointer; font-size:12px; margin-left:5px;">
-                                    <input type="radio" name="search_type" value="exclude" style="margin: 0; vertical-align: middle;"> 제외
+                                    <input type="radio" name="search_type" value="exclude" {{ request('search_type') === 'exclude' ? 'checked' : '' }} style="margin: 0; vertical-align: middle;"> 제외
                                 </label>
                                 <input type="text" name="search_text" value="{{ request('search_text') }}" placeholder="검색어 입력" style="border: 1px solid #ccc; height: 26px; width: 150px; padding: 0 5px; margin-left: 8px; outline: none; box-sizing: border-box;">
                             </div>
@@ -150,8 +151,11 @@
                     </ul>
 
                     <div>
-                        <select name="per_page" style="border: 1px solid #ccc; height: 26px; padding: 0 5px; outline: none; background: #fff; font-size: 12px; font-family:'Dotum';">
-                            <option value="75">75개씩 보기</option>
+                        <select name="per_page" onchange="changePerPage(this.value)" style="border: 1px solid #ccc; height: 26px; padding: 0 5px; outline: none; background: #fff; font-size: 12px; font-family:'Dotum';">
+                            <option value="20" {{ request('per_page', 20) == 20 ? 'selected' : '' }}>20개씩 보기</option>
+                            <option value="40" {{ request('per_page') == 40 ? 'selected' : '' }}>40개씩 보기</option>
+                            <option value="75" {{ request('per_page') == 75 ? 'selected' : '' }}>75개씩 보기</option>
+                            <option value="100" {{ request('per_page') == 100 ? 'selected' : '' }}>100개씩 보기</option>
                         </select>
                     </div>
                 </div>
@@ -164,7 +168,11 @@
                         <div class="goods_list_legacy_wrapper">
                             <ul class="goods_list_ul">
                                 @foreach($goods as $product)
-                                    <li>
+                                    <li style="position: relative;">
+                                        <!-- [LEGACY PARITY] Product Checkbox Overlay -->
+                                        <div style="position: absolute; top: 18px; left: 18px; z-index: 5;">
+                                            <input type="checkbox" class="product-select-chk" value="{{ $product->goods_seq }}" style="width: 18px; height: 18px; cursor: pointer; border: 1px solid #ccc; background: #fff;">
+                                        </div>
                                         @include('front.goods.component.legacy_product_item', ['product' => $product])
                                     </li>
                                 @endforeach
@@ -202,6 +210,59 @@
             } else {
                 alert('쇼핑몰 기능 로딩 중입니다. 잠시 후 다시 시도해 주세요.');
             }
+        }
+
+        // [LEGACY PARITY] per_page change handler
+        function changePerPage(val) {
+            var url = new URL(window.location.href);
+            url.searchParams.set('per_page', val);
+            url.searchParams.delete('page');
+            window.location.href = url.toString();
+        }
+
+        // [LEGACY PARITY] toggle select checkboxes
+        function toggleAllProducts(elem) {
+            var chks = document.querySelectorAll('.product-select-chk');
+            chks.forEach(function(chk) {
+                chk.checked = elem.checked;
+            });
+        }
+
+        // [LEGACY PARITY] download excel
+        function excelDownload() {
+            var chks = document.querySelectorAll('.product-select-chk:checked');
+            var seqs = [];
+            chks.forEach(function(chk) {
+                seqs.push(chk.value);
+            });
+            
+            var seqsStr = seqs.join(',');
+            
+            var url = new URL('{{ route("goods.catalog.excel") }}', window.location.origin);
+            if (seqsStr) {
+                url.searchParams.set('seqs', seqsStr);
+            }
+            
+            var code = '{{ request("code") }}';
+            if (code) {
+                url.searchParams.set('code', code);
+            }
+            
+            var searchText = '{{ request("search_text") }}';
+            var searchType = '{{ request("search_type") }}';
+            var priceStart = '{{ request("price_start") }}';
+            var priceEnd = '{{ request("price_end") }}';
+            var dateStart = '{{ request("date_start") }}';
+            var dateEnd = '{{ request("date_end") }}';
+            
+            if (searchText) url.searchParams.set('search_text', searchText);
+            if (searchType) url.searchParams.set('search_type', searchType);
+            if (priceStart) url.searchParams.set('price_start', priceStart);
+            if (priceEnd) url.searchParams.set('price_end', priceEnd);
+            if (dateStart) url.searchParams.set('date_start', dateStart);
+            if (dateEnd) url.searchParams.set('date_end', dateEnd);
+
+            window.location.href = url.toString();
         }
     </script>
 

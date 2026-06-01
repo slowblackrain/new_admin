@@ -59,14 +59,41 @@ class GoodsController extends Controller
             });
         }
 
-        // [New] Search within Category
+        // [New] Search within Category (Include / Exclude)
         $keyword = $request->input('search_text');
+        $searchType = $request->input('search_type', 'include');
         if ($keyword) {
-            $query->where(function ($q) use ($keyword) {
-                $q->where('goods_name', 'like', "%{$keyword}%")
-                  ->orWhere('goods_code', 'like', "%{$keyword}%")
-                  ->orWhere('goods_scode', 'like', "%{$keyword}%");
+            $query->where(function ($q) use ($keyword, $searchType) {
+                if ($searchType === 'exclude') {
+                    $q->where('goods_name', 'not like', "%{$keyword}%")
+                      ->where('goods_code', 'not like', "%{$keyword}%")
+                      ->where('goods_scode', 'not like', "%{$keyword}%");
+                } else {
+                    $q->where('goods_name', 'like', "%{$keyword}%")
+                      ->orWhere('goods_code', 'like', "%{$keyword}%")
+                      ->orWhere('goods_scode', 'like', "%{$keyword}%");
+                }
             });
+        }
+
+        // [New] Price Filter
+        if ($request->filled('price_start')) {
+            $query->whereHas('option', function ($q) use ($request) {
+                $q->where('price', '>=', $request->input('price_start'));
+            });
+        }
+        if ($request->filled('price_end')) {
+            $query->whereHas('option', function ($q) use ($request) {
+                $q->where('price', '<=', $request->input('price_end'));
+            });
+        }
+
+        // [New] Date Filter
+        if ($request->filled('date_start')) {
+            $query->where('regist_date', '>=', $request->input('date_start') . ' 00:00:00');
+        }
+        if ($request->filled('date_end')) {
+            $query->where('regist_date', '<=', $request->input('date_end') . ' 23:59:59');
         }
 
 
@@ -110,7 +137,11 @@ class GoodsController extends Controller
                 break;
         }
 
-        $goods = $query->paginate(20)->withQueryString();
+        $perPage = $request->input('per_page', 20);
+        if (!in_array($perPage, [20, 40, 75, 100])) {
+            $perPage = 20;
+        }
+        $goods = $query->paginate($perPage)->withQueryString();
 
         return view('front.goods.catalog', compact(
             'categories', 
@@ -121,6 +152,111 @@ class GoodsController extends Controller
             'sort',
             'keyword'
         ));
+    }
+
+    public function catalogExcel(Request $request)
+    {
+        $seqsStr = $request->input('seqs');
+        $code = $request->input('code');
+
+        $query = Goods::active()->excludeHiddenCodes()->with(['option']);
+
+        // Filter private/ATS goods (Match legacy catalog logic)
+        $memberSeq = auth()->check() ? auth()->user()->member_seq : 0;
+        if ($memberSeq) {
+            $query->where(function ($q) use ($memberSeq) {
+                $q->where('ATS_member_seq', 0)
+                  ->orWhere('ATS_member_seq', $memberSeq);
+            });
+        } else {
+            $query->where('ATS_member_seq', 0);
+        }
+
+        if ($seqsStr) {
+            $seqs = explode(',', $seqsStr);
+            $query->whereIn('goods_seq', $seqs);
+        } elseif ($code) {
+            $query->whereHas('categories', function ($q) use ($code) {
+                $q->where('fm_category.category_code', 'like', $code . '%');
+            });
+        } else {
+            $query->limit(200); // Protect memory
+        }
+
+        // Apply advanced search filters in excel if any
+        $keyword = $request->input('search_text');
+        $searchType = $request->input('search_type', 'include');
+        if ($keyword) {
+            $query->where(function ($q) use ($keyword, $searchType) {
+                if ($searchType === 'exclude') {
+                    $q->where('goods_name', 'not like', "%{$keyword}%")
+                      ->where('goods_code', 'not like', "%{$keyword}%")
+                      ->where('goods_scode', 'not like', "%{$keyword}%");
+                } else {
+                    $q->where('goods_name', 'like', "%{$keyword}%")
+                      ->orWhere('goods_code', 'like', "%{$keyword}%")
+                      ->orWhere('goods_scode', 'like', "%{$keyword}%");
+                }
+            });
+        }
+
+        if ($request->filled('price_start')) {
+            $query->whereHas('option', function ($q) use ($request) {
+                $q->where('price', '>=', $request->input('price_start'));
+            });
+        }
+        if ($request->filled('price_end')) {
+            $query->whereHas('option', function ($q) use ($request) {
+                $q->where('price', '<=', $request->input('price_end'));
+            });
+        }
+
+        if ($request->filled('date_start')) {
+            $query->where('regist_date', '>=', $request->input('date_start') . ' 00:00:00');
+        }
+        if ($request->filled('date_end')) {
+            $query->where('regist_date', '<=', $request->input('date_end') . ' 23:59:59');
+        }
+
+        $goodsList = $query->orderBy('goods_seq', 'desc')->get();
+
+        $filename = "catalog_goods_" . date('Ymd_His') . ".csv";
+
+        $headers = [
+            "Content-type"        => "text/csv; charset=UTF-8",
+            "Content-Disposition" => "attachment; filename=$filename",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+
+        $callback = function() use($goodsList) {
+            $file = fopen('php://output', 'w');
+            fwrite($file, "\xEF\xBB\xBF"); // BOM
+
+            fputcsv($file, ['순번', '관리코드', '상품코드', '상품명', '도매가', '낱개단가', '재고상태', '등록일']);
+
+            foreach ($goodsList as $index => $product) {
+                $wholesalePrice = $product->option->first()->price ?? 0;
+                $singlePrice = $wholesalePrice;
+                $runoutText = ($product->goods_status === 'normal') ? '판매중' : '품절';
+
+                fputcsv($file, [
+                    $index + 1,
+                    $product->goods_scode ?? '',
+                    $product->goods_code ?? '',
+                    $product->goods_name ?? '',
+                    number_format($wholesalePrice) . '원',
+                    number_format($singlePrice) . '원',
+                    $runoutText,
+                    $product->regist_date ? $product->regist_date->format('Y-m-d') : ''
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 
     public function view(Request $request, \App\Services\PricingService $pricingService, \App\Services\ShippingService $shippingService)
