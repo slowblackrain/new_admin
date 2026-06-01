@@ -701,7 +701,18 @@
         const initialGoodsPrice = {{ $totalPrice }};
         const maxEmoney = {{ $usableEmoney ?? 0 }};
         const maxCash = {{ $user->cash ?? 0 }};
-        let extraShippingCost = 0; // 추가 배송비 저장 변수
+        let extraShippingCost = {{ $extraCost ?? 0 }}; // [LEGACY PARITY] Sync with backend pre-calculated extra shipping cost
+
+        // Initialize extra shipping fee display on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            const wrap = document.getElementById('extra_shipping_wrap');
+            const display = document.getElementById('extra_shipping_display');
+            if (extraShippingCost > 0) {
+                wrap.style.display = 'inline-block';
+                display.innerText = new Intl.NumberFormat().format(extraShippingCost);
+            }
+            updateFinalPrice();
+        });
 
         // 비동기 추가 배송비 조회 로직
         function fetchShippingExtraCost(zipcode) {

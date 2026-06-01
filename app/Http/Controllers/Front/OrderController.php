@@ -19,17 +19,20 @@ class OrderController extends Controller
     protected AgencyProductService $agencyService;
     protected \App\Services\PricingService $pricingService;
     protected \App\Services\Admin\Goods\GoodsSetService $goodsSetService;
+    protected \App\Services\ShippingService $shippingService;
 
     public function __construct(
         \App\Services\Agency\AgencySettlementService $settlementService,
         AgencyProductService $agencyService,
         \App\Services\PricingService $pricingService,
-        \App\Services\Admin\Goods\GoodsSetService $goodsSetService
+        \App\Services\Admin\Goods\GoodsSetService $goodsSetService,
+        \App\Services\ShippingService $shippingService
     ) {
         $this->settlementService = $settlementService;
         $this->agencyService = $agencyService;
         $this->pricingService = $pricingService;
         $this->goodsSetService = $goodsSetService;
+        $this->shippingService = $shippingService;
     }
 
     public function index(Request $request)
@@ -112,11 +115,70 @@ class OrderController extends Controller
         $freeShippingThreshold = config('shop.shipping.free_threshold', 150000);
         $packagingCost = config('shop.shipping.packaging_cost', 300);
 
-        $shipping = 0;
-        // Only charge shipping if there are standard items and they don't meet threshold
-        if ($standardItemsTotal > 0 && $standardItemsTotal < $freeShippingThreshold) {
-            $shipping = $baseShipping;
+        // 1. Calculate Jeju/Island Mountainous Extra Shipping Fee based on default user address
+        $userZipcode = '';
+        if (Auth::check() && $user) {
+            $userZipcode = $user->zipcode;
+            $defaultAddr = DB::table('fm_delivery_address')
+                ->where('member_seq', $user->member_seq)
+                ->where('default', 'Y')
+                ->first();
+            if ($defaultAddr) {
+                $userZipcode = $defaultAddr->recipient_zipcode;
+            }
         }
+        
+        $extraCost = 0;
+        if ($userZipcode) {
+            $extraCost = DB::table('shipping_extra_costs')
+                ->where('zipcode_start', '<=', $userZipcode)
+                ->where('zipcode_end', '>=', $userZipcode)
+                ->value('extra_cost') ?? 0;
+        }
+
+        // 2. Compute Accumulative Dropship Fees & Standard HQ shipping
+        $hqTotal = 0;
+        $dropshipCost = 0;
+
+        foreach ($cartItems as $item) {
+            $goods = $item->goods;
+            $option = $item->options->first();
+            $ea = $option->ea ?? 1;
+
+            if (($option->shipping_method ?? '') === 'postpaid') {
+                continue; // postpaid/ATS items have zero prepaid shipping
+            }
+
+            // Options mapping logic
+            $matchedOption = null;
+            if ($goods && $goods->option) {
+                $matchedOption = $goods->option->first(function($o) use ($option) {
+                    return (string)$o->option1 == (string)$option->option1 &&
+                        (string)$o->option2 == (string)$option->option2 &&
+                        (string)$o->option3 == (string)$option->option3 &&
+                        (string)$o->option4 == (string)$option->option4 &&
+                        (string)$o->option5 == (string)$option->option5;
+                });
+            }
+            $calcOption = $matchedOption ?? ($goods->option ? $goods->option->first() : null);
+            $pricing = $this->pricingService->calculatePrice($goods, $calcOption, $ea);
+
+            if ($goods && $goods->shipping_policy === 'goods') {
+                // Dropship item
+                $dropshipCost += $this->shippingService->calculateProductShipping($goods, $ea);
+            } else {
+                // Standard Shop item
+                $hqTotal += $pricing['total_price'];
+            }
+        }
+
+        $shipping = $dropshipCost;
+        if ($hqTotal > 0 && $hqTotal < $freeShippingThreshold) {
+            $shipping += $baseShipping;
+        }
+
+        // Accumulate island/mountainous region extra shipping costs
+        $shipping += $extraCost;
 
         $tax = $totalVat;
         $finalPrice = $totalPrice + $shipping + $tax + $packagingCost;
@@ -182,7 +244,7 @@ class OrderController extends Controller
             }
         }
 
-        return view('front.order.order', compact('cartItems', 'user', 'totalPrice', 'cart_seqs', 'tax', 'finalPrice', 'shipping', 'packagingCost', 'coupons', 'hasExempt', 'usableEmoney', 'errReserve'));
+        return view('front.order.order', compact('cartItems', 'user', 'totalPrice', 'cart_seqs', 'tax', 'finalPrice', 'shipping', 'packagingCost', 'coupons', 'hasExempt', 'usableEmoney', 'errReserve', 'extraCost'));
     }
 
     public function calculateShipping(Request $request)

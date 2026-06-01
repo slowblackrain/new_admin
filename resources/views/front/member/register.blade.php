@@ -29,45 +29,109 @@
                     <tr style="border-bottom: 1px solid #eee;">
                         <th style="padding: 15px; text-align: left; background: #f9f9f9;">이름 <span style="color:red">*</span></th>
                         <td style="padding: 15px;">
-                            <input type="text" name="username" style="padding: 5px; width: 200px;">
+                            <input type="text" name="username" style="padding: 5px; width: 200px;" required>
                         </td>
                     </tr>
                     @if(isset($type) && $type === 'business')
-                    <tr style="border-bottom: 1px solid #eee;">
-                        <th style="padding: 15px; text-align: left; background: #f9f9f9;">상호명(법인명) <span style="color:red">*</span></th>
-                        <td style="padding: 15px;">
-                            <input type="text" name="bname" style="padding: 5px; width: 200px;">
-                        </td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #eee;">
-                        <th style="padding: 15px; text-align: left; background: #f9f9f9;">사업자등록번호 <span style="color:red">*</span></th>
-                        <td style="padding: 15px;">
-                            <input type="text" name="bno" placeholder="'-' 없이 입력" style="padding: 5px; width: 200px;">
-                        </td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #eee;">
-                        <th style="padding: 15px; text-align: left; background: #f9f9f9;">대표자명 <span style="color:red">*</span></th>
-                        <td style="padding: 15px;">
-                            <input type="text" name="bceo" style="padding: 5px; width: 200px;">
-                        </td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #eee;">
-                        <th style="padding: 15px; text-align: left; background: #f9f9f9;">사업자등록증 사본 <span style="color:red">*</span></th>
-                        <td style="padding: 15px;">
-                            <input type="file" name="bno_file" accept=".jpg,.jpeg,.png,.pdf" style="padding: 5px;">
-                        </td>
-                    </tr>
+                        {{-- 상호명 --}}
+                        @if(($joinform['bname_use'] ?? 'Y') === 'Y')
+                        <tr style="border-bottom: 1px solid #eee;">
+                            <th style="padding: 15px; text-align: left; background: #f9f9f9;">
+                                상호명(법인명) @if(($joinform['bname_required'] ?? 'Y') === 'Y') <span style="color:red">*</span> @endif
+                            </th>
+                            <td style="padding: 15px;">
+                                <input type="text" name="bname" style="padding: 5px; width: 200px;" @if(($joinform['bname_required'] ?? 'Y') === 'Y') required @endif>
+                            </td>
+                        </tr>
+                        @endif
+
+                        {{-- 사업자번호 --}}
+                        @if(($joinform['bno_use'] ?? 'Y') === 'Y')
+                        <tr style="border-bottom: 1px solid #eee;">
+                            <th style="padding: 15px; text-align: left; background: #f9f9f9;">
+                                사업자등록번호 @if(($joinform['bno_required'] ?? 'Y') === 'Y') <span style="color:red">*</span> @endif
+                            </th>
+                            <td style="padding: 15px;">
+                                <input type="text" name="bno" placeholder="'-' 없이 입력" style="padding: 5px; width: 200px;" @if(($joinform['bno_required'] ?? 'Y') === 'Y') required @endif>
+                            </td>
+                        </tr>
+                        @endif
+
+                        {{-- 대표자명 --}}
+                        @if(($joinform['bceo_use'] ?? 'Y') === 'Y')
+                        <tr style="border-bottom: 1px solid #eee;">
+                            <th style="padding: 15px; text-align: left; background: #f9f9f9;">
+                                대표자명 @if(($joinform['bceo_required'] ?? 'Y') === 'Y') <span style="color:red">*</span> @endif
+                            </th>
+                            <td style="padding: 15px;">
+                                <input type="text" name="bceo" style="padding: 5px; width: 200px;" @if(($joinform['bceo_required'] ?? 'Y') === 'Y') required @endif>
+                            </td>
+                        </tr>
+                        @endif
+
+                        {{-- 업태/종목 (bitem) --}}
+                        @if(($joinform['bitem_use'] ?? 'N') === 'Y')
+                        <tr style="border-bottom: 1px solid #eee;">
+                            <th style="padding: 15px; text-align: left; background: #f9f9f9;">
+                                업태/종목 @if(($joinform['bitem_required'] ?? 'N') === 'Y') <span style="color:red">*</span> @endif
+                            </th>
+                            <td style="padding: 15px;">
+                                <input type="text" name="bitem" placeholder="예: 도소매/전자상거래" style="padding: 5px; width: 200px;" @if(($joinform['bitem_required'] ?? 'N') === 'Y') required @endif>
+                            </td>
+                        </tr>
+                        @endif
+
+                        {{-- 사업장 전화번호 (bphone) --}}
+                        @if(($joinform['bphone_use'] ?? 'N') === 'Y')
+                        <tr style="border-bottom: 1px solid #eee;">
+                            <th style="padding: 15px; text-align: left; background: #f9f9f9;">
+                                전화번호(사업장) @if(($joinform['bphone_required'] ?? 'N') === 'Y') <span style="color:red">*</span> @endif
+                            </th>
+                            <td style="padding: 15px;">
+                                <input type="text" name="bphone" style="padding: 5px; width: 200px;" @if(($joinform['bphone_required'] ?? 'N') === 'Y') required @endif>
+                            </td>
+                        </tr>
+                        @endif
+
+                        {{-- 사업장 주소 (badress) --}}
+                        @if(($joinform['badress_use'] ?? 'N') === 'Y')
+                        <tr style="border-bottom: 1px solid #eee;">
+                            <th style="padding: 15px; text-align: left; background: #f9f9f9;">
+                                사업장 주소 @if(($joinform['badress_required'] ?? 'N') === 'Y') <span style="color:red">*</span> @endif
+                            </th>
+                            <td style="padding: 15px;">
+                                <input type="text" name="bzipcode" id="bzipcode" placeholder="우편번호" style="padding: 5px; width: 80px;" readonly @if(($joinform['badress_required'] ?? 'N') === 'Y') required @endif>
+                                <button type="button" onclick="openDaumPostcodeForBusiness()" style="padding: 5px 10px;">우편번호 찾기</button><br>
+                                <input type="text" name="baddress" id="baddress" placeholder="기본주소" style="padding: 5px; width: 350px; margin-top: 5px;" readonly><br>
+                                <input type="hidden" name="baddress_street" id="baddress_street">
+                                <input type="hidden" name="baddress_type" id="baddress_type">
+                                <input type="text" name="baddress_detail" placeholder="상세주소" style="padding: 5px; width: 250px; margin-top: 5px;" @if(($joinform['badress_required'] ?? 'N') === 'Y') required @endif>
+                            </td>
+                        </tr>
+                        @endif
+
+                        {{-- 사업자등록증 사본 --}}
+                        @if(($joinform['bno_use'] ?? 'Y') === 'Y')
+                        <tr style="border-bottom: 1px solid #eee;">
+                            <th style="padding: 15px; text-align: left; background: #f9f9f9;">
+                                사업자등록증 사본 @if(($joinform['bno_required'] ?? 'Y') === 'Y') <span style="color:red">*</span> @endif
+                            </th>
+                            <td style="padding: 15px;">
+                                <input type="file" name="bno_file" accept=".jpg,.jpeg,.png,.pdf" style="padding: 5px;" @if(($joinform['bno_required'] ?? 'Y') === 'Y') required @endif>
+                            </td>
+                        </tr>
+                        @endif
                     @endif
                     <tr style="border-bottom: 1px solid #eee;">
                         <th style="padding: 15px; text-align: left; background: #f9f9f9;">이메일 <span style="color:red">*</span></th>
                         <td style="padding: 15px;">
-                            <input type="email" name="email" style="padding: 5px; width: 300px;">
+                            <input type="email" name="email" style="padding: 5px; width: 300px;" required>
                         </td>
                     </tr>
                     <tr style="border-bottom: 1px solid #eee;">
                         <th style="padding: 15px; text-align: left; background: #f9f9f9;">휴대폰 <span style="color:red">*</span></th>
                         <td style="padding: 15px;">
-                            <input type="text" name="cellphone" style="padding: 5px; width: 200px;">
+                            <input type="text" name="cellphone" style="padding: 5px; width: 200px;" required>
                         </td>
                     </tr>
                 </table>
@@ -81,6 +145,7 @@
             </form>
 
             @push('scripts')
+                <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
                 <script>
                     $(document).ready(function () {
                         $('#btn_check_id').click(function () {
@@ -106,6 +171,25 @@
                             });
                         });
                     });
+
+                    // 사업자 주소 우편번호 찾기
+                    function openDaumPostcodeForBusiness() {
+                        new daum.Postcode({
+                            oncomplete: function (data) {
+                                var addr = '';
+                                if (data.userSelectedType === 'R') {
+                                    addr = data.roadAddress;
+                                    document.getElementById('baddress_type').value = 'street';
+                                } else {
+                                    addr = data.jibunAddress;
+                                    document.getElementById('baddress_type').value = 'zibun';
+                                }
+                                document.getElementById('bzipcode').value = data.zonecode;
+                                document.getElementById('baddress').value = addr;
+                                document.getElementById('baddress_street').value = data.roadAddress || data.autoRoadAddress || '';
+                            }
+                        }).open();
+                    }
                 </script>
             @endpush
 

@@ -105,12 +105,27 @@ class MemberController extends Controller
     public function register(Request $request)
     {
         $type = $request->query('type', 'general');
-        return view('front.member.register', compact('type'));
+        
+        // Fetch dynamic B2B registration settings from fm_config
+        $joinform = DB::table('fm_config')
+            ->where('groupcd', 'joinform')
+            ->get()
+            ->pluck('value', 'codecd')
+            ->toArray();
+            
+        return view('front.member.register', compact('type', 'joinform'));
     }
 
     public function register_process(Request $request)
     {
         $isBusiness = $request->input('type') === 'business';
+
+        // Fetch joinform settings from fm_config for dynamic validation
+        $joinform = DB::table('fm_config')
+            ->where('groupcd', 'joinform')
+            ->get()
+            ->pluck('value', 'codecd')
+            ->toArray();
 
         $rules = [
             'userid' => 'required|unique:fm_member,userid|min:4|max:20',
@@ -121,10 +136,38 @@ class MemberController extends Controller
         ];
 
         if ($isBusiness) {
-            $rules['bname'] = 'required';
-            $rules['bno'] = 'required';
-            $rules['bceo'] = 'required';
-            $rules['bno_file'] = 'required|file|mimes:jpeg,png,jpg,pdf|max:5120';
+            // bname (Company Name)
+            if (($joinform['bname_use'] ?? 'Y') === 'Y') {
+                $rules['bname'] = ($joinform['bname_required'] ?? 'Y') === 'Y' ? 'required' : 'nullable';
+            }
+            // bno (Business Number)
+            if (($joinform['bno_use'] ?? 'Y') === 'Y') {
+                $rules['bno'] = ($joinform['bno_required'] ?? 'Y') === 'Y' ? 'required' : 'nullable';
+            }
+            // bceo (CEO Name)
+            if (($joinform['bceo_use'] ?? 'Y') === 'Y') {
+                $rules['bceo'] = ($joinform['bceo_required'] ?? 'Y') === 'Y' ? 'required' : 'nullable';
+            }
+            // bno_file (Business License File)
+            if (($joinform['bno_use'] ?? 'Y') === 'Y') {
+                $rules['bno_file'] = ($joinform['bno_required'] ?? 'Y') === 'Y' 
+                    ? 'required|file|mimes:jpeg,png,jpg,pdf|max:5120' 
+                    : 'nullable|file|mimes:jpeg,png,jpg,pdf|max:5120';
+            }
+            // bitem (Business Item/Sector)
+            if (($joinform['bitem_use'] ?? 'N') === 'Y') {
+                $rules['bitem'] = ($joinform['bitem_required'] ?? 'N') === 'Y' ? 'required' : 'nullable';
+            }
+            // bphone (Business Phone)
+            if (($joinform['bphone_use'] ?? 'N') === 'Y') {
+                $rules['bphone'] = ($joinform['bphone_required'] ?? 'N') === 'Y' ? 'required' : 'nullable';
+            }
+            // badress (Business Address)
+            if (($joinform['badress_use'] ?? 'N') === 'Y') {
+                $rules['bzipcode'] = ($joinform['badress_required'] ?? 'N') === 'Y' ? 'required' : 'nullable';
+                $rules['baddress'] = ($joinform['badress_required'] ?? 'N') === 'Y' ? 'required' : 'nullable';
+                $rules['baddress_detail'] = ($joinform['badress_required'] ?? 'N') === 'Y' ? 'required' : 'nullable';
+            }
         }
 
         // 1. Validation
@@ -133,17 +176,11 @@ class MemberController extends Controller
         // 2. Hash Password (SHA-256 standard for new users)
         $passwordHash = hash('sha256', $validated['password']);
 
-        // Check Admin policy for B2B Auto Approve (Assuming it's stored in fm_config.b2b_auto_approve or similar, default false)
-        // Here we default to group 1 (General/Wait) if not auto-approved.
-        // If config requires, it could be group 2 (Dealer) etc.
-        // Let's assume manual approval: group 1, status 'done', mtype 'b2b'.
         $mtype = $isBusiness ? 'b2b' : 'person';
         
         $config = DB::table('fm_config')->first();
-        // Fallback to manual approval (group 1) if b2b_auto_approve is not set or false
         $groupSeq = 1; 
         if ($isBusiness && isset($config->b2b_auto_approve) && $config->b2b_auto_approve == 1) {
-            // Assume group 2 is a basic business/dealer group
             $groupSeq = 2; 
         }
 
@@ -154,13 +191,13 @@ class MemberController extends Controller
             'user_name' => $validated['username'],
             'nickname' => $validated['username'],
             'email' => $validated['email'],
-            'phone' => '',
+            'phone' => $isBusiness ? ($request->input('bphone') ?? '') : '',
             'cellphone' => $validated['cellphone'],
             'zipcode' => '',
             'address' => '',
             'address_street' => '',
             'address_detail' => '',
-            'company' => $isBusiness ? $validated['bname'] : '',
+            'company' => $isBusiness ? ($validated['bname'] ?? '') : '',
             'mtype' => $mtype,
 
             'regist_date' => now(),
@@ -191,23 +228,24 @@ class MemberController extends Controller
         if ($isBusiness) {
             $bnoFilePath = '';
             if ($request->hasFile('bno_file')) {
-                // Store file in storage/app/public/business_licenses
                 $path = $request->file('bno_file')->store('business_licenses', 'public');
                 $bnoFilePath = '/storage/' . $path;
             }
 
-            // Insert into fm_member_business
+            // Insert into fm_member_business with dynamic field safety
             DB::table('fm_member_business')->insert([
                 'member_seq' => $member->member_seq,
-                'bname' => $validated['bname'],
-                'bceo' => $validated['bceo'],
-                'bno' => $validated['bno'],
+                'bname' => $validated['bname'] ?? '',
+                'bceo' => $validated['bceo'] ?? '',
+                'bno' => $validated['bno'] ?? '',
                 'bno_file' => $bnoFilePath,
-                'bstatus' => 'done', // Or default
-                'bzipcode' => '',
-                'baddress' => '',
-                'baddress_detail' => '',
-                'baddress_street' => '',
+                'bstatus' => 'done', 
+                'bzipcode' => $request->input('bzipcode') ?? '',
+                'baddress' => $request->input('baddress') ?? '',
+                'baddress_detail' => $request->input('baddress_detail') ?? '',
+                'baddress_street' => $request->input('baddress_street') ?? '',
+                'bitem' => $request->input('bitem') ?? '', // 업태/종목
+                'bphone' => $request->input('bphone') ?? '', // 전화번호
             ]);
         }
 

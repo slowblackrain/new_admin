@@ -14,10 +14,14 @@ use Illuminate\Support\Facades\DB;
 class CartController extends Controller
 {
     protected $pricingService;
+    protected $shippingService;
 
-    public function __construct(\App\Services\PricingService $pricingService)
-    {
+    public function __construct(
+        \App\Services\PricingService $pricingService,
+        \App\Services\ShippingService $shippingService
+    ) {
         $this->pricingService = $pricingService;
+        $this->shippingService = $shippingService;
     }
 
     public function index()
@@ -129,10 +133,22 @@ class CartController extends Controller
                 // No prepay shipping if postpaid or empty
                 $group['shipping_cost'] = 0;
             } else {
-                // If group total is below threshold, charge base shipping once per group
-                if ($group['total_price'] < $freeShippingThreshold) {
-                    // Note: some dropship logic might have fixed unlimit_shipping_price, but fallback to base
-                    $group['shipping_cost'] = $baseShipping;
+                if ($key === 'hq_default') {
+                    // Default HQ Policy (Threshold-based)
+                    if ($group['total_price'] < $freeShippingThreshold) {
+                        $group['shipping_cost'] = $baseShipping;
+                    } else {
+                        $group['shipping_cost'] = 0;
+                    }
+                } elseif (strpos($key, 'dropship_') === 0) {
+                    // Dropship/Vendor Policy (Accumulative per individual item configurations)
+                    $dropshipCost = 0;
+                    foreach ($group['items'] as $item) {
+                        $option = $item->options->first();
+                        $ea = $option->ea ?? 1;
+                        $dropshipCost += $this->shippingService->calculateProductShipping($item->goods, $ea);
+                    }
+                    $group['shipping_cost'] = $dropshipCost;
                 } else {
                     $group['shipping_cost'] = 0;
                 }

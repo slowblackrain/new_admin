@@ -14,12 +14,83 @@
     </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 
+    @php
+        // [LEGACY PARITY] Extract icon badges using scode prefix & delivery configurations
+        $icons = [];
+        $scode = $product->goods_scode ?? '';
+        
+        $delivery = 'N';
+        if ($product->shipping_policy == 'goods' && $product->unlimit_shipping_price == 0 && $product->postpaid_delivery_cost_yn != 'y') {
+            $delivery = 'Y';
+        }
+
+        $isExcludedScodePrefix = in_array(substr($scode, 0, 3), ['OOO', 'CCC', 'DDD', 'BTB', 'BBB', 'GBC']);
+        
+        if (!$isExcludedScodePrefix && $scode) {
+            $s1 = substr($scode, 0, 1);
+            $s2 = substr($scode, 1, 1);
+            $s3 = substr($scode, 2, 1);
+
+            // First icon
+            if ($s1 == 'X' || $s1 == 'E') {
+                $icons[] = 'https://dometopia.com/data/skin/beauty/images/icon/G.gif';
+            } elseif (!in_array($s1, ['M', 'A', 'K', 'F', 'C']) && $s2) {
+                $icons[] = 'https://dometopia.com/data/skin/beauty/images/icon/' . $s1 . '.gif';
+            }
+
+            // Second icon
+            if (!in_array($s2, ['T', 'K', 'B']) && $s1 != 'F') {
+                $icons[] = 'https://dometopia.com/data/skin/beauty/images/icon/_' . $s2 . '.gif';
+            }
+
+            // Free delivery icon
+            if ($delivery == 'Y') {
+                $icons[] = 'https://dometopia.com/data/icon/common/free_delivery.gif';
+            }
+
+            // Video icon
+            if ($product->defaultInfo && $product->defaultInfo->video_url) {
+                $icons[] = 'https://dometopia.com/data/icon/common/vod_icon.gif';
+            }
+
+            // Third icon
+            if (!in_array($s3, ['S', 'A', 'M', 'L', 'Y', 'D', 'C']) && !in_array($s1, ['K', 'F']) && $s3) {
+                $icons[] = 'https://dometopia.com/data/skin/beauty/images/icon/__' . $s3 . '.gif';
+            }
+        }
+        
+        // Out of stock icon
+        $isSoldout = false;
+        if ($product->goods_status == 'runout') {
+             $isSoldout = true;
+        } elseif ($product->goods_status_info) {
+             $statusInfoArr = explode(',', rtrim($product->goods_status_info, ','));
+             if (in_array('soldout', $statusInfoArr)) {
+                 $isSoldout = true;
+             }
+        }
+        
+        if ($isSoldout) {
+            $icons[] = 'https://dometopia.com/data/icon/common/end_icon.gif';
+        }
+    @endphp
+
     <div id="goods_view_wrap">
         <div id="info">
             <div id="goods_thumbs" class="clearbox">
                 <div class="box" style="width:100%; max-width:580px; margin:0 auto; height:auto;">
                     <div class="slides_container"
-                        style="border:1px solid #E2E2E2; margin:auto; width:100%; min-height:300px; text-align:center;">
+                        style="position: relative; border:1px solid #E2E2E2; margin:auto; width:100%; min-height:300px; text-align:center;">
+                        
+                        {{-- Absolute overlay for badges --}}
+                        @if(!empty($icons))
+                        <div style="position: absolute; top: 10px; left: 10px; z-index: 10; display: flex; flex-direction: column; gap: 4px; text-align: left;">
+                            @foreach($icons as $iconSrc)
+                                <img src="{{ $iconSrc }}" alt="icon" style="vertical-align:top;" />
+                            @endforeach
+                        </div>
+                        @endif
+
                         @php
                             $viewImage = $product->images->where('image_type', 'view')->first();
                             $imgSrc = '/images/no_image.gif';
@@ -96,7 +167,12 @@
 
                     <div class="container">
                         <div class="pl_name">
-                            <h2>{{ $product->goods_name }}</h2>
+                            <h2>
+                                @foreach($icons as $iconSrc)
+                                    <img src="{{ $iconSrc }}" alt="icon" style="vertical-align: middle; margin-right: 3px;" />
+                                @endforeach
+                                {{ $product->goods_name }}
+                            </h2>
                             <div class="pl_icon" onclick='goods_view_wish({{ $product->goods_seq }})'>
                                 <p>찜하기</p>
                                 <i class="fas fa-heart btn-wish" title="위시리스트 추가"></i>
@@ -1188,7 +1264,25 @@
         }
 
         function processOrder() {
-            processCart(true);
+            if (!validateForm()) return;
+            
+            let form = document.forms['goodsForm'];
+            if (!form) form = document.getElementById('goodsForm');
+            if (!form) {
+                alert('주문 폼을 찾을 수 없습니다.');
+                return;
+            }
+
+            let directInput = form.querySelector('input[name="direct_buy"]');
+            if (!directInput) {
+                directInput = document.createElement('input');
+                directInput.type = 'hidden';
+                directInput.name = 'direct_buy';
+                form.appendChild(directInput);
+            }
+            directInput.value = 'Y';
+
+            form.submit();
         }
 
         function processCart(isDirectOrder = false) {
@@ -1199,6 +1293,11 @@
             if (!form) {
                 alert('주문 폼을 찾을 수 없습니다.');
                 return;
+            }
+
+            let directInput = form.querySelector('input[name="direct_buy"]');
+            if (directInput) {
+                directInput.value = 'N';
             }
 
             const formData = new FormData(form);
