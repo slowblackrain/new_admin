@@ -1,0 +1,203 @@
+input[id="menuicon"]{display: none;}
+input[id="menuicon"]+label {
+        width: 40px;
+        height: 40px;
+        position: fixed;
+        left: 0;
+        top: calc(50% - 25px);
+        transition-property: none;
+        cursor: pointer;
+        border: 10px solid #fff ;
+        outline: 1px solid #ddd;
+        background-color: #fff;
+        z-index: 998;
+		}
+
+input[id="menuicon"]+label span {
+        display: block;
+        position: absolute;
+        width: 100%;
+        height: 2px;
+        border-radius: 30px;
+        background: #000;
+        transition: all .35s;
+    }
+
+input[id="menuicon"]+label span:nth-child(1) {
+        top: 0;
+    }
+
+input[id="menuicon"]+label span:nth-child(2) {
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+input[id="menuicon"]+label span:nth-child(3) {
+        bottom: 0;
+    }
+
+input[id="menuicon"]:checked+label {
+        left: 169px;
+		top:131px;
+        color: #333;
+        border: 10px solid #fff;
+        outline: 1px solid #fff;
+		background-color: #fff;
+		transition-property: none;
+		z-index: 999;
+		opacity: 0;
+		animation: fadeInText 1.3s 0.2s ease-out forwards;
+    }
+
+
+
+
+.sidebar{overflow-x:hidden; overflow-y: scroll; padding-bottom:25px;}
+.sidebar a{position: relative; display:block; line-height: 2.8; font-size: 13px; padding: 0 0 2px 20px; color:#333;}
+.sidebar a > i{
+	position: absolute;
+    top: 40%;
+    right: 20px;
+    width: 8px;
+    height: 8px;
+    border: solid #fff;
+    border-width: 2px 2px 0px 0;
+    -webkit-transform: rotate(45deg);
+    -ms-transform: rotate(45deg);
+    transform: rotate(45deg);
+    content: "";
+	}
+.sidebar h3{padding: 25px 20px 12px; font-weight: bold; position: sticky; top: 0; background-color:#fff; width: 100%; z-index: 9999;}
+
+/**?レ????**/
+input[id="menuicon"]:checked+label span {
+        background: #333;
+    }
+
+input[id="menuicon"]:checked+label span:nth-child(1) {
+        top: 50%;
+        transform: translateY(-50%) rotate(45deg);
+    }
+
+input[id="menuicon"]:checked+label span:nth-child(2) {
+        opacity: 0
+    }
+
+input[id="menuicon"]:checked+label span:nth-child(3) {
+        bottom: 50%;
+        transform: translateY(50%) rotate(-45deg);
+    }
+
+div[class="sidebar"] {
+        width: 200px;
+        height: 610px;
+        background: #fff;
+        border: 1px solid #ddd;
+        position: fixed;
+        top: 110px;
+        left:-200px;
+        transition: all .35s;
+		box-shadow: 4px 0px 7px 1px rgb(0 0 0 / 10%);
+    }
+
+input[id="menuicon"]:checked+label+div {
+	top: 110px;
+    left: 20px;
+	height: 610px;
+	padding: 0;
+	z-index: 997;
+    }
+
+
+.sidebar::-webkit-scrollbar {
+    width: 10px;
+  }
+.sidebar::-webkit-scrollbar-thumb {
+    background-color: #ddd;
+    background-clip: padding-box;
+    border: 2px solid transparent;
+  }
+.sidebar::-webkit-scrollbar-track {
+    background-color:#f6f6f6;
+    border-radius: 10px;
+    box-shadow: inset 0px 0px 5px white;
+  }
+.sidebar img{
+ width: 200px; height: 199px; top: 720px;position: fixed; box-shadow: 4px 0px 7px 1px rgb(0 0 0 / 10%); margin-left:-1px;
+ }
+
+/* ??硫????ㅻ? CSS 異?媛? */
+.left_cate.active {
+	background-color : #3ba0ff;
+	color : #fff;
+    transition: 1s ease-out;
+
+}
+
+
+.cate1 { position: relative; display: block;}
+.cate2 { position: fixed; top: 110px; background: #fff; left: 220px; padding-top:5px; border: 1px solid #ddd; width: 200px; height: 809px; overflow: hidden; z-index: 999; overflow-y: scroll;box-shadow: 4px 0px 7px 1px rgb(0 0 0 / 10%); }
+.cate2 a, .cate3 a{ display: flex; position: relative; top: 10px; line-height: 2.55; font-size: 13px; padding: 0 0 2px 20px; color: #333;}
+.cate3 { position: fixed; top: 110px; background: #fff; left: 419px; border: 1px solid #ddd; width: 180px; height: 809px; overflow: hidden; z-index: 999; overflow-y: scroll; 
+box-shadow: 4px 0px 7px 1px rgb(0 0 0 / 10%);}
+.cate2::-webkit-scrollbar { width: 10px; }
+.cate2::-webkit-scrollbar-thumb { background-color: #ddd; background-clip: padding-box; border: 2px solid transparent; }
+.cate2::-webkit-scrollbar-track { background-color: #f6f6f6; border-radius: 10px; box-shadow: inset 0px 0px 5px white; }
+.cate3::-webkit-scrollbar { width: 10px; }
+.cate3::-webkit-scrollbar-thumb { background-color: #ddd; background-clip: padding-box; border: 2px solid transparent; }
+.cate3::-webkit-scrollbar-track { background-color: #f6f6f6; border-radius: 10px; box-shadow: inset 0px 0px 5px white; }
+
+/* .cate1 a:hover{color:#fff; font-weight: 500; background-color:#3ba0ff;} */
+.cate2 a:hover, .cate3 a:hover{color:#3ba0ff; font-weight: 500; background-color:#fff;}
+
+/*移댄??怨?由??닿린 留?????*/
+
+input[id="menuicon"]:checked+label .arrow_box{
+	display: none;
+}
+
+.arrow_box {
+	position: relative;
+    background: #333;
+    margin: -10px 45px 0;
+    width: 105px;
+    padding-left: 10px;
+    font-weight: 400;
+    color: #fff;
+    font-size: 15px;
+    height: 30px;
+	border-radius: 2px;
+    line-height: 2;
+	box-shadow: 2px 2px 3px 0 rgb(0 0 0 / 20%);
+	animation: motion 0.8s /* ???? */
+               linear 0s   /* 泥???遺?????源?吏? ?쇱?? ????濡? 吏??? */
+               infinite alternate; /* 臾댄?? 諛?蹂?*/
+  }
+  @keyframes motion {
+	0% {margin-top: -5px;} /* 泥??? ??移? */
+	100% {margin-top: 5px;} /* 留?吏?留? ??移? */
+  }
+
+.arrow_box:after, .arrow_box:before {
+	right: 100%;
+	top: 50%;
+	border: solid transparent;
+	content: "";
+	height: 0;
+	width: 0;
+	position: absolute;
+	pointer-events: none;
+}
+
+.arrow_box:before {
+	border-color: rgba(194, 225, 245, 0);
+	border-right-color: #333;
+	border-width: 6px;
+	margin-top: -6px;
+}
+
+
+@keyframes fadeInText {
+    100% {
+        opacity: 1;
+    }

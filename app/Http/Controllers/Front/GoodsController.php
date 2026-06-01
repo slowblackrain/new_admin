@@ -408,4 +408,71 @@ class GoodsController extends Controller
             'aiAnalysis', 'priceList', 'dayList', 'sort'
         ));
     }
+
+    public function getCate(Request $request)
+    {
+        $code = $request->input('category_code');
+        $len = strlen($code) + 4;
+        
+        $cateArr = \App\Models\Category::where('hide', '0')
+            ->whereRaw('length(category_code) = ?', [$len])
+            ->where('category_code', 'like', $code . '%')
+            ->orderBy('position')
+            ->get();
+            
+        $count = $cateArr->count();
+        
+        $html = '<input type="hidden" class="cate_count" value="' . $count . '">';
+        foreach ($cateArr as $cat) {
+            $html .= '<a href="/goods/catalog?code=' . $cat->category_code . '" data-value="' . $cat->category_code . '" class="left_cate2">' . $cat->title . '<i></i></a>';
+        }
+        
+        $html .= '
+        <script>
+        $(".left_cate2").mouseover(function() {
+            var code = $(this).attr("data-value");
+            $.ajax({
+                url: "/goods/get_cate2",
+                data: "category_code="+code,
+                context: this,
+                success: function(data) {
+                    $(".cate3").html(data);
+                    var cnt = $(".cate_count2").val();
+                    if(cnt > 0) {
+                        $(".left_cate2").css( "color", "" );
+                        $(".left_cate2").css( "background-color", "" );
+                        $( this ).css( "color", "#3ba0ff" );
+                        $( this ).css( "background-color", "#fff" );
+                        $(".cate3").css("display", "block");
+                    } else {
+                        $(".cate3").css("display", "none");
+                    }
+                }
+            });
+        });
+        </script>';
+        
+        return response($html);
+    }
+
+    public function getCate2(Request $request)
+    {
+        $code = $request->input('category_code');
+        $len = strlen($code) + 4;
+        
+        $cateArr = \App\Models\Category::where('hide', '0')
+            ->whereRaw('length(category_code) = ?', [$len])
+            ->where('category_code', 'like', $code . '%')
+            ->orderBy('position')
+            ->get();
+            
+        $count = $cateArr->count();
+        
+        $html = '<input type="hidden" class="cate_count2" value="' . $count . '">';
+        foreach ($cateArr as $cat) {
+            $html .= '<a href="/goods/catalog?code=' . $cat->category_code . '" data-value="' . $cat->category_code . '" class="left_cate3">' . $cat->title . '<i></i></a>';
+        }
+        
+        return response($html);
+    }
 }

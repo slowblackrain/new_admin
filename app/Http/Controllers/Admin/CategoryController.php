@@ -63,30 +63,47 @@ class CategoryController extends Controller
         $max_pos = Category::where('parent_id', $parent_id)->max('position');
         $position = $max_pos !== null ? $max_pos + 1 : 0;
         
-        // Generate Code (Simple Logic: Random or Max+1)
-        // Legacy seems to use 4-char chunks. For now simple unique ID or microtime
-        $code = substr(str_shuffle("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"), 0, 8); 
+        // Generate Code following the 4-digit hierarchical prefix chunk structure
+        if ($parent_id == 0 || $parent_id == 1) { // Root Level (assuming 1 is root)
+            $maxCode = Category::whereRaw('length(category_code) = 4')
+                ->max('category_code');
+            
+            if (!$maxCode) {
+                $code = '0001';
+            } else {
+                $next = intval($maxCode) + 1;
+                $code = sprintf('%04d', $next);
+            }
+            $level = 1;
+        } else {
+            $parent = Category::find($parent_id);
+            if (!$parent) {
+                return response()->json(['error' => 'Parent category not found'], 400);
+            }
+            $parentCode = $parent->category_code;
+            $parentLen = strlen($parentCode);
+            $childLen = $parentLen + 4;
+            
+            $maxChildCode = Category::where('category_code', 'like', $parentCode . '%')
+                ->whereRaw('length(category_code) = ?', [$childLen])
+                ->max('category_code');
+                
+            if (!$maxChildCode) {
+                $code = $parentCode . '0001';
+            } else {
+                $last4 = substr($maxChildCode, -4);
+                $next = intval($last4) + 1;
+                $code = $parentCode . sprintf('%04d', $next);
+            }
+            $level = $parent->level + 1;
+        }
 
         $category = new Category();
         $category->parent_id = $parent_id;
         $category->title = '새 카테고리';
         $category->position = $position;
         $category->category_code = $code; 
-        $category->category_code = $code; 
-        
-        if ($parent_id == 0) {
-            $category->level = 1;
-        } else {
-            $parent = Category::find($parent_id);
-            if (!$parent) {
-                // Determine fallback: Root(1) or if 1 is missing, error?
-                // For now throw error or fallback to 1.
-                // But verify_script sends 1. If 1 is missing, we have a problem.
-                return response()->json(['error' => 'Parent category not found'], 400);
-            }
-            $category->level = $parent->level + 1;
-        }
-        
+        $category->level = $level;
         $category->hide = '1'; // Default Hidden
         $category->regist_date = now();
         $category->update_date = now();
@@ -119,46 +136,116 @@ class CategoryController extends Controller
         $category = Category::find($id);
         if (!$category) return response()->json(['error' => 'Not found'], 404);
 
-        // Update Parent
-        $category->parent_id = ($parent_id == '#') ? 1 : $parent_id; 
-        // Note: verify if '#' maps to 1 or 0 based on legacy root.
-        // If legacy root is 1, and we move to top level, parent should be 1.
+        $oldCode = $category->category_code;
         
-        // Determine Level
-        if ($category->parent_id == 0) {
-            $category->level = 1;
-        } else {
-             $p = Category::find($category->parent_id);
-             $category->level = $p ? $p->level + 1 : 1;
-        }
+        // Calculate new parent_id
+        $parent_id = ($parent_id == '#') ? 1 : $parent_id; 
 
-        $category->save();
-
-        // Reorder Siblings
-        // Get all siblings ordered by current position
-        // This is complex because we inserted at a specific index. 
-        // Re-sorting all siblings is safer.
-        // But we only know the 'position' index provided by JSTree.
-        // We should shift others.
-        
-        // Simplest: Get all siblings (excluding self if we hadn't saved yet, but we did).
-        // Actually, we should set self to that position, and shift others.
-        // Let's do a bulk update for siblings.
-        
-        $siblings = Category::where('parent_id', $category->parent_id)
-            ->where('id', '!=', $id)
-            ->orderBy('position', 'asc')
-            ->get();
-        
-        $siblings->splice($position, 0, [$category]); // Insert self at new pos
-        
-        foreach ($siblings as $idx => $node) {
-            if ($node->position != $idx) { // optimization
-                DB::table('fm_category')->where('id', $node->id)->update(['position' => $idx]);
+        // Generate new code based on the new parent
+        if ($parent_id == 0 || $parent_id == 1) { // Root Level
+            $maxCode = Category::whereRaw('length(category_code) = 4')
+                ->where('id', '!=', $id)
+                ->max('category_code');
+            
+            if (!$maxCode) {
+                $newCode = '0001';
+            } else {
+                $next = intval($maxCode) + 1;
+                $newCode = sprintf('%04d', $next);
             }
+            $level = 1;
+        } else {
+            $parent = Category::find($parent_id);
+            if (!$parent) {
+                return response()->json(['error' => 'Parent not found'], 400);
+            }
+            $parentCode = $parent->category_code;
+            $parentLen = strlen($parentCode);
+            $childLen = $parentLen + 4;
+            
+            $maxChildCode = Category::where('category_code', 'like', $parentCode . '%')
+                ->whereRaw('length(category_code) = ?', [$childLen])
+                ->where('id', '!=', $id)
+                ->max('category_code');
+                
+            if (!$maxChildCode) {
+                $newCode = $parentCode . '0001';
+            } else {
+                $last4 = substr($maxChildCode, -4);
+                $next = intval($last4) + 1;
+                $newCode = $parentCode . sprintf('%04d', $next);
+            }
+            $level = $parent->level + 1;
         }
+
+        DB::transaction(function () use ($id, $parent_id, $level, $oldCode, $newCode, $position) {
+            $category = Category::find($id);
+            $oldLevel = $category->level;
+            
+            $category->parent_id = $parent_id;
+            $category->level = $level;
+            $category->category_code = $newCode;
+            $category->save();
+
+            // Recursively update all child categories and their related tables
+            if ($oldCode && $newCode && $oldCode !== $newCode) {
+                $descendants = Category::where('category_code', 'like', $oldCode . '%')
+                    ->where('id', '!=', $id)
+                    ->get();
+
+                foreach ($descendants as $desc) {
+                    $descOldCode = $desc->category_code;
+                    $descNewCode = $newCode . substr($descOldCode, strlen($oldCode));
+                    $newDescLevel = $desc->level + ($level - $oldLevel);
+
+                    DB::table('fm_category')->where('id', $desc->id)->update([
+                        'category_code' => $descNewCode,
+                        'level' => $newDescLevel
+                    ]);
+
+                    $this->updateRelatedTables($descOldCode, $descNewCode);
+                }
+
+                // Update related tables for the moved category itself
+                $this->updateRelatedTables($oldCode, $newCode);
+            }
+
+            // Reorder siblings
+            $siblings = Category::where('parent_id', $parent_id)
+                ->where('id', '!=', $id)
+                ->orderBy('position', 'asc')
+                ->get();
+            
+            $siblings->splice($position, 0, [$category]);
+            
+            foreach ($siblings as $idx => $node) {
+                if ($node->position != $idx) {
+                    DB::table('fm_category')->where('id', $node->id)->update(['position' => $idx]);
+                }
+            }
+        });
 
         return response()->json(['success' => true]);
+    }
+
+    private function updateRelatedTables($oldCode, $newCode)
+    {
+        $tables = [
+            'fm_category_link' => 'category_code',
+            'fm_category_group' => 'category_code',
+            'fm_coupon_issuecategory' => 'category_code',
+            'fm_download_issuecategory' => 'category_code',
+            'fm_event_choice' => 'category_code',
+            'fm_member_group_issuecategory' => 'category_code'
+        ];
+
+        foreach ($tables as $table => $column) {
+            try {
+                DB::table($table)->where($column, $oldCode)->update([$column => $newCode]);
+            } catch (\Exception $e) {
+                // Gracefully handle missing tables in testing environment
+            }
+        }
     }
 
     // Delete Node

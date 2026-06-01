@@ -49,6 +49,10 @@
                             <th scope="col">선택</th>
                         </tr>
                     </thead>
+                    @php
+                        $totalPrice = 0;
+                        $totalVat = $totalVat ?? 0;
+                    @endphp
                     @forelse($groupedCart as $groupKey => $group)
                     <tbody class="shipping-group" data-group-key="{{ $groupKey }}">
                         <tr class="group-header" style="background-color: #f8f9fa;">

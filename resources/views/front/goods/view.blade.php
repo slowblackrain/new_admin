@@ -75,6 +75,39 @@
         }
     @endphp
 
+    {{-- [LEGACY PARITY] Desktop category left sidebar --}}
+    <link rel="stylesheet" type="text/css" href="/css/legacy/left_category.css">
+    <script src="/js/legacy/left_category.js" defer></script>
+    @php
+        $leftCategories = \App\Models\Category::whereRaw('length(category_code) = 4')
+            ->where('hide', '!=', '1')
+            ->orderBy('position')
+            ->get();
+    @endphp
+
+    <input type="checkbox" id="menuicon" style="display:none;">
+    <label for="menuicon" style="cursor:pointer;">
+        <span></span>
+        <span></span>
+        <span></span>
+        <div class="arrow_box">카테고리 열기</div>
+    </label>
+
+    <div class="sidebar">
+        <h3>전체카테고리</h3>
+        @foreach($leftCategories as $lcat)
+            <div class="cate1" id="cate1">
+                @if($lcat->category_code == '0146')
+                    <a href="/gift" data-value="{{ $lcat->category_code }}" class="left_cate">{{ $lcat->title }}<i></i></a>
+                @else
+                    <a href="/goods/catalog?code={{ $lcat->category_code }}" data-value="{{ $lcat->category_code }}" class="left_cate">{{ $lcat->title }}<i></i></a>
+                @endif
+            </div>
+        @endforeach
+    </div>
+    <div class="cate2" style="display:none;"></div>
+    <div class="cate3" style="display:none;"></div>
+
     <div id="goods_view_wrap">
         <div id="info">
             <div id="goods_thumbs" class="clearbox">
@@ -119,9 +152,13 @@
 
                 {{-- Thumbnails --}}
                 @if($product->images->where('image_type', 'view')->count() > 1)
+                    @php
+                        $thumbImages = $product->images->where('image_type', 'view')->values();
+                        $totalThumbs = $thumbImages->count();
+                    @endphp
                     <div class="box_thumbs">
-                        <ul class="pagination clearbox">
-                            @foreach($product->images->where('image_type', 'view') as $img)
+                        <ul class="pagination clearbox" style="margin-bottom: 10px;">
+                            @foreach($thumbImages as $index => $img)
                                 @php
                                     $iPath = $img->image;
                                     $tSrc = '/images/no_image.gif';
@@ -138,7 +175,7 @@
                                         }
                                     }
                                 @endphp
-                                <li>
+                                <li class="thumb-item" style="@if($index >= 8) display: none; @else display: inline-block; @endif">
                                     <a href="javascript:void(0);"
                                         onclick="changeMainImage('{{ $tSrc }}')">
                                         <img src="{{ $tSrc }}" width="85" height="85"
@@ -147,6 +184,11 @@
                                 </li>
                             @endforeach
                         </ul>
+                        @if($totalThumbs > 8)
+                            <div class="extend" style="text-align: center; border-top: 1px solid #ddd; padding-top: 10px; margin-top: 10px;">
+                                <span class="more hand" onclick="toggleThumbnails(this)" style="cursor: pointer; font-size: 13px; color: #555; font-weight: bold; border: 1px solid #ddd; padding: 6px 15px; border-radius: 3px; display: inline-block; background: #fafafa;">섬네일 모두 보기 <i class="fas fa-chevron-down" style="margin-left:5px; font-size:10px;"></i></span>
+                            </div>
+                        @endif
                     </div>
                 @endif
 
@@ -154,6 +196,30 @@
                     function changeMainImage(src) {
                         const img = document.querySelector('#goods_thumbs .slides_container img');
                         if (img) img.src = src;
+                    }
+
+                    function toggleThumbnails(btn) {
+                        const items = document.querySelectorAll('.box_thumbs .thumb-item');
+                        let isHidden = false;
+                        
+                        for (let i = 8; i < items.length; i++) {
+                            if (items[i].style.display === 'none') {
+                                isHidden = true;
+                                break;
+                            }
+                        }
+
+                        if (isHidden) {
+                            for (let i = 8; i < items.length; i++) {
+                                items[i].style.display = 'inline-block';
+                            }
+                            btn.innerHTML = '섬네일 접기 <i class="fas fa-chevron-up" style="margin-left:5px; font-size:10px;"></i>';
+                        } else {
+                            for (let i = 8; i < items.length; i++) {
+                                items[i].style.display = 'none';
+                            }
+                            btn.innerHTML = '섬네일 모두 보기 <i class="fas fa-chevron-down" style="margin-left:5px; font-size:10px;"></i>';
+                        }
                     }
                 </script>
             </div>
@@ -402,6 +468,18 @@
                                 @endif
                             </tr>
 
+                            {{-- [LEGACY PARITY] Minimum Purchase Quantity Row --}}
+                            <tr>
+                                <th class="gst_th">최소구매수량</th>
+                                <td colspan="6" class="gst_td">
+                                    @if($product->min_purchase_limit == 'limit' && $product->min_purchase_ea > 0)
+                                        {{ number_format($product->min_purchase_ea) }}개
+                                    @else
+                                        1개
+                                    @endif
+                                </td>
+                            </tr>
+
                             {{-- Shipping Info Row --}}
                             <tr>
                                 <th class="gst_th">배송비</th>
@@ -583,13 +661,23 @@
                                 </select>
                             </div>
                         @else
-                            {{-- No Options: Quantity Input directly --}}
+                            {{-- [LEGACY PARITY] No Options: Quantity Input directly --}}
                             <div class="default_qty_area"
-                                style="padding: 15px 0; border-bottom: 1px solid #eee; margin-top:20px;">
-                                <span style="font-weight:bold; margin-right:10px;">수량</span>
-                                <input type="number" id="default_qty" value="1" min="1"
-                                    style="width: 60px; text-align: center; padding: 5px; border: 1px solid #ddd;"
-                                    onchange="updateTotal()" onkeyup="updateTotal()" onclick="updateTotal()">
+                                style="padding: 15px 0; border-bottom: 1px solid #eee; margin-top:20px; display: flex; align-items: center; justify-content: space-between;">
+                                <div style="display: flex; align-items: center;">
+                                    <span style="font-weight:bold; margin-right:20px; font-size:14px; color:#333;">구매수량</span>
+                                    <div class="quantity-controller" style="display: inline-flex; align-items: center; border: 1px solid #ccc; border-radius: 3px; overflow: hidden; height: 32px; background: #fff;">
+                                        <button type="button" onclick="decreaseQty()" style="width: 32px; height: 100%; border: none; background: #fff; font-size: 16px; font-weight: bold; cursor: pointer; color: #555; display: flex; align-items: center; justify-content: center; outline: none; border-right: 1px solid #ccc;">-</button>
+                                        <input type="text" id="default_qty" value="1" readonly style="width: 50px; height: 100%; border: none; text-align: center; font-size: 14px; font-weight: bold; outline: none; background: #fff; color:#333;">
+                                        <button type="button" onclick="increaseQty()" style="width: 32px; height: 100%; border: none; background: #fff; font-size: 16px; font-weight: bold; cursor: pointer; color: #555; display: flex; align-items: center; justify-content: center; outline: none; border-left: 1px solid #ccc;">+</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="padding: 12px; background: #f8f9fa; border: 1px solid #eaeaea; margin-top: 10px; font-size: 13px;">
+                                <a href="#detail" style="color: #666; text-decoration: none; display: flex; align-items: center; justify-content: space-between;" onclick="switchTab('detail')">
+                                    <span>상품정보 전자상거래 상품정보 제공 정보</span>
+                                    <span style="font-weight: bold; font-family: monospace;">&gt;</span>
+                                </a>
                             </div>
                         @endif
 
@@ -603,18 +691,33 @@
                         <div id="form_hidden_inputs"></div>
 
 
-                        {{-- Total Price & Buttons (Legacy Style) --}}
-                        <div class="total price" style="width:100%; text-align:right; margin-top:20px;">
-                            <span class="total_goods_price_txt" id="total_price"
-                                style="font-size:30px; color:#d32f2f; font-weight:bold;">0원</span>
-                            <div style="margin-top:20px;">
+                        {{-- [LEGACY PARITY] Total Price & Buttons (Legacy Style) --}}
+                        <div class="total price" style="width:100%; text-align:right; margin-top:20px; font-size: 20px; box-sizing: border-box; display: flex; flex-direction: column; align-items: flex-end;">
+                            <div style="display: flex; align-items: center; justify-content: flex-end; width: 100%; margin-bottom: 10px;">
+                                <p style="display: inline-block; color: #888; font-weight: 300; margin: 0; margin-right: 12px;">
+                                    <strong style="color: #333; font-weight: bold;">총 구매 금액</strong>
+                                    @if($product->tax == 'tax')
+                                        (VAT 별도)
+                                    @endif
+                                </p>
+                                <span class="total_goods_price">
+                                    <strong class="total_goods_price_txt" id="total_price" style="font-weight: bold; font-size: 30px; color: #f44336;">0원</strong>
+                                </span>
+                            </div>
+                            <div style="margin-top:10px; width:100%; display:flex; justify-content:flex-end;">
                                 @if($product->goods_status == 'runout')
                                     <button type="button" class="button" style="width:100%; background:#777; color:#fff;" onclick="openRestockPopup({{ $product->goods_seq }})">재입고알림 신청</button>
                                 @else
                                     <button type="button" class="button bgred" onclick="processOrder()">바로구매</button>
-                                    <button type="button" class="button bgblue" onclick="processCart()">장바구니</button>
+                                    <button type="button" class="button bgblack" onclick="processCart()" style="margin-left: 6px;">장바구니</button>
+                                    <button type="button" class="button consulting" onclick="location.href='http://pf.kakao.com/_AUxbuT/chat';" style="margin-left: 6px;">대량견적상담</button>
                                 @endif
                             </div>
+                            @if($product->goods_status != 'runout')
+                                <div style="font-size: 12px; color: #888; text-align: right; margin-top: 10px; width: 100%;">
+                                    ※견적서는 장바구니에서 출력할 수 있습니다.
+                                </div>
+                            @endif
                         </div>
 
                     </div> {{-- End container --}}
@@ -849,7 +952,7 @@
             @else
                 <button type="button" class="button bgred" onclick="processOrder()"
                     style="width:48%; height:40px;">바로구매</button>
-                <button type="button" class="button bgblue" onclick="processCart()"
+                <button type="button" class="button bgblack" onclick="processCart()"
                     style="width:48%; height:40px;">장바구니</button>
             @endif
         </div>
@@ -885,6 +988,66 @@
 
         let selectedOptions = {};
         let selectedSubOptions = {};
+
+        // [LEGACY PARITY] JS quantity helpers
+        function changeQty(seq, delta, type) {
+            let item;
+            if (type === 'option') {
+                item = selectedOptions[seq];
+            } else {
+                item = selectedSubOptions[seq];
+            }
+
+            if (!item) return;
+
+            let newQty = item.qty + delta;
+            if (newQty < 1) newQty = 1;
+
+            item.qty = newQty;
+
+            // Update display inside the row
+            const row = document.getElementById(`${type}_row_${seq}`);
+            if (row) {
+                const qtyInput = row.querySelector('input');
+                if (qtyInput) qtyInput.value = newQty;
+            }
+
+            updateTotal();
+        }
+
+        function removeOption(seq, type) {
+            if (type === 'option') {
+                delete selectedOptions[seq];
+            } else {
+                delete selectedSubOptions[seq];
+            }
+
+            const row = document.getElementById(`${type}_row_${seq}`);
+            if (row) {
+                row.remove();
+            }
+
+            updateTotal();
+        }
+
+        function changeDefaultQty(delta) {
+            const qtyInput = document.getElementById('default_qty');
+            if (!qtyInput) return;
+
+            let newQty = parseInt(qtyInput.value) + delta;
+            if (newQty < 1) newQty = 1;
+
+            qtyInput.value = newQty;
+            updateTotal();
+        }
+
+        function decreaseQty() {
+            changeDefaultQty(-1);
+        }
+
+        function increaseQty() {
+            changeDefaultQty(1);
+        }
 
         document.addEventListener('DOMContentLoaded', function () {
             updateTotal();

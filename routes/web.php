@@ -54,6 +54,8 @@ Route::prefix('goods')->name('goods.')->group(function () {
     Route::get('/search', [GoodsController::class, 'search'])->name('search');
     Route::get('/restock/register', [App\Http\Controllers\Front\RestockController::class, 'register'])->name('restock.register');
     Route::post('/restock/store', [App\Http\Controllers\Front\RestockController::class, 'store'])->name('restock.store');
+    Route::get('/get_cate', [GoodsController::class, 'getCate'])->name('get_cate');
+    Route::get('/get_cate2', [GoodsController::class, 'getCate2'])->name('get_cate2');
 });
 
 // Gift / Promotional Materials

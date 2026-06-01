@@ -22,6 +22,8 @@ class PaymentController extends Controller
         
         if ($pgParams['pg'] == 'pairing') {
             return view('front.payment.request_pairing', compact('order', 'pgParams'));
+        } elseif ($pgParams['pg'] == 'portone') {
+            return view('front.payment.request_portone', compact('order', 'pgParams'));
         } else {
             return view('front.payment.request_toss', compact('order', 'pgParams'));
         }
@@ -204,10 +206,13 @@ class PaymentController extends Controller
                 'goods_name' => $items->first()->goods_name,
             ];
         } else {
-            $config = config('payment.toss');
+            $config = config('payment.portone');
             return [
-                'pg' => 'toss',
-                'clientKey' => $config['is_test_mode'] ? $config['test_client_key'] : $config['r_client_key'],
+                'pg' => 'portone',
+                'storeId' => $config['store_id'],
+                'channelKey' => $config['channel_key'],
+                'channelKeyVbank' => $config['channel_key_vbank'],
+                'channelKeyTransfer' => $config['channel_key_transfer'],
                 'customerName' => $order->order_user_name,
                 'goods_name' => $items->first()->goods_name . (count($items) > 1 ? ' 외 ' . (count($items) - 1) . '건' : ''),
             ];
@@ -364,5 +369,246 @@ class PaymentController extends Controller
                 $order->save();
             }
         }
+    }
+
+    /**
+     * 포트원 결제 성공 콜백 수신
+     */
+    public function portoneSuccess(Request $request)
+    {
+        $paymentId = $request->input('paymentId');
+        if (empty($paymentId)) {
+            return redirect()->route('cart.index')->withErrors(['msg' => '결제 정보(paymentId)가 존재하지 않습니다.']);
+        }
+
+        // 1. 포트원 V2 단건결제조회 API 호출
+        $portoneData = $this->callPortoneApi($paymentId);
+        if (!$portoneData) {
+            return redirect()->route('cart.index')->withErrors(['msg' => '포트원 결제 정보를 검증하는 중 통신 오류가 발생했습니다.']);
+        }
+
+        $status = $portoneData['status'] ?? '';
+        $paidAmount = (int) ($portoneData['amount']['total'] ?? 0);
+        $transactionId = $portoneData['transactionId'] ?? '';
+
+        // PAID (결제완료) 또는 VIRTUAL_ACCOUNT_ISSUED (가상계좌발급) 상태 검증
+        if (!in_array($status, ['PAID', 'VIRTUAL_ACCOUNT_ISSUED'])) {
+            return redirect()->route('cart.index')->withErrors(['msg' => '올바른 결제 완료 상태가 아닙니다. (' . $status . ')']);
+        }
+
+        // 2. 내부 데이터베이스와 결제 금액 비교 검증
+        /** @var \App\Models\Order $order */
+        $order = Order::where('order_seq', $paymentId)->firstOrFail();
+        $dbAmount = (int) $order->settleprice;
+
+        if ($paidAmount !== $dbAmount) {
+            Log::warning("PortOne Payment Amount Tampering Detected! Order: {$paymentId}, Expected: {$dbAmount}, Received: {$paidAmount}");
+            return redirect()->route('cart.index')->withErrors(['msg' => '결제된 금액과 내부 주문 금액이 일치하지 않습니다. 위변조가 의심됩니다.']);
+        }
+
+        // 3. 검증 완료 후 처리
+        DB::beginTransaction();
+        try {
+            if ($status === 'PAID') {
+                if ($order->step < Order::STEP_PAYMENT_CONFIRMED) {
+                    $order->step = Order::STEP_PAYMENT_CONFIRMED;
+                    $order->pg = 'portone';
+                    $order->deposit_yn = 'y';
+                    $order->pg_transaction_number = $transactionId;
+                    $order->pg_approval_number = $portoneData['approvedAt'] ?? '0000';
+                    $order->save();
+
+                    // Delete Cart Items
+                    $cartSeqs = \Illuminate\Support\Facades\Cache::pull("order_cart_seqs_{$order->order_seq}");
+                    if ($cartSeqs && is_array($cartSeqs)) {
+                        \App\Models\Cart::whereIn('cart_seq', $cartSeqs)->delete();
+                        \App\Models\CartOption::whereIn('cart_seq', $cartSeqs)->delete();
+                        \App\Models\CartInput::whereIn('cart_seq', $cartSeqs)->delete();
+                    }
+
+                    $this->finalizeOrderFulfillment($order, $transactionId, 'portone', '신용카드');
+                }
+            } elseif ($status === 'VIRTUAL_ACCOUNT_ISSUED') {
+                if ($order->step < 15) {
+                    $virtualAccountStr = '';
+                    $bankDepositor = $portoneData['customer']['name'] ?? '';
+                    $virtualDate = null;
+
+                    if (isset($portoneData['method']) && $portoneData['method']['type'] === 'PaymentMethodVirtualAccount') {
+                        $portoneBankMap = [
+                            'NONGHYUP'=>'농협','KOOKMIN'=>'국민','SHINHAN'=>'신한','WOORI'=>'우리','HANA'=>'하나',
+                            'KAKAOBANK'=>'카카오뱅크','TOSS'=>'토스뱅크','K_BANK'=>'케이뱅크','IBK'=>'기업','SC'=>'SC제일',
+                            'CITY'=>'한국씨티','SUHYUP'=>'수협','POST'=>'우체국','BUSAN'=>'부산','KYONGNAM'=>'경남',
+                            'DAEGU'=>'대구','KWANGJU'=>'광주','JEONBUK'=>'전북','JEJU'=>'제주','CU'=>'신협',
+                            'MG'=>'새마을금고','SBI'=>'SBI저축','KFCC'=>'새마을금고','KB'=>'국민'
+                        ];
+                        $acc = $portoneData['method'];
+                        $bankName = isset($acc['bank']) ? ($portoneBankMap[$acc['bank']] ?? $acc['bank']) : '';
+                        $virtualAccountStr = trim($bankName . ' ' . ($acc['accountNumber'] ?? ''));
+                        if (isset($acc['expiredAt'])) {
+                            $virtualDate = date('Y-m-d H:i:s', strtotime($acc['expiredAt']));
+                        }
+                    }
+
+                    $order->step = 15; // 미입금 (주문접수)
+                    $order->payment = 'virtual';
+                    $order->pg = 'portone';
+                    $order->virtual_account = $virtualAccountStr;
+                    $order->depositor = $bankDepositor;
+                    if ($virtualDate) {
+                        $order->virtual_date = $virtualDate;
+                    }
+                    $order->pg_transaction_number = $transactionId;
+                    $order->save();
+
+                    // Delete Cart Items
+                    $cartSeqs = \Illuminate\Support\Facades\Cache::pull("order_cart_seqs_{$order->order_seq}");
+                    if ($cartSeqs && is_array($cartSeqs)) {
+                        \App\Models\Cart::whereIn('cart_seq', $cartSeqs)->delete();
+                        \App\Models\CartOption::whereIn('cart_seq', $cartSeqs)->delete();
+                        \App\Models\CartInput::whereIn('cart_seq', $cartSeqs)->delete();
+                    }
+
+                    $this->finalizeOrderFulfillment($order, $transactionId, 'portone', '가상계좌 발급');
+                }
+            }
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("PortOne post-payment database process failed: " . $e->getMessage());
+            return redirect()->route('cart.index')->withErrors(['msg' => '결제 승인 처리 중 내부 데이터베이스 오류가 발생했습니다.']);
+        }
+
+        return redirect()->route('order.complete', ['id' => $order->order_seq]);
+    }
+
+    /**
+     * 포트원 결제 실패 콜백 수신
+     */
+    public function portoneFail(Request $request)
+    {
+        $msg = $request->input('message', '결제가 취소되었거나 실패했습니다.');
+        $code = $request->input('code', '');
+        return redirect()->route('cart.index')->withErrors(['msg' => "결제 실패: [{$code}] {$msg}"]);
+    }
+
+    /**
+     * 포트원 결제 웹훅 수신
+     */
+    public function portoneWebhook(Request $request)
+    {
+        $payload = $request->all();
+        $paymentId = $payload['data']['paymentId'] ?? null;
+
+        if (!$paymentId) {
+            return response('Payment ID missing', 400);
+        }
+
+        // 포트원 V2 단건조회 API를 통해 실제 데이터 검증
+        $portoneData = $this->callPortoneApi($paymentId);
+        if (!$portoneData) {
+            return response('Verification Failed', 400);
+        }
+
+        $status = $portoneData['status'] ?? '';
+        $transactionId = $portoneData['transactionId'] ?? '';
+
+        /** @var \App\Models\Order|null $order */
+        $order = Order::where('order_seq', $paymentId)->first();
+        if (!$order) {
+            return response('Order Not Found', 404);
+        }
+
+        DB::beginTransaction();
+        try {
+            if ($status === 'PAID') {
+                if ($order->step < Order::STEP_PAYMENT_CONFIRMED) {
+                    $order->step = Order::STEP_PAYMENT_CONFIRMED;
+                    $order->pg = 'portone';
+                    $order->deposit_yn = 'y';
+                    $order->deposit_date = now();
+                    $order->pg_transaction_number = $transactionId;
+                    $order->save();
+
+                    $this->finalizeOrderFulfillment($order, $transactionId, 'portone', '가상계좌 입금(웹훅)');
+                }
+            } elseif ($status === 'VIRTUAL_ACCOUNT_ISSUED') {
+                if ($order->step < 15) {
+                    $virtualAccountStr = '';
+                    $bankDepositor = $portoneData['customer']['name'] ?? '';
+                    $virtualDate = null;
+
+                    if (isset($portoneData['method']) && $portoneData['method']['type'] === 'PaymentMethodVirtualAccount') {
+                        $portoneBankMap = [
+                            'NONGHYUP'=>'농협','KOOKMIN'=>'국민','SHINHAN'=>'신한','WOORI'=>'우리','HANA'=>'하나',
+                            'KAKAOBANK'=>'카카오뱅크','TOSS'=>'토스뱅크','K_BANK'=>'케이뱅크','IBK'=>'기업','SC'=>'SC제일',
+                            'CITY'=>'한국씨티','SUHYUP'=>'수협','POST'=>'우체국','BUSAN'=>'부산','KYONGNAM'=>'경남',
+                            'DAEGU'=>'대구','KWANGJU'=>'광주','JEONBUK'=>'전북','JEJU'=>'제주','CU'=>'신협',
+                            'MG'=>'새마을금고','SBI'=>'SBI저축','KFCC'=>'새마을금고','KB'=>'국민'
+                        ];
+                        $acc = $portoneData['method'];
+                        $bankName = isset($acc['bank']) ? ($portoneBankMap[$acc['bank']] ?? $acc['bank']) : '';
+                        $virtualAccountStr = trim($bankName . ' ' . ($acc['accountNumber'] ?? ''));
+                        if (isset($acc['expiredAt'])) {
+                            $virtualDate = date('Y-m-d H:i:s', strtotime($acc['expiredAt']));
+                        }
+                    }
+
+                    $order->step = 15;
+                    $order->payment = 'virtual';
+                    $order->pg = 'portone';
+                    $order->virtual_account = $virtualAccountStr;
+                    $order->depositor = $bankDepositor;
+                    if ($virtualDate) {
+                        $order->virtual_date = $virtualDate;
+                    }
+                    $order->pg_transaction_number = $transactionId;
+                    $order->save();
+
+                    $this->finalizeOrderFulfillment($order, $transactionId, 'portone', '가상계좌 발급(웹훅)');
+                }
+            }
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("PortOne Webhook processing error: " . $e->getMessage());
+            return response('Error', 500);
+        }
+
+        return response('OK', 200);
+    }
+
+    /**
+     * 포트원 V2 단건 결제조회 API 호출 헬퍼
+     */
+    private function callPortoneApi($paymentId)
+    {
+        $apiSecret = config('payment.portone.api_secret');
+
+        $curl = curl_init();
+        curl_setopt_array($curl, [
+            CURLOPT_URL => 'https://api.portone.io/payments/' . urlencode($paymentId),
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 15,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'GET',
+            CURLOPT_HTTPHEADER => [
+                'Authorization: PortOne ' . $apiSecret,
+                'Content-Type: application/json'
+            ],
+        ]);
+
+        $response = curl_exec($curl);
+        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        curl_close($curl);
+
+        if ($httpCode === 200 && $response) {
+            return json_decode($response, true);
+        }
+
+        return null;
     }
 }
