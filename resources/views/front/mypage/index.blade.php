@@ -22,15 +22,15 @@
 
             {{-- 회원상세 한 줄 정보 바 --}}
             <div class="user-info-text-line" style="display: flex; flex-wrap: wrap; gap: 5px; align-items: center; font-size: 12px; color: #666; margin-bottom: 20px; border-bottom: 1px solid #f2f2f2; padding-bottom: 15px; text-align: left;">
-                <span><strong>회원등급</strong> : @if($user->gubun == 'business') 기업 @else 일반 @endif</span>
+                <span><strong>회원등급</strong> : @if($user->mtype == 'business') 기업 @else 일반 @endif</span>
                 <span style="color: #ccc; margin: 0 8px;">|</span>
-                <span><strong>총 구매금액</strong> : <span style="color: #f25e1a; font-weight: bold;">{{ number_format($user->total_sales ?? 0) }}원</span></span>
+                <span><strong>총 구매금액</strong> : <span style="color: #f25e1a; font-weight: bold;">{{ number_format($user->member_order_price ?? 0) }}원</span></span>
                 <span style="color: #ccc; margin: 0 8px;">|</span>
                 <span><strong>이메일</strong> : {{ $user->email ?? '-' }}</span>
                 <span style="color: #ccc; margin: 0 8px;">|</span>
                 <span><strong>휴대폰</strong> : {{ $user->cellphone ?? '-' }}</span>
                 <span style="color: #ccc; margin: 0 8px;">|</span>
-                <span><strong>주소</strong> : {{ $user->address ?? $user->address_street ?? '서울 구로구 구로동로 5-6 23' }}</span>
+                <span><strong>주소</strong> : {{ $user->address ?? '' }} {{ $user->address_detail ?? '' }}</span>
             </div>
 
             {{-- 진행중인 주문 ~ 위시리스트 가로 슬림 바 --}}
@@ -113,7 +113,7 @@
                                         @endif
                                     </td>
                                     <td style="padding: 10px 8px; font-weight: bold; color: #333; border-right: 1px solid #eee;">
-                                        {{ number_format($order->total_price ?? 0) }}원
+                                        {{ number_format($order->settleprice ?? 0) }}원
                                     </td>
                                     <td style="padding: 10px 8px;">
                                         <span style="font-weight: bold;

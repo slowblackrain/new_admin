@@ -14,14 +14,15 @@ class MypageController extends Controller
     {
         $user = Auth::user();
 
-        // 1. 진행중인 주문 수 (step 15, 25, 35, 45, 55)
+        // 1. 진행중인 주문 수 (step 15 이상 75 미만인 실질적 진행 중 주문)
         $orderCount = Order::where('member_seq', $user->member_seq)
-            ->whereIn('step', [15, 25, 35, 45, 55])
+            ->where('step', '>=', 15)
+            ->where('step', '<', 75)
             ->count();
 
-        // 2. 교환, 반품 (step 81, 82, 91, 95)
+        // 2. 교환, 반품 (반품요청 81, 교환요청 82, 취소요청 91 등 진행 중 클레임. 완료된 취소 95는 제외)
         $claimCount = Order::where('member_seq', $user->member_seq)
-            ->whereIn('step', [81, 82, 91, 95])
+            ->whereIn('step', [81, 82, 91])
             ->count();
 
         // 3. 할인쿠폰 수
@@ -35,8 +36,9 @@ class MypageController extends Controller
         // 5. 위시리스트 수
         $wishCount = \App\Models\Wish::currentUser()->count();
 
-        // 6. 최근 주문내역 (5건)
+        // 6. 최근 주문내역 (5건 - 가주문 step 0 제외)
         $recentOrders = Order::where('member_seq', $user->member_seq)
+            ->where('step', '>=', 15)
             ->with(['items'])
             ->orderBy('regist_date', 'desc')
             ->take(5)
