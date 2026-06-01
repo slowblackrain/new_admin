@@ -30,19 +30,18 @@
                     </div>
                     <div class="foot-content cs">
                         <h6>배송 · 교환 · 반품문의</h6>
-                        <p class="foot-tell">{{ $shopInfo['companyPhone'] ?? '02-000-0000' }}</p>
+                        <p class="foot-tell">1566-6779</p>
                         <p class="foot-list">- <strong>평일</strong>10:00~16:00</p>
-                        <p class="foot-list">- <strong>Fax</strong>{{ $shopInfo['companyFax'] ?? '041-353-9060' }}</p>
-                        <p class="foot-email">{{ $shopInfo['companyEmail'] ?? 'help@dometopia.com' }}</p>
+                        <p class="foot-list">- <strong>Fax</strong>041-353-9060</p>
+                        <p class="foot-email">dometopia@dometopia.com</p>
                     </div>
                     <div class="foot-content" style="margin-bottom: 15px;">
                         <h6 style="margin-bottom: 8px;">당진 물류 센터</h6>
-                        <p class="">- {{ $shopInfo['companyAddress_street'] ?? '충청남도 당진시 송악읍 틀모시로 355-22' }} (우) {{ $shopInfo['companyZipcode'] ?? '31738' }} </p>
+                        <p class="">- 충청남도 당진시 송악읍 틀모시로 355-22 (우) 31738 </p>
                     </div>
                     <div class="foot-content">
                         <h6 style="margin-bottom: 8px;">반품주소</h6>
-                        <p class="">- 충남 아산시 고불로 755-10 (씨제이대한통운택배 아산서브 정안물류) (우) 31581 </p>
-
+                        <p class="">- 충남 홍성군 홍성읍 충서로 1705-47 한진택배 </p>
                     </div>
                 </div>
                 <div class="foot-middle clearbox">
@@ -59,19 +58,10 @@
                 <div class="foot-bottom clearbox">
                     <div class="company_info">
                         <div class="fleft">
-                            <p>상호: {{ $shopInfo['companyName'] ?? '(주)트리' }} <span>대표:
-                                    {{ $shopInfo['ceo'] ?? '대표자명' }}</span> <span>사업자 등록번호:
-                                    {{ $shopInfo['businessLicense'] ?? '000-00-00000' }}</span> <span><b>통신판매 신고번호:
-                                        {{ $shopInfo['mailsellingLicense'] ?? '2020-인천-0000' }}</b></span> <span>개인정보보호
-                                    책임자 : {{ $shopInfo['member_info_manager'] ?? '서현우이사' }}</span></p>
-                            <p class="foot-addr">인천 본사: {{ $shopInfo['headcompanyAddress_street'] ?? '인천시 서구 봉오재3로 120 가정봄2프라자 2층' }} (우)
-                                {{ $shopInfo['headcompanyZipcode'] ?? '22883' }} <span> Tel.
-                                    {{ $shopInfo['companyPhone'] ?? '1566-6779' }}</span></p>
-                            <p>당진 물류 센터: {{ $shopInfo['companyAddress_street'] ?? '충청남도 당진시 송악읍 틀모시로 355-22' }} (우)
-                                {{ $shopInfo['companyZipcode'] ?? '31738' }} <span> Tel.
-                                    {{ $shopInfo['companyPhone'] ?? '02-000-0000' }}</span> <span> Fax.
-                                    {{ $shopInfo['companyFax'] ?? '000-000-0000' }}</span></p>
-                            <p>중국지사 : 中国 浙江省 金华市 佛堂大道80号 (우) 322000 <span> Tel. 0579)8513-9393</span></p>
+                            <p>상호: (주)트리 <span>대표: 부영운</span> <span>사업자 등록번호: 137-86-10726</span> <span><b>통신판매 신고번호: 제2017-충남당진-0028호</b></span> <span>개인정보보호 책임자 : 서현우이사</span></p>
+                            <p class="foot-addr">인천 본사: 인천광역시 서구 봉오재3로 120 가정봄2프라자 2층 (우) 22883 <span> Tel. 1566-6779</span></p>
+                            <p>당진 물류 센터: 충청남도 당진시 송악읍 틀모시로 355-22 (우) 31738 <span> Tel. 1566-6779</span> <span> Fax. 041-353-9060</span></p>
+                            <p>중국지사 : 中国 浙江省 金华市 佛堂大道80号 (우) 322000  <span> Tel. 0579)8513-9393</span></p>
                         </div>
                     </div>
                 </div>
@@ -92,13 +82,13 @@
             <a href="/service/agreement">이용약관</a>
         </div>
         <div class="mf-info">
-            <p><strong>{{ $shopInfo['companyName'] ?? '(주)트리' }}</strong> | 대표: {{ $shopInfo['ceo'] ?? '부영운' }}</p>
-            <p>사업자등록번호: {{ $shopInfo['businessLicense'] ?? '137-86-10726' }} | 통신판매업신고: {{ $shopInfo['mailsellingLicense'] ?? '제2017-충남당진-0028호' }}</p>
-            <p>고객센터: <a href="tel:{{ $shopInfo['companyPhone'] ?? '1566-6779' }}">{{ $shopInfo['companyPhone'] ?? '1566-6779' }}</a> | 팩스: {{ $shopInfo['companyFax'] ?? '041-353-9060' }}</p>
-            <p>메일: {{ $shopInfo['companyEmail'] ?? 'dometopia@dometopia.com' }}</p>
-            <p>인천 본사: {{ $shopInfo['headcompanyAddress_street'] ?? '인천광역시 서구 봉오재3로 120 가정봄2프라자 2층' }}</p>
-            <p>당진 물류/반품: {{ $shopInfo['companyAddress_street'] ?? '충청남도 당진시 송악읍 틀모시로 355-22' }}</p>
-            <p class="copyright-text">Copyright ⓒ {{ $shopInfo['companyName'] ?? 'Tree Co., Ltd.' }} All rights reserved.</p>
+            <p><strong>(주)트리</strong> | 대표: 부영운</p>
+            <p>사업자등록번호: 137-86-10726 | 통신판매업신고: 제2017-충남당진-0028호</p>
+            <p>고객센터: <a href="tel:1566-6779">1566-6779</a> | 팩스: 041-353-9060</p>
+            <p>메일: dometopia@dometopia.com</p>
+            <p>인천 본사: 인천광역시 서구 봉오재3로 120 가정봄2프라자 2층</p>
+            <p>당진 물류 센터: 충청남도 당진시 송악읍 틀모시로 355-22</p>
+            <p class="copyright-text">Copyright ⓒ Tree Co., Ltd. All rights reserved.</p>
         </div>
     </div>
 
