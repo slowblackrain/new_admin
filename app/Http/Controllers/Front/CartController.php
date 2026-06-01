@@ -73,7 +73,7 @@ class CartController extends Controller
         $globalTotalProductPrice = 0;
         $globalTotalShippingCost = 0;
 
-        $freeShippingThreshold = config('shop.shipping.free_threshold', 50000);
+        $freeShippingThreshold = config('shop.shipping.free_threshold', 150000);
         $packagingCost = config('shop.shipping.packaging_cost', 300); // Mandatory Box Fee
         $baseShipping = config('shop.shipping.base_cost', 2500); // Or 3000
 
@@ -132,7 +132,7 @@ class CartController extends Controller
                 // If group total is below threshold, charge base shipping once per group
                 if ($group['total_price'] < $freeShippingThreshold) {
                     // Note: some dropship logic might have fixed unlimit_shipping_price, but fallback to base
-                    $group['shipping_cost'] = 3000; // Using 3000 default for new system
+                    $group['shipping_cost'] = $baseShipping;
                 } else {
                     $group['shipping_cost'] = 0;
                 }

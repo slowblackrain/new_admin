@@ -109,7 +109,7 @@ class OrderController extends Controller
         }
 
         $baseShipping = config('shop.shipping.base_cost', 2500);
-        $freeShippingThreshold = config('shop.shipping.free_shipping_threshold', 50000);
+        $freeShippingThreshold = config('shop.shipping.free_threshold', 150000);
         $packagingCost = config('shop.shipping.packaging_cost', 300);
 
         $shipping = 0;
