@@ -76,10 +76,22 @@ class CartController extends Controller
         $totalVat = 0;
         $globalTotalProductPrice = 0;
         $globalTotalShippingCost = 0;
+        $totalPoint = 0;
 
         $freeShippingThreshold = config('shop.shipping.free_threshold', 150000);
         $packagingCost = config('shop.shipping.packaging_cost', 300); // Mandatory Box Fee
         $baseShipping = config('shop.shipping.base_cost', 2500); // Or 3000
+
+        // Get reserve/point configs from DB
+        $pointConfig = DB::table('fm_config')->whereIn('codecd', [
+            'point_use', 'default_point_type', 'default_point_percent', 'default_point_app', 'default_point'
+        ])->pluck('value', 'codecd')->toArray();
+
+        $pointUse = ($pointConfig['point_use'] ?? 'N') === 'Y';
+        $defaultPointType = $pointConfig['default_point_type'] ?? 'per';
+        $defaultPointPercent = (float)($pointConfig['default_point_percent'] ?? 0);
+        $defaultPointApp = (float)($pointConfig['default_point_app'] ?? 1000);
+        $defaultPoint = (float)($pointConfig['default_point'] ?? 10);
 
         foreach ($cartItems as $item) {
             if ($item->is_postpaid) {
@@ -112,6 +124,22 @@ class CartController extends Controller
                     'is_postpaid' => $item->is_postpaid
                 ];
             }
+
+            // Calculate Point for this item
+            $unitPrice = $item->pricing_info['unit_price'] ?? 0;
+            $itemPoint = 0;
+            if ($pointUse) {
+                if ($defaultPointType === 'per') {
+                    $itemPoint = (int)($unitPrice * $defaultPointPercent / 100);
+                } elseif ($defaultPointType === 'app') {
+                    $itemPoint = (int)($unitPrice / $defaultPointApp * $defaultPoint);
+                }
+            }
+            $item->point = $itemPoint;
+
+            $option = $item->options->first();
+            $ea = $option->ea ?? 1;
+            $totalPoint += $itemPoint * $ea;
 
             // Push Item
             $groupedCart[$groupKey]['items'][] = $item;
@@ -156,7 +184,9 @@ class CartController extends Controller
             $globalTotalShippingCost += $group['shipping_cost'];
         }
 
-        return view('front.cart.index', compact('groupedCart', 'validCartSeqs', 'globalTotalProductPrice', 'globalTotalShippingCost', 'freeShippingThreshold', 'packagingCost', 'totalVat', 'baseShipping'));
+        $totalVat = floor($totalVat / 10) * 10;
+
+        return view('front.cart.index', compact('groupedCart', 'validCartSeqs', 'globalTotalProductPrice', 'globalTotalShippingCost', 'freeShippingThreshold', 'packagingCost', 'totalVat', 'baseShipping', 'totalPoint'));
     }
 
     /**
