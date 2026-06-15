@@ -630,7 +630,7 @@
             document.getElementById('recipient_address_type').value = addr.recipient_address_type || 'zibun';
             
             closeAddressModal();
-            fetchShippingExtraCost(addr.recipient_zipcode);
+            fetchShippingExtraCost(addr.recipient_zipcode, addr.recipient_address, addr.recipient_address_street);
         }
 
         // 새 배송지 폼 토글
@@ -715,8 +715,9 @@
         });
 
         // 비동기 추가 배송비 조회 로직
-        function fetchShippingExtraCost(zipcode) {
-            if (!zipcode) return;
+        function fetchShippingExtraCost(zipcode, address = '', addressStreet = '') {
+            const resolvedAddress = address || document.getElementById('recipient_address').value || '';
+            const resolvedAddressStreet = addressStreet || document.getElementById('recipient_address_street').value || '';
             
             fetch("{{ route('order.calculate-shipping') }}", {
                 method: "POST",
@@ -724,7 +725,11 @@
                     "Content-Type": "application/json",
                     "X-CSRF-TOKEN": "{{ csrf_token() }}"
                 },
-                body: JSON.stringify({ zipcode: zipcode })
+                body: JSON.stringify({ 
+                    zipcode: zipcode, 
+                    address: resolvedAddress, 
+                    address_street: resolvedAddressStreet 
+                })
             })
             .then(res => res.json())
             .then(data => {
@@ -922,11 +927,13 @@
                     document.getElementById("recipient_address_display").value = addr; // Show selected address
 
                     // Save detailed address data
-                    document.getElementById("recipient_address").value = data.jibunAddress || data.autoJibunAddress || addr; // Always try to save Jibun
-                    document.getElementById("recipient_address_street").value = data.roadAddress || data.autoRoadAddress || ''; // Always try to save Road
+                    const jibunAddr = data.jibunAddress || data.autoJibunAddress || addr;
+                    const roadAddr = data.roadAddress || data.autoRoadAddress || '';
+                    document.getElementById("recipient_address").value = jibunAddr; // Always try to save Jibun
+                    document.getElementById("recipient_address_street").value = roadAddr; // Always try to save Road
 
-                    // Fetch Extra Shipping Cost with resolved zipcode
-                    fetchShippingExtraCost(data.zonecode);
+                    // Fetch Extra Shipping Cost with resolved address
+                    fetchShippingExtraCost(data.zonecode, jibunAddr, roadAddr);
 
                     // 커서를 상세주소 필드로 이동한다.
                     document.getElementById("recipient_address_detail").focus();

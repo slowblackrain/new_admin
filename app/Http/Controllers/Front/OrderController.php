@@ -116,25 +116,22 @@ class OrderController extends Controller
         $packagingCost = config('shop.shipping.packaging_cost', 300);
 
         // 1. Calculate Jeju/Island Mountainous Extra Shipping Fee based on default user address
-        $userZipcode = '';
+        $userAddress = '';
+        $userAddressStreet = '';
         if (Auth::check() && $user) {
-            $userZipcode = $user->zipcode;
+            $userAddress = $user->address;
+            $userAddressStreet = $user->address_street;
             $defaultAddr = DB::table('fm_delivery_address')
                 ->where('member_seq', $user->member_seq)
                 ->where('default', 'Y')
                 ->first();
             if ($defaultAddr) {
-                $userZipcode = $defaultAddr->recipient_zipcode;
+                $userAddress = $defaultAddr->recipient_address;
+                $userAddressStreet = $defaultAddr->recipient_address_street;
             }
         }
         
-        $extraCost = 0;
-        if ($userZipcode) {
-            $extraCost = DB::table('shipping_extra_costs')
-                ->where('zipcode_start', '<=', $userZipcode)
-                ->where('zipcode_end', '>=', $userZipcode)
-                ->value('extra_cost') ?? 0;
-        }
+        $extraCost = $this->getExtraShippingCost($userAddress, $userAddressStreet);
 
         // 2. Compute Accumulative Dropship Fees & Standard HQ shipping
         $hqTotal = 0;
@@ -250,15 +247,10 @@ class OrderController extends Controller
 
     public function calculateShipping(Request $request)
     {
-        $zipcode = $request->input('zipcode');
-        if (!$zipcode) {
-            return response()->json(['extra_cost' => 0]);
-        }
-
-        $extraShippingCost = DB::table('shipping_extra_costs')
-            ->where('zipcode_start', '<=', $zipcode)
-            ->where('zipcode_end', '>=', $zipcode)
-            ->value('extra_cost') ?? 0;
+        $address = $request->input('address');
+        $addressStreet = $request->input('address_street');
+        
+        $extraShippingCost = $this->getExtraShippingCost($address, $addressStreet);
 
         return response()->json(['extra_cost' => $extraShippingCost]);
     }
@@ -448,15 +440,10 @@ class OrderController extends Controller
                 $shipping = $baseShipping;
             }
 
-            // [NEW] 도서산간 배송비(우편번호 기반 구간 매핑) 적용
-            $recipientZipcode = $request->recipient_zipcode;
-            $extraShippingCost = 0;
-            if ($recipientZipcode) {
-                $extraShippingCost = DB::table('shipping_extra_costs')
-                    ->where('zipcode_start', '<=', $recipientZipcode)
-                    ->where('zipcode_end', '>=', $recipientZipcode)
-                    ->value('extra_cost') ?? 0;
-            }
+            // [NEW] 도서산간 배송비(레거시 주소 텍스트 매칭) 적용
+            $recipientAddress = $request->recipient_address;
+            $recipientAddressStreet = $request->recipient_address_street;
+            $extraShippingCost = $this->getExtraShippingCost($recipientAddress, $recipientAddressStreet);
             $shipping += $extraShippingCost;
 
             $tax = $totalVat;
@@ -870,5 +857,60 @@ class OrderController extends Controller
         ]);
 
         return date('YmdHis') . $id;
+    }
+
+    private function getExtraShippingCost($address, $addressStreet)
+    {
+        if (!$address && !$addressStreet) {
+            return 0;
+        }
+
+        $row = DB::table('fm_provider_shipping')->where('provider_seq', 1)->first();
+        if (!$row || !$row->add_delivery_cost) {
+            return 0;
+        }
+
+        $addressWords = array_filter(explode(" ", trim($address)));
+        $addressStreetWords = array_filter(explode(" ", trim($addressStreet)));
+
+        $maxCost = 0;
+        $rules = explode("|", $row->add_delivery_cost);
+
+        foreach ($rules as $rule) {
+            $tmps = explode(":", $rule);
+            $tmpCount = count($tmps);
+            if ($tmpCount === 3) {
+                $jibunArea = trim($tmps[0]);
+                $streetArea = trim($tmps[1]);
+                $cost = (int)trim($tmps[2]);
+
+                $jibunWords = array_filter(explode(" ", $jibunArea));
+                $isJibunMatch = !empty($jibunWords) && (count(array_intersect($jibunWords, $addressWords)) === count($jibunWords));
+
+                $streetWords = array_filter(explode(" ", $streetArea));
+                $isStreetMatch = !empty($streetWords) && (count(array_intersect($streetWords, $addressStreetWords)) === count($streetWords));
+
+                if ($isJibunMatch || $isStreetMatch) {
+                    if ($cost > $maxCost) {
+                        $maxCost = $cost;
+                    }
+                }
+            } else if ($tmpCount === 2) {
+                $area = trim($tmps[0]);
+                $cost = (int)trim($tmps[1]);
+
+                $areaWords = array_filter(explode(" ", $area));
+                $isJibunMatch = !empty($areaWords) && (count(array_intersect($areaWords, $addressWords)) === count($areaWords));
+                $isStreetMatch = !empty($areaWords) && (count(array_intersect($areaWords, $addressStreetWords)) === count($areaWords));
+
+                if ($isJibunMatch || $isStreetMatch) {
+                    if ($cost > $maxCost) {
+                        $maxCost = $cost;
+                    }
+                }
+            }
+        }
+
+        return $maxCost;
     }
 }
