@@ -186,13 +186,24 @@ class OrderController extends Controller
             return $item->goods && $item->goods->tax === 'exempt';
         });
 
+        // [NEW] 쿠폰/적립금 사용 제한 상품 및 3% 카드 수수료 할증 상품 플래그 추가
+        $limitSeqs = ['64931', '67659', '9891', '16046', '10327', '192328', '205052', '204693'];
+        $hasSaveEmoneyLimit = $cartItems->contains(function($item) use ($limitSeqs) {
+            return $item->goods && in_array((string)$item->goods->goods_seq, $limitSeqs);
+        });
+
+        $bbbSeqs = ['64931', '67659', '64972', '16046', '9891', '10327', '192328', '205052', '204693'];
+        $isBbbType = $cartItems->contains(function($item) use ($bbbSeqs) {
+            return $item->goods && in_array((string)$item->goods->goods_seq, $bbbSeqs);
+        });
+
         // 5. Fetch Usable Coupons
         $coupons = [];
         if ($user) {
             $coupons = DB::table('fm_download')
                 ->join('fm_coupon', 'fm_download.coupon_seq', '=', 'fm_coupon.coupon_seq')
                 ->where('fm_download.member_seq', $user->member_seq)
-                ->where('fm_download.use_status', 'unused') // Verify 'unused' is correct value. Usually 'used'/'unused' or '1'/'0'. Let's assume 'unused' based on 'use_status' column name often string enum. Check Schema if possible or try both.
+                ->where('fm_download.use_status', 'unused') 
                 ->where('fm_download.issue_enddate', '>=', now())
                 ->select('fm_download.*', 'fm_coupon.coupon_name', 'fm_coupon.coupon_seq as master_coupon_seq', 'fm_coupon.sale_type', 'fm_coupon.percent_goods_sale', 'fm_coupon.won_goods_sale', 'fm_coupon.max_percent_goods_sale')
                 ->get();
@@ -202,47 +213,52 @@ class OrderController extends Controller
         $usableEmoney = 0;
         $errReserve = "";
         if (Auth::check() && $user) {
-            $reserves = DB::table('fm_config')->where('groupcd', 'reserve')->get()->pluck('value', 'codecd')->toArray();
-            $minEmoney = (int) ($reserves['min_emoney'] ?? 100);          // 최소 사용 적립금
-            $useLimit = (int) ($reserves['emoney_use_limit'] ?? 100);     // 최소 보유 적립금
-            $maxPolicy = $reserves['max_emoney_policy'] ?? 'unlimit';
-            
-            $memberEmoney = (int) $user->emoney;
-            $settlePrice = $finalPrice; // 최종 결제 예정 금액
-            
-            $usableEmoney = $memberEmoney;
-            if ($usableEmoney > $settlePrice) {
-                $usableEmoney = $settlePrice;
-            }
-            
-            if ($memberEmoney >= $useLimit) {
-                if ($maxPolicy === 'percent_limit' && isset($reserves['max_emoney_percent'])) {
-                    $maxEmoney = (int) ($settlePrice * (int)$reserves['max_emoney_percent'] / 100);
-                } else if ($maxPolicy === 'price_limit' && isset($reserves['max_emoney'])) {
-                    $maxEmoney = (int) $reserves['max_emoney'];
-                } else {
-                    $maxEmoney = $settlePrice;
-                }
-                
-                if ($maxEmoney > $settlePrice) {
-                    $maxEmoney = $settlePrice;
-                }
-                
-                if ($usableEmoney < $minEmoney) {
-                    $usableEmoney = 0;
-                    $errReserve = "적립금은 최소 " . number_format($minEmoney) . "원부터 사용가능 합니다.";
-                }
-                
-                if ($usableEmoney > $maxEmoney && $maxPolicy !== 'unlimit') {
-                    $usableEmoney = $maxEmoney;
-                }
-            } else {
+            if ($hasSaveEmoneyLimit) {
                 $usableEmoney = 0;
-                $errReserve = number_format($useLimit) . "원 이상 적립하여야 합니다.";
+                $errReserve = "제한 상품이 포함되어 적립금을 사용할 수 없습니다.";
+            } else {
+                $reserves = DB::table('fm_config')->where('groupcd', 'reserve')->get()->pluck('value', 'codecd')->toArray();
+                $minEmoney = (int) ($reserves['min_emoney'] ?? 100);          // 최소 사용 적립금
+                $useLimit = (int) ($reserves['emoney_use_limit'] ?? 100);     // 최소 보유 적립금
+                $maxPolicy = $reserves['max_emoney_policy'] ?? 'unlimit';
+                
+                $memberEmoney = (int) $user->emoney;
+                $settlePrice = $finalPrice; // 최종 결제 예정 금액
+                
+                $usableEmoney = $memberEmoney;
+                if ($usableEmoney > $settlePrice) {
+                    $usableEmoney = $settlePrice;
+                }
+                
+                if ($memberEmoney >= $useLimit) {
+                    if ($maxPolicy === 'percent_limit' && isset($reserves['max_emoney_percent'])) {
+                        $maxEmoney = (int) ($settlePrice * (int)$reserves['max_emoney_percent'] / 100);
+                    } else if ($maxPolicy === 'price_limit' && isset($reserves['max_emoney'])) {
+                        $maxEmoney = (int) $reserves['max_emoney'];
+                    } else {
+                        $maxEmoney = $settlePrice;
+                    }
+                    
+                    if ($maxEmoney > $settlePrice) {
+                        $maxEmoney = $settlePrice;
+                    }
+                    
+                    if ($usableEmoney < $minEmoney) {
+                        $usableEmoney = 0;
+                        $errReserve = "적립금은 최소 " . number_format($minEmoney) . "원부터 사용가능 합니다.";
+                    }
+                    
+                    if ($usableEmoney > $maxEmoney && $maxPolicy !== 'unlimit') {
+                        $usableEmoney = $maxEmoney;
+                    }
+                } else {
+                    $usableEmoney = 0;
+                    $errReserve = number_format($useLimit) . "원 이상 적립하여야 합니다.";
+                }
             }
         }
 
-        return view('front.order.order', compact('cartItems', 'user', 'totalPrice', 'cart_seqs', 'tax', 'finalPrice', 'shipping', 'packagingCost', 'coupons', 'hasExempt', 'usableEmoney', 'errReserve', 'extraCost'));
+        return view('front.order.order', compact('cartItems', 'user', 'totalPrice', 'cart_seqs', 'tax', 'finalPrice', 'shipping', 'packagingCost', 'coupons', 'hasExempt', 'usableEmoney', 'errReserve', 'extraCost', 'hasSaveEmoneyLimit', 'isBbbType'));
     }
 
     public function calculateShipping(Request $request)
@@ -257,27 +273,35 @@ class OrderController extends Controller
 
     public function store(Request $request)
     {
-
+        // 3분할 연락처 병합 처리
+        $orderPhone = is_array($request->order_phone) ? implode('-', array_filter($request->order_phone)) : $request->order_phone;
+        $orderCellphone = is_array($request->order_cellphone) ? implode('-', array_filter($request->order_cellphone)) : $request->order_cellphone;
+        $recipientPhone = is_array($request->recipient_phone) ? implode('-', array_filter($request->recipient_phone)) : $request->recipient_phone;
+        $recipientCellphone = is_array($request->recipient_cellphone) ? implode('-', array_filter($request->recipient_cellphone)) : $request->recipient_cellphone;
+        
+        $request->merge([
+            'order_phone_merged' => $orderPhone,
+            'order_cellphone_merged' => $orderCellphone,
+            'recipient_phone_merged' => $recipientPhone,
+            'recipient_cellphone_merged' => $recipientCellphone,
+        ]);
         
         // 1. Validate
         $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
             'cart_seq' => 'required|array',
             'order_user_name' => 'required',
-            'order_cellphone' => 'required',
+            'order_cellphone_merged' => 'required',
             'order_email' => 'required|email',
             'recipient_user_name' => 'required',
-            'recipient_cellphone' => 'required',
+            'recipient_cellphone_merged' => 'required',
             'recipient_zipcode' => 'required',
             'recipient_address' => 'required',
             'payment' => 'required',
         ]);
 
         if ($validator->fails()) {
-    
             return back()->withErrors($validator)->withInput();
         }
-
-
 
         $cart_seqs = $request->input('cart_seq');
 
@@ -286,23 +310,16 @@ class OrderController extends Controller
             ->whereIn('cart_seq', $cart_seqs)
             ->with(['goods.images', 'goods.option', 'options', 'inputs'])
             ->get();
-        
-
-
-        // dd('Cart Items:', $cartItems->toArray());
 
         if ($cartItems->isEmpty()) {
             \Illuminate\Support\Facades\Log::info("OrderController: Cart is Empty for User: " . (\Illuminate\Support\Facades\Auth::id() ?? 'Guest'));
-            \Illuminate\Support\Facades\Log::info("Cart Query Count: " . \App\Models\Cart::where('member_seq', \Illuminate\Support\Facades\Auth::id())->count());
             return back()->withErrors(['msg' => '선택된 상품이 없습니다.']);
         }
 
         // 3. Process Order in Transaction
         DB::beginTransaction();
         try {
-    
             $user = Auth::user();
-    
             
             $totalPrice = 0;
             $totalEa = 0;
@@ -311,17 +328,14 @@ class OrderController extends Controller
 
             // Calculate Total
             foreach ($cartItems as $cItem) {
-        
                 $goods = $cItem->goods;
                 $option = $cItem->options->first();
                 $ea = $option->ea ?? 1;
                 
                 $price = 0;
-                // Price Logic using PricingService
                 $matchedOption = null;
                 if ($goods && $goods->option) {
                     $matchedOption = $goods->option->first(function($o) use ($option) {
-                         // Simplify match logic for debug or trust existing
                          return (string)$o->option1 == (string)$option->option1 &&
                                 (string)$o->option2 == (string)$option->option2 &&
                                 (string)$o->option3 == (string)$option->option3 &&
@@ -330,10 +344,7 @@ class OrderController extends Controller
                     });
                 }
                 
-                // Fallback option if not matched (e.g. data sync issue)
                 $calcOption = $matchedOption ?? $goods->option->first();
-                
-                // Calculate Final Unit Price (Discounted)
                 $pricingInfo = $this->pricingService->calculatePrice($goods, $calcOption, $ea);
                 $price = $pricingInfo['unit_price'];
 
@@ -354,7 +365,6 @@ class OrderController extends Controller
                     $currentStock = $supply->stock ?? 0;
                     
                     if ($currentStock < $ea) {
-                 
                         throw new \Exception("상품 '{$goods->goods_name}'의 선택된 옵션 재고가 부족합니다. (현재: {$currentStock}, 요청: {$ea})");
                     }
                 } else {
@@ -364,25 +374,56 @@ class OrderController extends Controller
                     $currentStock = $supply->stock ?? 0;
                     
                     if ($currentStock < $ea) {
-                
                         throw new \Exception("상품 '{$goods->goods_name}'의 재고가 부족합니다. (현재: {$currentStock}, 요청: {$ea})");
                     }
                 }
             }
+
+            // [NEW] 결제 및 할인 제한 검증
+            $hasExempt = false;
+            $hasSaveEmoneyLimit = false;
+            $isBbbType = false;
             
-    
+            $limitSeqs = ['64931', '67659', '9891', '16046', '10327', '192328', '205052', '204693'];
+            $bbbSeqs = ['64931', '67659', '64972', '16046', '9891', '10327', '192328', '205052', '204693'];
+            
+            foreach ($cartItems as $cItem) {
+                $goods = $cItem->goods;
+                if ($goods) {
+                    if ($goods->tax === 'exempt') $hasExempt = true;
+                    if (in_array((string)$goods->goods_seq, $limitSeqs)) $hasSaveEmoneyLimit = true;
+                    if (in_array((string)$goods->goods_seq, $bbbSeqs)) $isBbbType = true;
+                }
+            }
+
+            if ($hasExempt) {
+                if ($request->payment === 'card') {
+                    throw new \Exception("면세(비과세) 상품이 포함된 경우 신용카드 결제를 이용할 수 없습니다.");
+                }
+                if ((int)$request->input('typereceipt', 0) > 0) {
+                    throw new \Exception("면세(비과세) 상품이 포함된 경우 증빙서류 발급 신청을 할 수 없습니다.");
+                }
+            }
+
+            $useEmoney = (int)$request->input('use_emoney', 0);
+            $downloadSeq = $request->input('download_seq');
+            if ($hasSaveEmoneyLimit) {
+                if ($useEmoney > 0 || $downloadSeq) {
+                    throw new \Exception("제한 상품이 포함된 경우 쿠폰 및 적립금을 사용할 수 없습니다.");
+                }
+            }
 
             // Create Order Header
             $order = new \App\Models\Order();
             $order->order_seq = $this->generateOrderSeq();
             
             $order->order_user_name = $request->order_user_name;
-            $order->order_cellphone = $request->order_cellphone;
-            $order->order_phone = $request->order_cellphone; 
+            $order->order_cellphone = $orderCellphone;
+            $order->order_phone = $orderPhone; 
             $order->order_email = $request->order_email;
             $order->recipient_user_name = $request->recipient_user_name;
-            $order->recipient_cellphone = $request->recipient_cellphone; 
-            $order->recipient_phone = $request->recipient_cellphone; 
+            $order->recipient_cellphone = $recipientCellphone; 
+            $order->recipient_phone = $recipientPhone; 
             $order->recipient_zipcode = substr($request->recipient_zipcode, 0, 7); 
             $order->recipient_address_type = $request->recipient_address_type ?? 'zibun';
             $order->recipient_address = $request->recipient_address;
@@ -395,29 +436,12 @@ class OrderController extends Controller
             $packagingCost = config('shop.shipping.packaging_cost', 300);
 
             $shipping = 0;
-            // Only charge shipping if there are standard items and they don't meet threshold
-            // Filter out postpaid items from this check
             $standardItemsTotal = 0;
-            foreach ($cartItems as $cItem) {
-                $cOption = $cItem->options->first();
-                // Check 'shipping_method' from cart option
-                if (($cOption->shipping_method ?? '') !== 'postpaid') {
-                     // Recalculate or just use pre-calculated price?
-                     // We need price per item. Let's reuse logic or just sum up quickly if we trust loop above.
-                     // The loop above calculated $totalPrice but didn't separate standard.
-                     // Let's iterate again or use a flag. 
-                     // Optimization: Do this inside the main loop above (lines 162-213) 
-                     // But strictly, we can just loop again here for clarity or rely on refined loop.
-                }
-            }
-            // Actually, let's rewrite the initial loop (lines 162-213) to calculate $standardItemsTotal
-            // But I am editing lines 235-242. I can't easily reach up.
-            // Let's just re-loop for shipping calculation. It's only a few items.
             foreach ($cartItems as $cItem) {
                  $goods = $cItem->goods;
                  $option = $cItem->options->first();
                  $ea = $option->ea ?? 1;
-                 // Get Price
+                 
                  $matchedOption = null;
                  if ($goods && $goods->option) {
                      $matchedOption = $goods->option->first(function($o) use ($option) {
@@ -440,14 +464,20 @@ class OrderController extends Controller
                 $shipping = $baseShipping;
             }
 
-            // [NEW] 도서산간 배송비(레거시 주소 텍스트 매칭) 적용
             $recipientAddress = $request->recipient_address;
             $recipientAddressStreet = $request->recipient_address_street;
             $extraShippingCost = $this->getExtraShippingCost($recipientAddress, $recipientAddressStreet);
             $shipping += $extraShippingCost;
 
             $tax = $totalVat;
-            $finalSettlePrice = $totalPrice + $shipping + $tax + $packagingCost;
+
+            // [NEW] 3% 카드 수수료 할증 서버 계산
+            $cardVat = 0;
+            if ($isBbbType && $request->payment === 'card') {
+                $cardVat = floor(($totalPrice + $tax) * 0.03);
+            }
+
+            $finalSettlePrice = $totalPrice + $shipping + $tax + $packagingCost + $cardVat;
 
             $order->settleprice = $finalSettlePrice;
             $order->original_settleprice = $finalSettlePrice;
@@ -465,8 +495,8 @@ class OrderController extends Controller
                 }
                 
                 $reserves = DB::table('fm_config')->where('groupcd', 'reserve')->get()->pluck('value', 'codecd')->toArray();
-                $minEmoney = (int) ($reserves['min_emoney'] ?? 100);          // 최소 사용 적립금
-                $useLimit = (int) ($reserves['emoney_use_limit'] ?? 100);     // 최소 보유 적립금
+                $minEmoney = (int) ($reserves['min_emoney'] ?? 100);          
+                $useLimit = (int) ($reserves['emoney_use_limit'] ?? 100);     
                 $maxPolicy = $reserves['max_emoney_policy'] ?? 'unlimit';
                 
                 $memberEmoney = (int) $user->emoney;
@@ -481,7 +511,6 @@ class OrderController extends Controller
                     throw new \Exception("보유 적립금이 부족합니다.");
                 }
                 
-                // 최대 한도 계산
                 if ($maxPolicy === 'percent_limit' && isset($reserves['max_emoney_percent'])) {
                     $maxEmoney = (int) ($finalSettlePrice * (int)$reserves['max_emoney_percent'] / 100);
                 } else if ($maxPolicy === 'price_limit' && isset($reserves['max_emoney'])) {
@@ -504,7 +533,7 @@ class OrderController extends Controller
                 
                 $finalSettlePrice -= $useEmoney;
                 $user->decrement('emoney', $useEmoney);
-                $order->emoney = $useEmoney; // 'emoney' column holds USED emoney
+                $order->emoney = $useEmoney; 
                 
                 DB::table('fm_emoney')->insert([
                     'member_seq' => $user->member_seq,
@@ -545,10 +574,8 @@ class OrderController extends Controller
 
             // Coupon Usage
             $downloadSeq = $request->input('download_seq');
-            
             $couponDiscount = 0;
             if ($downloadSeq) {
-                // ... fetch download ...
                 $download = DB::table('fm_download')
                     ->where('download_seq', $downloadSeq)
                     ->where('member_seq', $user->member_seq)
@@ -557,15 +584,12 @@ class OrderController extends Controller
                 if (!$download) {
                      throw new \Exception("쿠폰이 존재하지 않거나 유효하지 않습니다.");
                 }
-                
                 if ($download->use_status !== 'unused') {
                      throw new \Exception("이미 사용된 쿠폰입니다.");
                 }
 
-                // ... fetch coupon ...
                 $coupon = DB::table('fm_coupon')->where('coupon_seq', $download->coupon_seq)->first();
                 
-                // Logic for Percent vs Amount
                 if ($coupon->sale_type == 'percent') {
                      $calcDiscount = floor($totalPrice * ($coupon->percent_goods_sale / 100));
                      if ($coupon->max_percent_goods_sale > 0 && $calcDiscount > $coupon->max_percent_goods_sale) {
@@ -577,12 +601,11 @@ class OrderController extends Controller
                 }
                 
                 if ($couponDiscount > $finalSettlePrice) {
-                    $couponDiscount = $finalSettlePrice; // Cap at remaining price
+                    $couponDiscount = $finalSettlePrice; 
                 }
                 
                 $finalSettlePrice -= $couponDiscount;
 
-                // Mark Used
                 DB::table('fm_download')
                     ->where('download_seq', $downloadSeq)
                     ->update([
@@ -601,7 +624,23 @@ class OrderController extends Controller
             $order->tax = $tax;
             $order->shipping_cost = $shipping;
 
-            $order->international = 'domestic';
+            // 해외배송 영문 주소 저장 처리
+            if ($request->input('international') === 'international' || $request->filled('international_address')) {
+                $order->international = 'international';
+                $order->international_address = $request->input('international_address');
+                $order->international_town_city = $request->input('international_town_city');
+                $order->international_county = $request->input('international_county');
+                $order->international_postcode = $request->input('international_postcode');
+                $order->international_country = $request->input('international_country');
+            } else {
+                $order->international = 'domestic';
+                $order->international_address = '';
+                $order->international_town_city = '';
+                $order->international_county = '';
+                $order->international_postcode = '';
+                $order->international_country = '';
+            }
+
             $order->international_cost = 0;
             $order->total_ea = $totalEa;
             $order->total_type = $kinds;
@@ -621,8 +660,13 @@ class OrderController extends Controller
                 $order->step = \App\Models\Order::STEP_ORDER_RECEIVED;
                 $order->deposit_yn = 'n';
                 $order->bundle_yn = 'n';
+
+                // 환불 계좌 log 컬럼 저장
+                if ($request->filled('refund_bank') && $request->filled('refund_acount')) {
+                    $refundName = $request->input('refund_name', $request->order_user_name);
+                    $order->log = "[{$request->refund_bank}] {$request->refund_acount} - {$refundName}";
+                }
             } else {
-                // PG Payment - Wait for Confirmation
                 $order->step = \App\Models\Order::STEP_ORDER_RECEIVED;
                 $order->deposit_yn = 'n'; 
                 $order->bundle_yn = 'n';
@@ -631,22 +675,45 @@ class OrderController extends Controller
             if ($user) {
                 $order->member_seq = $user->member_seq;
             } else {
-                $order->member_seq = 0; // Guest
+                $order->member_seq = 0; 
             }
 
-             try {
+            // 기본 배송지 저장 처리
+            if (Auth::check() && $request->input('save_delivery_address') == 1) {
+                DB::table('fm_delivery_address')
+                    ->where('member_seq', $user->member_seq)
+                    ->where('default', 'Y')
+                    ->update(['default' => 'N']);
+                    
+                DB::table('fm_delivery_address')->insert([
+                    'member_seq' => $user->member_seq,
+                    'recipient_user_name' => $request->recipient_user_name,
+                    'recipient_phone' => $recipientPhone,
+                    'recipient_cellphone' => $recipientCellphone,
+                    'recipient_zipcode' => $request->recipient_zipcode,
+                    'recipient_address_type' => $request->recipient_address_type ?? 'zibun',
+                    'recipient_address' => $request->recipient_address,
+                    'recipient_address_street' => $request->recipient_address_street,
+                    'recipient_address_detail' => $request->recipient_address_detail,
+                    'default' => 'Y',
+                    'address_group' => '기본',
+                    'regist_date' => now(),
+                ]);
+            }
+
+            try {
                 $order->typereceipt = $request->input('typereceipt', 0);
                 $order->save();
 
                 // Phase 1: Save Tax Invoice / Cash Receipt Request to fm_sales
-                if ($order->typereceipt == 1) { // 세금계산서
+                if ($order->typereceipt == 1) { 
                     DB::table('fm_sales')->insert([
                         'typereceipt' => 1,
-                        'type' => 2, // 수동 신청
-                        'tstep' => 1, // 발급 신청 접수
+                        'type' => '2', 
+                        'tstep' => 1, 
                         'order_seq' => $order->order_seq,
                         'member_seq' => $order->member_seq ?? 0,
-                        'price' => $order->settleprice, // 우선 총액 기준 (실제로는 과세/면세 분리 고도화 필요)
+                        'price' => $order->settleprice, 
                         'supply' => round($order->settleprice / 1.1),
                         'surtax' => $order->settleprice - round($order->settleprice / 1.1),
                         'co_name' => $request->input('co_name', ''),
@@ -654,25 +721,42 @@ class OrderController extends Controller
                         'co_ceo' => $request->input('co_ceo', ''),
                         'co_status' => $request->input('co_status', ''),
                         'co_type' => $request->input('co_type', ''),
-                        'person' => $request->input('tax_person', ''),
-                        'email' => $request->input('tax_email', ''),
+                        
+                        // 주소 필드 매핑
+                        'zipcode' => $request->input('co_new_zipcode', ''),
+                        'address_type' => $request->input('co_address_type', 'zibun'),
+                        'address' => $request->input('co_address', ''),
+                        'address_street' => $request->input('co_address_street', ''),
+                        'address_detail' => $request->input('co_address_detail', ''),
+                        
+                        // 담당자 정보 매핑
+                        'person' => $request->input('person', ''),
+                        'phone' => $request->input('phone', ''),
+                        'email' => $request->input('email', ''),
+                        
                         'regdate' => now(),
                     ]);
-                } elseif ($order->typereceipt == 2) { // 현금영수증
+                } elseif ($order->typereceipt == 2) { 
                     $cuse = $request->input('cuse', 0);
-                    $cnoInput = $request->input('cash_receipt_number', '');
-                    $cno = str_replace('-', '', $cnoInput);
+                    $cnoArr = $request->input('creceipt_number');
+                    $cno = '';
+                    if (is_array($cnoArr)) {
+                        $cno = ($cuse == 0) ? ($cnoArr[0] ?? '') : ($cnoArr[1] ?? '');
+                    } else {
+                        $cno = $cnoArr;
+                    }
+                    $cno = str_replace('-', '', $cno);
 
                     DB::table('fm_sales')->insert([
                         'typereceipt' => 2,
-                        'type' => 0, // 사용자 수동
-                        'tstep' => 1, // 발급 신청 접수
+                        'type' => '0', 
+                        'tstep' => 1, 
                         'order_seq' => $order->order_seq,
                         'member_seq' => $order->member_seq ?? 0,
                         'price' => $order->settleprice,
                         'supply' => round($order->settleprice / 1.1),
                         'surtax' => $order->settleprice - round($order->settleprice / 1.1),
-                        'cuse' => $cuse, // 0:개인, 1:사업자
+                        'cuse' => $cuse, 
                         'creceipt_number' => $cno,
                         'person' => $request->input('order_user_name', ''),
                         'email' => $request->input('order_email', ''),
@@ -684,9 +768,7 @@ class OrderController extends Controller
                 if (strpos($e->getMessage(), 'virtual_date') !== false) {
                     $order->virtual_date = now();
                     $order->save();
-            
                 } else {
-            
                     throw $e;
                 }
             }

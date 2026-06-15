@@ -267,13 +267,21 @@
                             <label>이름<span class="badge_required">필수</span></label>
                             <input type="text" name="order_user_name" value="{{ old('order_user_name', $user->user_name ?? '') }}" class="input_text" required>
                         </div>
+                        @php
+                            $orderPhoneArr = explode('-', old('order_phone', $user->phone ?? ''));
+                            $orderCellphoneArr = explode('-', old('order_cellphone', $user->cellphone ?? ''));
+                        @endphp
                         <div class="order_info_form_row" style="margin-top: 15px;">
                             <label>전화번호</label>
-                            <input type="text" name="order_phone" value="{{ old('order_phone', $user->phone ?? '') }}" class="input_text">
+                            <input type="text" name="order_phone[]" value="{{ $orderPhoneArr[0] ?? '' }}" style="width: 20%; text-align: center;" class="input_text"> -
+                            <input type="text" name="order_phone[]" value="{{ $orderPhoneArr[1] ?? '' }}" style="width: 20%; text-align: center;" class="input_text"> -
+                            <input type="text" name="order_phone[]" value="{{ $orderPhoneArr[2] ?? '' }}" style="width: 20%; text-align: center;" class="input_text">
                         </div>
                         <div class="order_info_form_row" style="margin-top: 15px;">
                             <label>휴대전화<span class="badge_required">필수</span></label>
-                            <input type="text" name="order_cellphone" value="{{ old('order_cellphone', $user->cellphone ?? '') }}" class="input_text" required>
+                            <input type="text" name="order_cellphone[]" value="{{ $orderCellphoneArr[0] ?? '' }}" style="width: 20%; text-align: center;" class="input_text" required> -
+                            <input type="text" name="order_cellphone[]" value="{{ $orderCellphoneArr[1] ?? '' }}" style="width: 20%; text-align: center;" class="input_text" required> -
+                            <input type="text" name="order_cellphone[]" value="{{ $orderCellphoneArr[2] ?? '' }}" style="width: 20%; text-align: center;" class="input_text" required>
                         </div>
                         <div class="order_info_form_row" style="margin-top: 15px;">
                             <label>이메일<span class="badge_required">필수</span></label>
@@ -293,6 +301,37 @@
 
                 <h4 class="mt30">배송지 정보 <label><input type="checkbox" id="copy_user_info"> 주문자 정보와 동일</label>
                 </h4>
+                
+                {{-- [LEGACY PARITY] Quick Address Selector (chkQuickAddress) --}}
+                @if(auth()->check())
+                <div class="order_info_table" style="margin-bottom:10px;">
+                    <table class="form_table">
+                        <colgroup>
+                            <col width="150" />
+                            <col width="*" />
+                        </colgroup>
+                        <tbody>
+                            <tr>
+                                <th>배송지 불러오기</th>
+                                <td>
+                                    <div style="display: flex; gap: 15px; align-items: center;">
+                                        <label><input type="radio" name="chkQuickAddress" value="member" id="chkQuick_member"> 회원정보주소</label>
+                                        <label><input type="radio" name="chkQuickAddress" value="often" id="chkQuick_often"> 자주쓰는배송지</label>
+                                        <label><input type="radio" name="chkQuickAddress" value="lately" id="chkQuick_lately"> 최근배송지</label>
+                                        <label><input type="radio" name="chkQuickAddress" value="new" id="chkQuick_new" checked> 새로운 배송지</label>
+                                        
+                                        <select name="chkQuickAddressLately" id="chkQuickAddressLately" class="input_text" style="display:none; min-width:180px;">
+                                            <option value="">최근 배송지를 선택하세요</option>
+                                        </select>
+                                        
+                                        <button type="button" class="btn_base btn_addr_list" onclick="openAddressModal()">주소록 목록</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                @endif
                 <div class="order_info_table">
                     <table class="form_table">
                         <colgroup>
@@ -307,35 +346,68 @@
                             </tr>
                             <tr>
                                 <th>전화번호</th>
-                                <td><input type="text" name="recipient_phone" id="recipient_phone" value="{{ old('recipient_phone') }}" class="input_text"></td>
+                                <td>
+                                    <input type="text" name="recipient_phone[]" id="recipient_phone_0" style="width: 20%; text-align: center;" class="input_text"> -
+                                    <input type="text" name="recipient_phone[]" id="recipient_phone_1" style="width: 20%; text-align: center;" class="input_text"> -
+                                    <input type="text" name="recipient_phone[]" id="recipient_phone_2" style="width: 20%; text-align: center;" class="input_text">
+                                </td>
                             </tr>
                             <tr>
                                 <th>휴대전화 <span class="required">*</span></th>
-                                <td><input type="text" name="recipient_cellphone" id="recipient_cellphone" value="{{ old('recipient_cellphone') }}"
-                                        class="input_text" required></td>
+                                <td>
+                                    <input type="text" name="recipient_cellphone[]" id="recipient_cellphone_0" style="width: 20%; text-align: center;" class="input_text" required> -
+                                    <input type="text" name="recipient_cellphone[]" id="recipient_cellphone_1" style="width: 20%; text-align: center;" class="input_text" required> -
+                                    <input type="text" name="recipient_cellphone[]" id="recipient_cellphone_2" style="width: 20%; text-align: center;" class="input_text" required>
+                                </td>
                             </tr>
                             <tr>
                                 <th>주소 <span class="required">*</span></th>
                                 <td>
-                                    <input type="text" name="recipient_zipcode" id="recipient_zipcode" class="input_text" value="{{ old('recipient_zipcode') }}"
+                                    <input type="text" name="recipient_new_zipcode" id="recipient_new_zipcode" class="input_text" value="{{ old('recipient_new_zipcode') }}"
                                         style="width: 80px;" placeholder="우편번호" readonly>
                                     <button type="button" class="btn_base" onclick="openDaumPostcode()">우편번호 찾기</button>
-                                    <button type="button" class="btn_base btn_addr_list" onclick="openAddressModal()">배송지 목록</button><br>
+                                    <br>
 
                                     {{-- Visible Address Input (Display Only) --}}
                                     <input type="text" id="recipient_address_display" class="input_text" value="{{ old('recipient_address_type') == 'street' ? old('recipient_address_street') : old('recipient_address') }}"
                                         style="width: 300px; margin-top: 5px;" placeholder="기본주소" readonly>
 
                                     {{-- Actual Data Inputs --}}
-                                    <input type="hidden" name="recipient_address" id="recipient_address" value="{{ old('recipient_address') }}"> {{-- Jibun Address
-                                    --}}
-                                    <input type="hidden" name="recipient_address_street" id="recipient_address_street" value="{{ old('recipient_address_street') }}"> {{--
-                                    Road Address --}}
-                                    <input type="hidden" name="recipient_address_type" id="recipient_address_type" value="{{ old('recipient_address_type') }}"> {{--
-                                    Type: street/zibun --}}
+                                    <input type="hidden" name="recipient_address" id="recipient_address" value="{{ old('recipient_address') }}"> {{-- Jibun Address --}}
+                                    <input type="hidden" name="recipient_address_street" id="recipient_address_street" value="{{ old('recipient_address_street') }}"> {{-- Road Address --}}
+                                    <input type="hidden" name="recipient_address_type" id="recipient_address_type" value="{{ old('recipient_address_type') }}"> {{-- Type: street/zibun --}}
 
                                     <input type="text" name="recipient_address_detail" id="recipient_address_detail" value="{{ old('recipient_address_detail') }}"
                                         class="input_text" style="width: 200px; margin-top: 5px;" placeholder="상세주소">
+                                    
+                                    @if(auth()->check())
+                                    <div style="margin-top: 5px;">
+                                        <label><input type="checkbox" name="save_delivery_address" id="save_delivery_address" value="1"> <span style="color: #0088ff; font-size: 13px;">기본 배송지로 저장</span></label>
+                                    </div>
+                                    @endif
+                                </td>
+                            </tr>
+                            
+                            {{-- [LEGACY PARITY] Overseas English Address form --}}
+                            <tr id="international_address_row" style="display:none;">
+                                <th>해외배송 영문 주소</th>
+                                <td>
+                                    <div style="margin-bottom: 5px;">
+                                        <span style="display:inline-block; width:80px;">English Addr:</span>
+                                        <input type="text" name="international_address" id="international_address" class="input_text" style="width: 350px;">
+                                    </div>
+                                    <div style="margin-bottom: 5px;">
+                                        <span style="display:inline-block; width:80px;">Town/City:</span>
+                                        <input type="text" name="international_town_city" id="international_town_city" class="input_text" style="width: 150px;">
+                                        <span style="margin:0 10px;">County/State:</span>
+                                        <input type="text" name="international_county" id="international_county" class="input_text" style="width: 150px;">
+                                    </div>
+                                    <div>
+                                        <span style="display:inline-block; width:80px;">Postcode:</span>
+                                        <input type="text" name="international_postcode" id="international_postcode" class="input_text" style="width: 150px;">
+                                        <span style="margin:0 10px;">Country:</span>
+                                        <input type="text" name="international_country" id="international_country" class="input_text" style="width: 150px;">
+                                    </div>
                                 </td>
                             </tr>
                             <tr>
@@ -354,7 +426,7 @@
                             <col width="*" />
                         </colgroup>
                         <tbody>
-                            <tr>
+                            <tr id="coupon_use_row">
                                 <th>쿠폰 사용</th>
                                 <td>
                                     <select name="download_seq" id="download_seq" class="input_text" style="min-width: 200px;">
@@ -373,12 +445,18 @@
                                     <span id="coupon_discount_display" style="color: #d00; font-weight: bold; margin-left: 10px;"></span>
                                 </td>
                             </tr>
-                            <tr>
+                            <tr id="emoney_use_row">
                                 <th>적립금</th>
                                 <td>
-                                    <input type="number" name="use_emoney" id="use_emoney" class="input_text" value="{{ old('use_emoney', 0) }}" style="text-align:right;"> 원
+                                    <input type="number" name="use_emoney_view" id="use_emoney_view" class="input_text" value="{{ old('use_emoney', 0) }}" style="text-align:right; width: 120px;"> 원
+                                    <input type="hidden" name="use_emoney" id="use_emoney" value="{{ old('use_emoney', 0) }}">
+                                    
                                     <span style="color:#888; margin-left:10px;">(보유: <strong>{{ number_format($user->emoney ?? 0) }}</strong>원)</span>
-                                    <button type="button" class="btn_base" onclick="useAll('emoney', {{ $usableEmoney ?? 0 }})">전액사용</button>
+                                    
+                                    <span class="emoney_input_button" style="margin-left:5px;"><button type="button" class="btn_base" onclick="useEmoneyBtn()">입력</button></span>
+                                    <span class="emoney_all_input_button" style="margin-left:5px;"><button type="button" class="btn_base" onclick="useAllEmoneyBtn()">전액사용</button></span>
+                                    <span class="emoney_cancel_button" style="margin-left:5px; display:none;"><button type="button" class="btn_base" onclick="cancelEmoneyBtn()">초기화</button></span>
+                                    
                                     @if(isset($errReserve) && $errReserve)
                                         <div style="color: #d00; font-size:11px; margin-top:4px;">※ {{ $errReserve }}</div>
                                     @else
@@ -386,12 +464,17 @@
                                     @endif
                                 </td>
                             </tr>
-                            <tr>
-                                <th>예치금</th>
+                            <tr id="cash_use_row">
+                                <th>캐시</th>
                                 <td>
-                                    <input type="number" name="use_cash" id="use_cash" class="input_text" value="{{ old('use_cash', 0) }}" style="text-align:right;"> 원
+                                    <input type="number" name="use_cash_view" id="use_cash_view" class="input_text" value="{{ old('use_cash', 0) }}" style="text-align:right; width: 120px;"> 원
+                                    <input type="hidden" name="use_cash" id="use_cash" value="{{ old('use_cash', 0) }}">
+                                    
                                     <span style="color:#888; margin-left:10px;">(보유: <strong>{{ number_format($user->cash ?? 0) }}</strong>원)</span>
-                                    <button type="button" class="btn_base" onclick="useAll('cash', {{ $user->cash ?? 0 }})">전액사용</button>
+                                    
+                                    <span class="cash_input_button" style="margin-left:5px;"><button type="button" class="btn_base" onclick="useCashBtn()">입력</button></span>
+                                    <span class="cash_all_input_button" style="margin-left:5px;"><button type="button" class="btn_base" onclick="useAllCashBtn()">전액사용</button></span>
+                                    <span class="cash_cancel_button" style="margin-left:5px; display:none;"><button type="button" class="btn_base" onclick="cancelCashBtn()">초기화</button></span>
                                 </td>
                             </tr>
                         </tbody>
@@ -408,8 +491,7 @@
                                 <th>결제 방법</th>
                                 <td>
                                     <label><input type="radio" name="payment" value="bank" {{ old('payment', 'bank') == 'bank' ? 'checked' : '' }}> 무통장 입금</label>
-                                    <label style="margin-left: 20px;"><input type="radio" name="payment" value="card" {{ old('payment') == 'card' ? 'checked' : '' }}>
-                                        신용카드</label>
+                                    <label style="margin-left: 20px;" id="card_payment_label"><input type="radio" name="payment" value="card" {{ old('payment') == 'card' ? 'checked' : '' }}> 신용카드</label>
                                 </td>
                             </tr>
                             <tr id="bank_info_row">
@@ -422,12 +504,35 @@
                                     <input type="text" name="depositor" value="{{ old('depositor') }}" class="input_text" placeholder="입금자명">
                                 </td>
                             </tr>
+                            
+                            {{-- [LEGACY PARITY] Bank Refund Account Form (Shown for Bank, virtual, account payments) --}}
+                            <tr id="refund_info_row" style="display:none;">
+                                <th>환불시 입금 정보 입력<br>(선택사항)</th>
+                                <td>
+                                    <div style="margin-bottom: 5px;">
+                                        <span style="display:inline-block; width:100px;">입금자명(예금주)</span> 
+                                        <input type="text" name="refund_name" id="refund_name" value="{{ old('refund_name') }}" class="input_text" style="width:150px;">
+                                    </div>
+                                    <div style="margin-bottom: 5px;">
+                                        <span style="display:inline-block; width:100px;">입금은행</span> 
+                                        <input type="text" name="refund_bank" id="refund_bank" value="{{ old('refund_bank') }}" class="input_text" style="width:150px;">
+                                    </div>
+                                    <div>
+                                        <span style="display:inline-block; width:100px;">입금계좌</span> 
+                                        <input type="text" name="refund_acount" id="refund_acount" value="{{ old('refund_acount') }}" class="input_text" style="width:250px;" placeholder="'-'없이 입력">
+                                        <span style="color:#888; font-size:11px; margin-left:10px;">( 하이픈 [ - ] 없이 입력 )</span>
+                                    </div>
+                                    <div style="margin-top:5px; color:#555; font-size:11px;">
+                                        ※ 환불은 작성하신 계좌로 입금 됩니다. 입금자명 및 계좌를 정확히 입력해주세요.
+                                    </div>
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
 
-                {{-- Phase 1: Receipt Request Section --}}
-                <div class="order_info_table mt30">
+                {{-- [LEGACY PARITY] Tax Invoice & Cash Receipt Form Area --}}
+                <div class="order_info_table mt30" id="receipt_request_table">
                     <h4 style="margin-bottom:10px;">증빙 서류 신청</h4>
                     <table class="form_table">
                         <colgroup>
@@ -435,39 +540,62 @@
                             <col width="*" />
                         </colgroup>
                         <tbody>
-                            <tr>
+                            <tr id="typereceipt_selection_row">
                                 <th>신청 선택</th>
                                 <td>
                                     <label><input type="radio" name="typereceipt" value="0" {{ old('typereceipt', '0') == '0' ? 'checked' : '' }} onclick="toggleReceipt(0)"> 신청안함</label>
-                                    @if(isset($hasExempt) && $hasExempt)
-                                        <span style="color:#d00; font-size:12px; margin-left:10px;">(비과세 상품 포함시 증빙서류 발급 불가)</span>
-                                    @else
-                                        <label class="ml10"><input type="radio" name="typereceipt" value="1" {{ old('typereceipt') == '1' ? 'checked' : '' }} onclick="toggleReceipt(1)"> 세금계산서</label>
-                                        <label class="ml10"><input type="radio" name="typereceipt" value="2" {{ old('typereceipt') == '2' ? 'checked' : '' }} onclick="toggleReceipt(2)"> 현금영수증</label>
-                                    @endif
+                                    <label class="ml10" id="tax_invoice_label"><input type="radio" name="typereceipt" value="1" {{ old('typereceipt') == '1' ? 'checked' : '' }} onclick="toggleReceipt(1)"> 세금계산서</label>
+                                    <label class="ml10" id="cash_receipt_label"><input type="radio" name="typereceipt" value="2" {{ old('typereceipt') == '2' ? 'checked' : '' }} onclick="toggleReceipt(2)"> 현금영수증</label>
+                                    <span id="tax_exempt_warning" style="color:#d00; font-size:12px; margin-left:10px; display:none;">(비과세 상품 포함시 증빙서류 발급 불가)</span>
                                 </td>
                             </tr>
                             <tr id="receipt_form_row" class="hide">
                                 <th>정보 입력</th>
                                 <td>
-                                    {{-- Tax Invoice Form --}}
+                                    {{-- Tax Invoice Form (co_new_zipcode, co_address, co_address_street, co_address_detail, person, phone, email) --}}
                                     <div id="tax_form" class="hide">
-                                        <div class="receipt_row"><span class="label">상호명</span> <input type="text" name="co_name" value="{{ old('co_name') }}" class="input_text"></div>
-                                        <div class="receipt_row"><span class="label">사업자번호</span> <input type="text" name="busi_no" value="{{ old('busi_no') }}" class="input_text" placeholder="'-'없이 입력"></div>
-                                        <div class="receipt_row"><span class="label">대표자명</span> <input type="text" name="co_ceo" value="{{ old('co_ceo') }}" class="input_text"></div>
-                                        <div class="receipt_row"><span class="label">업태</span> <input type="text" name="co_status" value="{{ old('co_status') }}" class="input_text"></div>
-                                        <div class="receipt_row"><span class="label">종목</span> <input type="text" name="co_type" value="{{ old('co_type') }}" class="input_text"></div>
-                                        <div class="receipt_row"><span class="label">담당자명</span> <input type="text" name="tax_person" value="{{ old('tax_person') }}" class="input_text"></div>
-                                        <div class="receipt_row"><span class="label">이메일</span> <input type="text" name="tax_email" value="{{ old('tax_email') }}" class="input_text"></div>
+                                        <div class="receipt_row"><span class="label">상호명</span> <input type="text" name="co_name" id="co_name" value="{{ old('co_name') }}" class="input_text"></div>
+                                        <div class="receipt_row"><span class="label">사업자번호</span> <input type="text" name="busi_no" id="busi_no" value="{{ old('busi_no') }}" class="input_text" placeholder="'-'없이 입력"></div>
+                                        <div class="receipt_row"><span class="label">대표자명</span> <input type="text" name="co_ceo" id="co_ceo" value="{{ old('co_ceo') }}" class="input_text"></div>
+                                        <div class="receipt_row"><span class="label">업태</span> <input type="text" name="co_status" id="co_status" value="{{ old('co_status') }}" class="input_text"></div>
+                                        <div class="receipt_row"><span class="label">종목</span> <input type="text" name="co_type" id="co_type" value="{{ old('co_type') }}" class="input_text"></div>
+                                        
+                                        <div class="receipt_row">
+                                            <span class="label">사업장주소</span>
+                                            <button type="button" class="btn_base" onclick="openTaxDaumPostcode()">우편번호 찾기</button>
+                                            <input type="text" name="co_new_zipcode" id="co_new_zipcode" value="{{ old('co_new_zipcode') }}" class="input_text" style="width: 100px; margin-left:5px;" readonly>
+                                        </div>
+                                        <div class="receipt_row">
+                                            <span class="label" style="visibility:hidden;">주소</span>
+                                            <input type="text" name="co_address" id="co_address" value="{{ old('co_address') }}" class="input_text" style="width:300px;" placeholder="기본주소(지번)" readonly>
+                                            <input type="text" name="co_address_street" id="co_address_street" value="{{ old('co_address_street') }}" class="input_text hide" style="width:300px;" placeholder="도로명주소" readonly>
+                                            <input type="hidden" name="co_address_type" id="co_address_type" value="{{ old('co_address_type', 'zibun') }}">
+                                        </div>
+                                        <div class="receipt_row">
+                                            <span class="label" style="visibility:hidden;">상세주소</span>
+                                            <input type="text" name="co_address_detail" id="co_address_detail" value="{{ old('co_address_detail') }}" class="input_text" style="width:300px;" placeholder="상세주소">
+                                        </div>
+                                        
+                                        <div style="margin-top:10px; border-top:1px dashed #ddd; padding-top:10px;">
+                                            <div class="receipt_row"><span class="label">담당자명</span> <input type="text" name="person" id="person" value="{{ old('person') }}" class="input_text"></div>
+                                            <div class="receipt_row"><span class="label">연락처</span> <input type="text" name="phone" id="phone" value="{{ old('phone') }}" class="input_text"></div>
+                                            <div class="receipt_row"><span class="label">이메일</span> <input type="text" name="email" id="email" value="{{ old('email') }}" class="input_text"></div>
+                                        </div>
                                     </div>
+                                    
                                     {{-- Cash Receipt Form --}}
                                     <div id="cash_form" class="hide">
                                         <div class="receipt_row">
-                                            <label><input type="radio" name="cuse" value="0" {{ old('cuse', '0') == '0' ? 'checked' : '' }}> 개인소득공제용</label>
-                                            <label class="ml10"><input type="radio" name="cuse" value="1" {{ old('cuse') == '1' ? 'checked' : '' }}> 사업자지출증빙용</label>
+                                            <label><input type="radio" name="cuse" value="0" {{ old('cuse', '0') == '0' ? 'checked' : '' }} onclick="toggleCashReceiptType(0)"> 개인소득공제용</label>
+                                            <label class="ml10"><input type="radio" name="cuse" value="1" {{ old('cuse') == '1' ? 'checked' : '' }} onclick="toggleCashReceiptType(1)"> 사업자지출증빙용</label>
                                         </div>
-                                        <div class="receipt_row mt5">
-                                            <span class="label">휴대폰/번호</span> <input type="text" name="cash_receipt_number" value="{{ old('cash_receipt_number') }}" class="input_text" placeholder="'-'없이 입력">
+                                        <div class="receipt_row mt5" id="personal_receipt_row">
+                                            <span class="label">휴대폰번호</span> 
+                                            <input type="text" name="creceipt_number[]" value="{{ old('creceipt_number') ? (old('creceipt_number')[0] ?? '') : '' }}" class="input_text" placeholder="'-'없이 입력">
+                                        </div>
+                                        <div class="receipt_row mt5" id="business_receipt_row" style="display:none;">
+                                            <span class="label">사업자번호</span> 
+                                            <input type="text" name="creceipt_number[]" value="{{ old('creceipt_number') ? (old('creceipt_number')[1] ?? '') : '' }}" class="input_text" placeholder="'-'없이 입력">
                                         </div>
                                     </div>
                                 </td>
@@ -670,409 +798,683 @@
 
         paymentRadios.forEach(radio => {
             radio.addEventListener('change', function () {
-                if (this.value === 'bank') {
-                    bankInfoRow.style.display = 'table-row';
-                } else {
-                    bankInfoRow.style.display = 'none';
+        if (this.value === 'bank') {
+            bankInfoRow.style.display = 'table-row';
+            refundInfoRow.style.display = 'table-row';
+            
+            // 무통장 선택 시 세금계산서 자동 선택 및 토글 트리거
+            if (!hasExempt) {
+                const taxRadio = document.querySelector('input[name="typereceipt"][value="1"]');
+                if (taxRadio) {
+                    taxRadio.checked = true;
+                    toggleReceipt(1);
                 }
-            });
-        });
+            }
+        } else {
+            bankInfoRow.style.display = 'none';
+            refundInfoRow.style.display = 'none';
+            
+            // 신용카드 선택 시 증빙서류 '신청안함' 자동 선택
+            const noReceiptRadio = document.querySelector('input[name="typereceipt"][value="0"]');
+            if (noReceiptRadio) {
+                noReceiptRadio.checked = true;
+                toggleReceipt(0);
+            }
+        }
+        updateFinalPrice();
+    });
+});
 
-        // Address Modal Functions
-        function openAddressModal() {
-            const listEl = document.getElementById('addressList');
-            listEl.innerHTML = '<li>로딩중...</li>';
-            document.getElementById('addressModal').style.display = 'block';
+// Address Modal Functions
+function openAddressModal() {
+    const listEl = document.getElementById('addressList');
+    listEl.innerHTML = '<li>로딩중...</li>';
+    document.getElementById('addressModal').style.display = 'block';
 
-            fetch("{{ route('mypage.delivery_address.json') }}")
-                .then(res => res.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        listEl.innerHTML = '';
-                        if (data.data.length === 0) {
-                            listEl.innerHTML = '<li>등록된 배송지가 없습니다.</li>';
-                            return;
-                        }
-                        data.data.forEach(addr => {
-                            const li = document.createElement('li');
-                            li.style.cssText = "border:1px solid #ddd; padding:15px; margin-bottom:10px; cursor:pointer;";
-                            li.onclick = function() { selectAddress(addr); };
-                            li.innerHTML = `
-                                <div class="addr_item">
-                                    <strong style="color:#000; font-size:14px;">${addr.recipient_user_name}</strong>
-                                    <span style="color:#888; font-size:12px; margin-left:5px;">[${addr.address_group || '기본'}]</span>
-                                    ${addr.default === 'Y' ? '<span style="display:inline-block; padding:2px 5px; background:#d00; color:#fff; font-size:11px; margin-left:5px; border-radius:3px;">기본</span>' : ''}
-                                    <p style="margin:5px 0 0 0; color:#555; font-size:13px;">${addr.recipient_address} ${addr.recipient_address_detail || ''}</p>
-                                    <p style="margin:2px 0 0 0; color:#888; font-size:12px;">${addr.recipient_mobile || addr.recipient_cellphone || ''}</p>
-                                </div>
-                            `;
-                            listEl.appendChild(li);
-                        });
-                    } else {
-                        alert(data.message);
-                        closeAddressModal();
-                    }
-                })
-                .catch(err => {
-                    console.error(err);
-                    listEl.innerHTML = '<li>불러오기 실패</li>';
+    fetch("{{ route('mypage.delivery_address.json') }}")
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                listEl.innerHTML = '';
+                if (data.data.length === 0) {
+                    listEl.innerHTML = '<li>등록된 배송지가 없습니다.</li>';
+                    return;
+                }
+                data.data.forEach(addr => {
+                    const li = document.createElement('li');
+                    li.style.cssText = "border:1px solid #ddd; padding:15px; margin-bottom:10px; cursor:pointer;";
+                    li.onclick = function() { selectAddress(addr); };
+                    li.innerHTML = `
+                        <div class="addr_item">
+                            <strong style="color:#000; font-size:14px;">${addr.recipient_user_name}</strong>
+                            <span style="color:#888; font-size:12px; margin-left:5px;">[${addr.address_group || '기본'}]</span>
+                            ${addr.default === 'Y' ? '<span style="display:inline-block; padding:2px 5px; background:#d00; color:#fff; font-size:11px; margin-left:5px; border-radius:3px;">기본</span>' : ''}
+                            <p style="margin:5px 0 0 0; color:#555; font-size:13px;">${addr.recipient_address} ${addr.recipient_address_detail || ''}</p>
+                            <p style="margin:2px 0 0 0; color:#888; font-size:12px;">${addr.recipient_mobile || addr.recipient_cellphone || ''}</p>
+                        </div>
+                    `;
+                    listEl.appendChild(li);
                 });
-        }
-
-        function closeAddressModal() {
-            document.getElementById('addressModal').style.display = 'none';
-        }
-
-        function selectAddress(addr) {
-            document.getElementById('recipient_user_name').value = addr.recipient_user_name;
-            // Handle differences in column name vs frontend expectation
-            document.getElementById('recipient_cellphone').value = addr.recipient_mobile || addr.recipient_cellphone || '';
-            document.getElementById('recipient_zipcode').value = addr.recipient_zipcode;
-            document.getElementById('recipient_address').value = addr.recipient_address;
-            document.getElementById('recipient_address_display').value = addr.recipient_address;
-            document.getElementById('recipient_address_detail').value = addr.recipient_address_detail || '';
-            document.getElementById('recipient_address_street').value = addr.recipient_address_street || '';
-            document.getElementById('recipient_address_type').value = addr.recipient_address_type || 'zibun';
-            
-            closeAddressModal();
-            fetchShippingExtraCost(addr.recipient_zipcode, addr.recipient_address, addr.recipient_address_street);
-        }
-
-        // 새 배송지 폼 토글
-        function toggleNewAddressForm() {
-            const formArea = document.getElementById('newAddressFormArea');
-            if (formArea.style.display === 'none') {
-                formArea.style.display = 'block';
-                // Reset inputs
-                document.getElementById('new_addr_name').value = '';
-                document.getElementById('new_addr_mobile').value = '';
-                document.getElementById('new_addr_group').value = '';
-                document.getElementById('new_addr_zipcode').value = '';
-                document.getElementById('new_addr_address').value = '';
-                document.getElementById('new_addr_detail').value = '';
-                document.getElementById('new_addr_default').checked = false;
             } else {
-                formArea.style.display = 'none';
+                alert(data.message);
+                closeAddressModal();
             }
-        }
-
-        // 새 배송지 저장요청 (AJAX)
-        function saveNewAddress() {
-            const data = {
-                recipient_user_name: document.getElementById('new_addr_name').value,
-                recipient_mobile: document.getElementById('new_addr_mobile').value,
-                address_group: document.getElementById('new_addr_group').value,
-                recipient_zipcode: document.getElementById('new_addr_zipcode').value,
-                recipient_address: document.getElementById('new_addr_address').value,
-                recipient_address_street: document.getElementById('new_addr_street').value,
-                recipient_address_detail: document.getElementById('new_addr_detail').value,
-                recipient_address_type: document.getElementById('new_addr_type').value || 'zibun',
-                default: document.getElementById('new_addr_default').checked ? 'Y' : 'N'
-            };
-
-            if(!data.recipient_user_name || !data.recipient_mobile || !data.recipient_zipcode) {
-                alert('필수 사항을 모두 입력해주세요.');
-                return;
-            }
-
-            fetch("{{ route('mypage.delivery_address.store') }}", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json",
-                    "X-CSRF-TOKEN": "{{ csrf_token() }}"
-                },
-                body: JSON.stringify(data)
-            })
-            .then(res => res.json())
-            .then(resData => {
-                if(resData.status === 'success') {
-                    alert('새 배송지가 등록되었습니다.');
-                    toggleNewAddressForm();
-                    // 목록 리프레시
-                    openAddressModal();
-                } else {
-                    alert('등록 중 오류가 발생했습니다.');
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                alert('요청 실패');
-            });
-        }
-
-        // Initial PHP values passing to JS
-        const initialFinalPrice = {{ $totalPrice + $shipping + $packagingCost + $tax }};
-        const initialGoodsPrice = {{ $totalPrice }};
-        const maxEmoney = {{ $usableEmoney ?? 0 }};
-        const maxCash = {{ $user->cash ?? 0 }};
-        let extraShippingCost = {{ $extraCost ?? 0 }}; // [LEGACY PARITY] Sync with backend pre-calculated extra shipping cost
-
-        // Initialize extra shipping fee display on page load
-        window.addEventListener('DOMContentLoaded', () => {
-            const wrap = document.getElementById('extra_shipping_wrap');
-            const display = document.getElementById('extra_shipping_display');
-            if (extraShippingCost > 0) {
-                wrap.style.display = 'inline-block';
-                display.innerText = new Intl.NumberFormat().format(extraShippingCost);
-            }
-            updateFinalPrice();
+        })
+        .catch(err => {
+            console.error(err);
+            listEl.innerHTML = '<li>불러오기 실패</li>';
         });
+}
 
-        // 비동기 추가 배송비 조회 로직
-        function fetchShippingExtraCost(zipcode, address = '', addressStreet = '') {
-            const resolvedAddress = address || document.getElementById('recipient_address').value || '';
-            const resolvedAddressStreet = addressStreet || document.getElementById('recipient_address_street').value || '';
-            
-            fetch("{{ route('order.calculate-shipping') }}", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRF-TOKEN": "{{ csrf_token() }}"
-                },
-                body: JSON.stringify({ 
-                    zipcode: zipcode, 
-                    address: resolvedAddress, 
-                    address_street: resolvedAddressStreet 
-                })
-            })
-            .then(res => res.json())
-            .then(data => {
-                extraShippingCost = parseInt(data.extra_cost) || 0;
-                const wrap = document.getElementById('extra_shipping_wrap');
-                const display = document.getElementById('extra_shipping_display');
-                
-                if (extraShippingCost > 0) {
-                    wrap.style.display = 'inline-block';
-                    display.innerText = new Intl.NumberFormat().format(extraShippingCost);
-                } else {
-                    wrap.style.display = 'none';
-                    display.innerText = '0';
-                }
-                
-                updateFinalPrice();
-            })
-            .catch(err => console.error("Shipping Calculation Error:", err));
+function closeAddressModal() {
+    document.getElementById('addressModal').style.display = 'none';
+}
+
+function selectAddress(addr) {
+    document.getElementById('recipient_user_name').value = addr.recipient_user_name;
+    
+    // 연락처 3분할 대입
+    const cellphone = (addr.recipient_mobile || addr.recipient_cellphone || '').split('-');
+    const phone = (addr.recipient_phone || '').split('-');
+    for(let i=0; i<3; i++) {
+        document.getElementById('recipient_phone_' + i).value = phone[i] || '';
+        document.getElementById('recipient_cellphone_' + i).value = cellphone[i] || '';
+    }
+    
+    document.getElementById('recipient_zipcode').value = addr.recipient_zipcode;
+    document.getElementById('recipient_address').value = addr.recipient_address;
+    document.getElementById('recipient_address_street').value = addr.recipient_address_street || '';
+    document.getElementById('recipient_address_display').value = addr.recipient_address_type === 'street' ? (addr.recipient_address_street || addr.recipient_address) : addr.recipient_address;
+    document.getElementById('recipient_address_detail').value = addr.recipient_address_detail || '';
+    document.getElementById('recipient_address_type').value = addr.recipient_address_type || 'zibun';
+    
+    closeAddressModal();
+    fetchShippingExtraCost(addr.recipient_zipcode, addr.recipient_address, addr.recipient_address_street);
+}
+
+// 새 배송지 폼 토글
+function toggleNewAddressForm() {
+    const formArea = document.getElementById('newAddressFormArea');
+    if (formArea.style.display === 'none') {
+        formArea.style.display = 'block';
+        // Reset inputs
+        document.getElementById('new_addr_name').value = '';
+        document.getElementById('new_addr_mobile').value = '';
+        document.getElementById('new_addr_group').value = '';
+        document.getElementById('new_addr_zipcode').value = '';
+        document.getElementById('new_addr_address').value = '';
+        document.getElementById('new_addr_detail').value = '';
+        document.getElementById('new_addr_default').checked = false;
+    } else {
+        formArea.style.display = 'none';
+    }
+}
+
+// 새 배송지 저장요청 (AJAX)
+function saveNewAddress() {
+    const data = {
+        recipient_user_name: document.getElementById('new_addr_name').value,
+        recipient_mobile: document.getElementById('new_addr_mobile').value,
+        address_group: document.getElementById('new_addr_group').value,
+        recipient_zipcode: document.getElementById('new_addr_zipcode').value,
+        recipient_address: document.getElementById('new_addr_address').value,
+        recipient_address_street: document.getElementById('new_addr_street').value,
+        recipient_address_detail: document.getElementById('new_addr_detail').value,
+        recipient_address_type: document.getElementById('new_addr_type').value || 'zibun',
+        default: document.getElementById('new_addr_default').checked ? 'Y' : 'N'
+    };
+
+    if(!data.recipient_user_name || !data.recipient_mobile || !data.recipient_zipcode) {
+        alert('필수 사항을 모두 입력해주세요.');
+        return;
+    }
+
+    fetch("{{ route('mypage.delivery_address.store') }}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "X-CSRF-TOKEN": "{{ csrf_token() }}"
+        },
+        body: JSON.stringify(data)
+    })
+    .then(res => res.json())
+    .then(resData => {
+        if(resData.status === 'success') {
+            alert('새 배송지가 등록되었습니다.');
+            toggleNewAddressForm();
+            openAddressModal();
+        } else {
+            alert('등록 중 오류가 발생했습니다.');
         }
+    })
+    .catch(err => {
+        console.error(err);
+        alert('요청 실패');
+    });
+}
 
-        function useAll(type, amount) {
-            const input = document.getElementById('use_' + type);
-            const currentTotal = calculateCurrentTotal(type);
-            let useAmount = amount;
-            if (amount > currentTotal) useAmount = currentTotal;
-            
-            input.value = useAmount;
-            updateFinalPrice();
-        }
+// Initial PHP values passing to JS
+const initialFinalPrice = {{ $totalPrice + $shipping + $packagingCost + $tax }};
+const initialGoodsPrice = {{ $totalPrice }};
+const initialTax = {{ $tax }};
+const maxEmoney = {{ $usableEmoney ?? 0 }};
+const maxCash = {{ $user->cash ?? 0 }};
+const hasExempt = {{ $hasExempt ? 'true' : 'false' }};
+const hasSaveEmoneyLimit = {{ $hasSaveEmoneyLimit ? 'true' : 'false' }};
+const isBbbType = {{ $isBbbType ? 'true' : 'false' }};
+let extraShippingCost = {{ $extraCost ?? 0 }}; 
 
-        function calculateCurrentTotal(excludeType) {
-            // Recalculate everything to be safe
-            // Base + ExtraShipping - Coupon - (Other Points)
-            let total = initialFinalPrice + extraShippingCost - calculateCouponDiscount();
-            
-            if (excludeType !== 'emoney') total -= parseInt(document.getElementById('use_emoney').value || 0);
-            if (excludeType !== 'cash') total -= parseInt(document.getElementById('use_cash').value || 0);
-            return total;
-        }
-
-        function calculateCouponDiscount() {
-            const select = document.getElementById('download_seq');
-            const option = select.options[select.selectedIndex];
-            if (!option.value) return 0;
-
-            let discount = 0;
-            const type = option.dataset.type;
-            
-            if (type === 'percent') {
-                const percent = parseFloat(option.dataset.percent);
-                const max = parseFloat(option.dataset.max);
-                discount = Math.floor(initialGoodsPrice * (percent / 100));
-                if (max > 0 && discount > max) discount = max;
-            } else if (type === 'won') {
-                discount = parseFloat(option.dataset.won);
+// Initialize constraints on page load
+window.addEventListener('DOMContentLoaded', () => {
+    // 1. 비과세 제한 처리
+    if (hasExempt) {
+        const cardRadio = document.querySelector('input[name="payment"][value="card"]');
+        if (cardRadio) {
+            cardRadio.disabled = true;
+            if (cardRadio.checked) {
+                document.querySelector('input[name="payment"][value="bank"]').checked = true;
             }
-            
-            // Cannot exceed total price (or goods price? usually goods price but settlement price cap in controller)
-            // Let's cap at initialFinalPrice for simplicity in UI
-            if (discount > initialFinalPrice) discount = initialFinalPrice;
-            
-            return discount;
         }
-
-        function updateFinalPrice() {
-            let useEmoney = parseInt(document.getElementById('use_emoney').value || 0);
-            let useCash = parseInt(document.getElementById('use_cash').value || 0);
-            let couponDiscount = calculateCouponDiscount();
-
-            // Display Coupon Discount
-            if (couponDiscount > 0) {
-                 document.getElementById('coupon_discount_display').innerText = '-' + new Intl.NumberFormat().format(couponDiscount) + '원';
-                 document.getElementById('coupon_discount_display_text').innerText = new Intl.NumberFormat().format(couponDiscount);
+        const cardLabel = document.getElementById('card_payment_label');
+        if (cardLabel) cardLabel.style.display = 'none';
+        
+        document.querySelectorAll('input[name="typereceipt"]').forEach(radio => {
+            if (radio.value !== '0') {
+                radio.disabled = true;
             } else {
-                 document.getElementById('coupon_discount_display').innerText = '';
-                 document.getElementById('coupon_discount_display_text').innerText = '0';
-            }
-
-            // Available total for points is (Final + ExtraShipping - Coupon)
-            let availableForPoints = initialFinalPrice + extraShippingCost - couponDiscount;
-
-            // Re-validate points against new available total
-            if (useEmoney > availableForPoints) {
-                 useEmoney = availableForPoints;
-                 document.getElementById('use_emoney').value = useEmoney;
-            }
-            availableForPoints -= useEmoney;
-
-            if (useCash > availableForPoints) {
-                 useCash = availableForPoints;
-                 document.getElementById('use_cash').value = useCash;
-            }
-
-            // Validation Max Holding
-            if (useEmoney > 0) {
-                const minEmoney = 100;
-                const emoneyUseLimit = 100;
-                const userEmoneyTotal = {{ $user->emoney ?? 0 }};
-                
-                if (userEmoneyTotal < emoneyUseLimit) {
-                    alert(new Intl.NumberFormat().format(emoneyUseLimit) + '원 이상 적립하여야 합니다.');
-                    useEmoney = 0;
-                    document.getElementById('use_emoney').value = 0;
-                } else if (useEmoney < minEmoney) {
-                    alert('적립금은 최소 ' + new Intl.NumberFormat().format(minEmoney) + '원부터 사용가능 합니다.');
-                    useEmoney = 0;
-                    document.getElementById('use_emoney').value = 0;
-                } else if (useEmoney > maxEmoney) {
-                    alert('사용 가능한 적립금을 초과할 수 없습니다.');
-                    useEmoney = maxEmoney;
-                    document.getElementById('use_emoney').value = useEmoney;
-                }
-            }
-            if (useCash > maxCash) {
-                alert('보유 예치금을 초과할 수 없습니다.');
-                useCash = maxCash;
-                document.getElementById('use_cash').value = useCash;
-            }
-
-            let finalPrice = initialFinalPrice + extraShippingCost - couponDiscount - useEmoney - useCash;
-
-            if (finalPrice < 0) finalPrice = 0;
-
-            document.querySelector('.final_price').innerText = new Intl.NumberFormat().format(finalPrice);
-            
-            // 실시간 배송비 합산 업데이트 (기본 배송비 + 포장비 + 도서산간비)
-            const totalShipping = {{ $shipping + $packagingCost }} + extraShippingCost;
-            document.getElementById('total_shipping_display_text').innerText = new Intl.NumberFormat().format(totalShipping);
-        }
-
-        document.getElementById('use_emoney').addEventListener('change', updateFinalPrice);
-        document.getElementById('use_cash').addEventListener('change', updateFinalPrice);
-        document.getElementById('download_seq').addEventListener('change', updateFinalPrice);
-
-        // Toggle Receipt Forms
-        function toggleReceipt(type) {
-            const row = document.getElementById('receipt_form_row');
-            const taxForm = document.getElementById('tax_form');
-            const cashForm = document.getElementById('cash_form');
-
-            if (type == 0) {
-                row.style.display = 'none';
-                taxForm.style.display = 'none';
-                cashForm.style.display = 'none';
-            } else if (type == 1) { // Tax Invoice
-                row.style.display = 'table-row';
-                taxForm.style.display = 'block';
-                cashForm.style.display = 'none';
-            } else if (type == 2) { // Cash Receipt
-                row.style.display = 'table-row';
-                taxForm.style.display = 'none';
-                cashForm.style.display = 'block';
-            }
-        }
-
-        // Validate Agreements on Submit
-        document.getElementById('orderForm').addEventListener('submit', function(e) {
-            // Shipping Policy
-            if (!document.querySelector('input[name="delivery_chk"]:checked')) {
-                alert('배송비 정책에 동의하셔야 합니다.');
-                e.preventDefault();
-                return false;
-            }
-            // Cancellation Policy
-            const cancelAgree = document.querySelector('input[name="cancellation"]:checked');
-            if (!cancelAgree || cancelAgree.value !== 'Y') {
-                alert('청약철회 관련 방침에 동의하셔야 합니다.');
-                e.preventDefault();
-                return false;
-            }
-            // Privacy Policy (Non-member)
-            const privacyAgree = document.querySelector('input[name="privacy_agree"]:checked');
-            if (privacyAgree && privacyAgree.value !== 'Y') {
-                alert('비회원 개인정보 수집 이용에 동의하셔야 합니다.');
-                e.preventDefault();
-                return false;
+                radio.checked = true;
             }
         });
+        document.getElementById('tax_exempt_warning').style.display = 'inline';
+        toggleReceipt(0);
+    }
+    
+    // 2. 제한 상품 쿠폰/적립금 영역 숨김
+    if (hasSaveEmoneyLimit) {
+        const couponRow = document.getElementById('coupon_use_row');
+        if (couponRow) couponRow.style.display = 'none';
+        
+        const emoneyRow = document.getElementById('emoney_use_row');
+        if (emoneyRow) emoneyRow.style.display = 'none';
+        
+        document.getElementById('download_seq').value = '';
+        document.getElementById('use_emoney').value = 0;
+        document.getElementById('use_emoney_view').value = 0;
+    }
 
-        function openDaumPostcode() {
-            new daum.Postcode({
-                oncomplete: function (data) {
-                    // 팝업에서 검색결과 항목을 클릭했을때 실행할 코드를 작성하는 부분.
+    const wrap = document.getElementById('extra_shipping_wrap');
+    const display = document.getElementById('extra_shipping_display');
+    if (extraShippingCost > 0) {
+        wrap.style.display = 'inline-block';
+        display.innerText = new Intl.NumberFormat().format(extraShippingCost);
+    }
+    updateFinalPrice();
+});
 
-                    // 각 주소의 노출 규칙에 따라 주소를 조합한다.
-                    // 내려오는 변수가 값이 없는 경우엔 공백('')값을 가지므로, 이를 참고하여 분기 한다.
-                    var addr = ''; // 주소 변수
-                    var extraAddr = ''; // 참고항목 변수
-
-                    //사용자가 선택한 주소 타입에 따라 해당 주소 값을 가져온다.
-                    if (data.userSelectedType === 'R') { // 사용자가 도로명 주소를 선택했을 경우
-                        addr = data.roadAddress;
-                        document.getElementById('recipient_address_type').value = 'street';
-                    } else { // 사용자가 지번 주소를 선택했을 경우(J)
-                        addr = data.jibunAddress;
-                        document.getElementById('recipient_address_type').value = 'zibun';
-                    }
-
-                    // 우편번호와 주소 정보를 해당 필드에 넣는다.
-                    document.getElementById('recipient_zipcode').value = data.zonecode;
-                    document.getElementById("recipient_address_display").value = addr; // Show selected address
-
-                    // Save detailed address data
-                    const jibunAddr = data.jibunAddress || data.autoJibunAddress || addr;
-                    const roadAddr = data.roadAddress || data.autoRoadAddress || '';
-                    document.getElementById("recipient_address").value = jibunAddr; // Always try to save Jibun
-                    document.getElementById("recipient_address_street").value = roadAddr; // Always try to save Road
-
-                    // Fetch Extra Shipping Cost with resolved address
-                    fetchShippingExtraCost(data.zonecode, jibunAddr, roadAddr);
-
-                    // 커서를 상세주소 필드로 이동한다.
-                    document.getElementById("recipient_address_detail").focus();
-                }
-            }).open();
+// 비동기 추가 배송비 조회 로직
+function fetchShippingExtraCost(zipcode, address = '', addressStreet = '') {
+    const resolvedAddress = address || document.getElementById('recipient_address').value || '';
+    const resolvedAddressStreet = addressStreet || document.getElementById('recipient_address_street').value || '';
+    
+    fetch("{{ route('order.calculate-shipping') }}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-TOKEN": "{{ csrf_token() }}"
+        },
+        body: JSON.stringify({ 
+            zipcode: zipcode, 
+            address: resolvedAddress, 
+            address_street: resolvedAddressStreet 
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        extraShippingCost = parseInt(data.extra_cost) || 0;
+        const wrap = document.getElementById('extra_shipping_wrap');
+        const display = document.getElementById('extra_shipping_display');
+        
+        if (extraShippingCost > 0) {
+            wrap.style.display = 'inline-block';
+            display.innerText = new Intl.NumberFormat().format(extraShippingCost);
+        } else {
+            wrap.style.display = 'none';
+            display.innerText = '0';
         }
+        
+        updateFinalPrice();
+    })
+    .catch(err => console.error("Shipping Calculation Error:", err));
+}
 
-        // 새 배송지용 Daum 주소
-        function openModalDaumPostcode() {
-            new daum.Postcode({
-                oncomplete: function (data) {
-                    var addr = ''; 
-                    if (data.userSelectedType === 'R') { 
-                        addr = data.roadAddress;
-                        document.getElementById('new_addr_type').value = 'street';
-                    } else { 
-                        addr = data.jibunAddress;
-                        document.getElementById('new_addr_type').value = 'zibun';
-                    }
+// 적립금/캐시 동적 버튼 함수
+function useEmoneyBtn() {
+    const viewVal = parseInt(document.getElementById('use_emoney_view').value) || 0;
+    const userEmoney = {{ $user->emoney ?? 0 }};
+    
+    if (hasSaveEmoneyLimit) {
+        alert('제한 상품이 포함되어 적립금을 사용할 수 없습니다.');
+        cancelEmoneyBtn();
+        return;
+    }
+    if (viewVal <= 0) {
+        alert('사용하실 금액을 입력해주세요.');
+        return;
+    }
+    
+    const currentTotal = calculateCurrentTotal('emoney');
+    let useVal = viewVal;
+    
+    if (useVal > userEmoney) {
+        alert('보유 적립금액을 초과할 수 없습니다.');
+        useVal = userEmoney;
+    }
+    if (useVal > currentTotal) {
+        useVal = currentTotal;
+    }
+    
+    const minEmoney = 100;
+    const emoneyUseLimit = 100;
+    if (userEmoney < emoneyUseLimit) {
+        alert(new Intl.NumberFormat().format(emoneyUseLimit) + '원 이상 적립하여야 합니다.');
+        cancelEmoneyBtn();
+        return;
+    }
+    if (useVal < minEmoney) {
+        alert('적립금은 최소 ' + new Intl.NumberFormat().format(minEmoney) + '원부터 사용가능 합니다.');
+        cancelEmoneyBtn();
+        return;
+    }
+    
+    document.getElementById('use_emoney_view').value = useVal;
+    document.getElementById('use_emoney').value = useVal;
+    document.getElementById('use_emoney_view').readOnly = true;
+    
+    document.querySelector('.emoney_input_button').style.display = 'none';
+    document.querySelector('.emoney_all_input_button').style.display = 'none';
+    document.querySelector('.emoney_cancel_button').style.display = 'inline-block';
+    
+    updateFinalPrice();
+}
 
-                    document.getElementById('new_addr_zipcode').value = data.zonecode;
-                    document.getElementById("new_addr_address").value = addr;
-                    document.getElementById("new_addr_street").value = data.roadAddress || data.autoRoadAddress || ''; 
+function useAllEmoneyBtn() {
+    if (hasSaveEmoneyLimit) {
+        alert('제한 상품이 포함되어 적립금을 사용할 수 없습니다.');
+        return;
+    }
+    const userEmoney = {{ $user->emoney ?? 0 }};
+    const currentTotal = calculateCurrentTotal('emoney');
+    let useVal = userEmoney;
+    if (useVal > currentTotal) {
+        useVal = currentTotal;
+    }
+    document.getElementById('use_emoney_view').value = useVal;
+    useEmoneyBtn();
+}
 
-                    document.getElementById("new_addr_detail").focus();
-                }
-            }).open();
+function cancelEmoneyBtn() {
+    document.getElementById('use_emoney_view').value = 0;
+    document.getElementById('use_emoney').value = 0;
+    document.getElementById('use_emoney_view').readOnly = false;
+    
+    document.querySelector('.emoney_input_button').style.display = 'inline-block';
+    document.querySelector('.emoney_all_input_button').style.display = 'inline-block';
+    document.querySelector('.emoney_cancel_button').style.display = 'none';
+    
+    updateFinalPrice();
+}
+
+function useCashBtn() {
+    const viewVal = parseInt(document.getElementById('use_cash_view').value) || 0;
+    const userCash = {{ $user->cash ?? 0 }};
+    
+    if (viewVal <= 0) {
+        alert('사용하실 캐시 금액을 입력해주세요.');
+        return;
+    }
+    
+    const currentTotal = calculateCurrentTotal('cash');
+    let useVal = viewVal;
+    
+    if (useVal > userCash) {
+        alert('보유 캐시를 초과할 수 없습니다.');
+        useVal = userCash;
+    }
+    if (useVal > currentTotal) {
+        useVal = currentTotal;
+    }
+    
+    document.getElementById('use_cash_view').value = useVal;
+    document.getElementById('use_cash').value = useVal;
+    document.getElementById('use_cash_view').readOnly = true;
+    
+    document.querySelector('.cash_input_button').style.display = 'none';
+    document.querySelector('.cash_all_input_button').style.display = 'none';
+    document.querySelector('.cash_cancel_button').style.display = 'inline-block';
+    
+    updateFinalPrice();
+}
+
+function useAllCashBtn() {
+    const userCash = {{ $user->cash ?? 0 }};
+    const currentTotal = calculateCurrentTotal('cash');
+    let useVal = userCash;
+    if (useVal > currentTotal) {
+        useVal = currentTotal;
+    }
+    document.getElementById('use_cash_view').value = useVal;
+    useCashBtn();
+}
+
+function cancelCashBtn() {
+    document.getElementById('use_cash_view').value = 0;
+    document.getElementById('use_cash').value = 0;
+    document.getElementById('use_cash_view').readOnly = false;
+    
+    document.querySelector('.cash_input_button').style.display = 'inline-block';
+    document.querySelector('.cash_all_input_button').style.display = 'inline-block';
+    document.querySelector('.cash_cancel_button').style.display = 'none';
+    
+    updateFinalPrice();
+}
+
+function calculateCurrentTotal(excludeType) {
+    let total = initialFinalPrice + extraShippingCost - calculateCouponDiscount();
+    if (excludeType !== 'emoney') total -= parseInt(document.getElementById('use_emoney').value || 0);
+    if (excludeType !== 'cash') total -= parseInt(document.getElementById('use_cash').value || 0);
+    return total;
+}
+
+function calculateCouponDiscount() {
+    const select = document.getElementById('download_seq');
+    const option = select.options[select.selectedIndex];
+    if (!option || !option.value) return 0;
+
+    let discount = 0;
+    const type = option.dataset.type;
+    
+    if (type === 'percent') {
+        const percent = parseFloat(option.dataset.percent);
+        const max = parseFloat(option.dataset.max);
+        discount = Math.floor(initialGoodsPrice * (percent / 100));
+        if (max > 0 && discount > max) discount = max;
+    } else if (type === 'won') {
+        discount = parseFloat(option.dataset.won);
+    }
+    if (discount > initialFinalPrice) discount = initialFinalPrice;
+    return discount;
+}
+
+function updateFinalPrice() {
+    let useEmoney = parseInt(document.getElementById('use_emoney').value || 0);
+    let useCash = parseInt(document.getElementById('use_cash').value || 0);
+    let couponDiscount = calculateCouponDiscount();
+
+    if (couponDiscount > 0) {
+         document.getElementById('coupon_discount_display').innerText = '-' + new Intl.NumberFormat().format(couponDiscount) + '원';
+         document.getElementById('coupon_discount_display_text').innerText = new Intl.NumberFormat().format(couponDiscount);
+    } else {
+         document.getElementById('coupon_discount_display').innerText = '';
+         document.getElementById('coupon_discount_display_text').innerText = '0';
+    }
+
+    let availableForPoints = initialFinalPrice + extraShippingCost - couponDiscount;
+
+    if (useEmoney > availableForPoints) {
+         useEmoney = availableForPoints;
+         document.getElementById('use_emoney').value = useEmoney;
+    }
+    availableForPoints -= useEmoney;
+
+    if (useCash > availableForPoints) {
+         useCash = availableForPoints;
+         document.getElementById('use_cash').value = useCash;
+    }
+
+    // 3% 카드 수수료 할증 실시간 계산
+    const paymentVal = document.querySelector('input[name="payment"]:checked')?.value || 'bank';
+    let cardVat = 0;
+    if (isBbbType && paymentVal === 'card') {
+        const baseAmount = (initialGoodsPrice - couponDiscount) + initialTax;
+        cardVat = Math.floor(baseAmount * 0.03);
+    }
+
+    let finalPrice = initialFinalPrice + extraShippingCost - couponDiscount - useEmoney - useCash + cardVat;
+    if (finalPrice < 0) finalPrice = 0;
+
+    document.querySelector('.final_price').innerText = new Intl.NumberFormat().format(finalPrice);
+    
+    const totalShipping = {{ $shipping + $packagingCost }} + extraShippingCost;
+    document.getElementById('total_shipping_display_text').innerText = new Intl.NumberFormat().format(totalShipping);
+}
+
+document.getElementById('download_seq').addEventListener('change', updateFinalPrice);
+
+// Toggle Receipt Forms
+function toggleReceipt(type) {
+    const row = document.getElementById('receipt_form_row');
+    const taxForm = document.getElementById('tax_form');
+    const cashForm = document.getElementById('cash_form');
+
+    if (type == 0) {
+        row.style.display = 'none';
+        taxForm.style.display = 'none';
+        cashForm.style.display = 'none';
+    } else if (type == 1) { 
+        row.style.display = 'table-row';
+        taxForm.style.display = 'block';
+        cashForm.style.display = 'none';
+    } else if (type == 2) { 
+        row.style.display = 'table-row';
+        taxForm.style.display = 'none';
+        cashForm.style.display = 'block';
+    }
+}
+
+// 현금영수증 타입 교차 노출
+function toggleCashReceiptType(type) {
+    const personalRow = document.getElementById('personal_receipt_row');
+    const businessRow = document.getElementById('business_receipt_row');
+    if (type == 0) {
+        personalRow.style.display = 'block';
+        businessRow.style.display = 'none';
+    } else {
+        personalRow.style.display = 'none';
+        businessRow.style.display = 'block';
+    }
+}
+
+// Quick Address Radios change bindings
+document.querySelectorAll('input[name="chkQuickAddress"]').forEach(el => {
+    el.addEventListener('change', function() {
+        const latelySelect = document.getElementById('chkQuickAddressLately');
+        if (this.value === 'member') {
+            latelySelect.style.display = 'none';
+            document.getElementById('recipient_user_name').value = "{{ $user->user_name ?? '' }}";
+            
+            const phone = "{{ $user->phone ?? '' }}".split('-');
+            const cellphone = "{{ $user->cellphone ?? '' }}".split('-');
+            for(let i=0; i<3; i++) {
+                document.getElementById('recipient_phone_' + i).value = phone[i] || '';
+                document.getElementById('recipient_cellphone_' + i).value = cellphone[i] || '';
+            }
+            
+            document.getElementById('recipient_new_zipcode').value = "{{ $user->zipcode ?? '' }}";
+            document.getElementById('recipient_address').value = "{{ $user->address ?? '' }}";
+            document.getElementById('recipient_address_street').value = "{{ $user->address_street ?? '' }}";
+            document.getElementById('recipient_address_display').value = "{{ ($user->address_type ?? 'zibun') == 'street' ? ($user->address_street ?? '') : ($user->address ?? '') }}";
+            document.getElementById('recipient_address_detail').value = "{{ $user->address_detail ?? '' }}";
+            document.getElementById('recipient_address_type').value = "{{ $user->address_type ?? 'zibun' }}";
+            
+            fetchShippingExtraCost("{{ $user->zipcode ?? '' }}", "{{ $user->address ?? '' }}", "{{ $user->address_street ?? '' }}");
+        } else if (this.value === 'new') {
+            latelySelect.style.display = 'none';
+            document.getElementById('recipient_user_name').value = '';
+            for(let i=0; i<3; i++) {
+                document.getElementById('recipient_phone_' + i).value = '';
+                document.getElementById('recipient_cellphone_' + i).value = '';
+            }
+            document.getElementById('recipient_new_zipcode').value = '';
+            document.getElementById('recipient_address').value = '';
+            document.getElementById('recipient_address_street').value = '';
+            document.getElementById('recipient_address_display').value = '';
+            document.getElementById('recipient_address_detail').value = '';
+            document.getElementById('recipient_address_type').value = 'zibun';
+            extraShippingCost = 0;
+            updateFinalPrice();
+        } else if (this.value === 'often') {
+            latelySelect.style.display = 'none';
+            openAddressModal();
+        } else if (this.value === 'lately') {
+            latelySelect.style.display = 'inline-block';
+            loadLatelyAddresses();
         }
+    });
+});
+
+function loadLatelyAddresses() {
+    const select = document.getElementById('chkQuickAddressLately');
+    select.innerHTML = '<option value="">로딩중...</option>';
+    
+    fetch("{{ route('mypage.delivery_address.json') }}")
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                select.innerHTML = '<option value="">최근 배송지를 선택하세요</option>';
+                data.data.forEach(addr => {
+                    const option = document.createElement('option');
+                    option.value = JSON.stringify(addr);
+                    option.innerText = `${addr.recipient_user_name} (${addr.recipient_address})`;
+                    select.appendChild(option);
+                });
+            } else {
+                select.innerHTML = '<option value="">불러오기 실패</option>';
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            select.innerHTML = '<option value="">불러오기 에러</option>';
+        });
+}
+
+document.getElementById('chkQuickAddressLately').addEventListener('change', function() {
+    if (!this.value) return;
+    const addr = JSON.parse(this.value);
+    
+    document.getElementById('recipient_user_name').value = addr.recipient_user_name;
+    
+    const cellphone = (addr.recipient_mobile || addr.recipient_cellphone || '').split('-');
+    const phone = (addr.recipient_phone || '').split('-');
+    for(let i=0; i<3; i++) {
+        document.getElementById('recipient_phone_' + i).value = phone[i] || '';
+        document.getElementById('recipient_cellphone_' + i).value = cellphone[i] || '';
+    }
+    
+    document.getElementById('recipient_zipcode').value = addr.recipient_zipcode;
+    document.getElementById('recipient_address').value = addr.recipient_address;
+    document.getElementById('recipient_address_street').value = addr.recipient_address_street || '';
+    document.getElementById('recipient_address_display').value = addr.recipient_address_type === 'street' ? (addr.recipient_address_street || addr.recipient_address) : addr.recipient_address;
+    document.getElementById('recipient_address_detail').value = addr.recipient_address_detail || '';
+    document.getElementById('recipient_address_type').value = addr.recipient_address_type || 'zibun';
+    
+    fetchShippingExtraCost(addr.recipient_zipcode, addr.recipient_address, addr.recipient_address_street);
+});
+
+// Validate Agreements on Submit
+document.getElementById('orderForm').addEventListener('submit', function(e) {
+    if (!document.querySelector('input[name="delivery_chk"]:checked')) {
+        alert('배송비 정책에 동의하셔야 합니다.');
+        e.preventDefault();
+        return false;
+    }
+    const cancelAgree = document.querySelector('input[name="cancellation"]:checked');
+    if (!cancelAgree || cancelAgree.value !== 'Y') {
+        alert('청약철회 관련 방침에 동의하셔야 합니다.');
+        e.preventDefault();
+        return false;
+    }
+    const privacyAgree = document.querySelector('input[name="privacy_agree"]:checked');
+    if (privacyAgree && privacyAgree.value !== 'Y') {
+        alert('비회원 개인정보 수집 이용에 동의하셔야 합니다.');
+        e.preventDefault();
+        return false;
+    }
+});
+
+function openDaumPostcode() {
+    new daum.Postcode({
+        oncomplete: function (data) {
+            var addr = ''; 
+            if (data.userSelectedType === 'R') { 
+                addr = data.roadAddress;
+                document.getElementById('recipient_address_type').value = 'street';
+            } else { 
+                addr = data.jibunAddress;
+                document.getElementById('recipient_address_type').value = 'zibun';
+            }
+
+            document.getElementById('recipient_zipcode').value = data.zonecode;
+            document.getElementById("recipient_address_display").value = addr; 
+
+            const jibunAddr = data.jibunAddress || data.autoJibunAddress || addr;
+            const roadAddr = data.roadAddress || data.autoRoadAddress || '';
+            document.getElementById("recipient_address").value = jibunAddr; 
+            document.getElementById("recipient_address_street").value = roadAddr; 
+
+            fetchShippingExtraCost(data.zonecode, jibunAddr, roadAddr);
+            document.getElementById("recipient_address_detail").focus();
+        }
+    }).open();
+}
+
+function openModalDaumPostcode() {
+    new daum.Postcode({
+        oncomplete: function (data) {
+            var addr = ''; 
+            if (data.userSelectedType === 'R') { 
+                addr = data.roadAddress;
+                document.getElementById('new_addr_type').value = 'street';
+            } else { 
+                addr = data.jibunAddress;
+                document.getElementById('new_addr_type').value = 'zibun';
+            }
+
+            document.getElementById('new_addr_zipcode').value = data.zonecode;
+            document.getElementById("new_addr_address").value = addr;
+            document.getElementById("new_addr_street").value = data.roadAddress || data.autoRoadAddress || ''; 
+
+            document.getElementById("new_addr_detail").focus();
+        }
+    }).open();
+}
+
+// 세금계산서 주소 Daum API 연동
+function openTaxDaumPostcode() {
+    new daum.Postcode({
+        oncomplete: function (data) {
+            var addr = ''; 
+            if (data.userSelectedType === 'R') { 
+                addr = data.roadAddress;
+                document.getElementById('co_address_type').value = 'street';
+                document.getElementById('co_address_street').style.display = 'block';
+                document.getElementById('co_address').style.display = 'none';
+            } else { 
+                addr = data.jibunAddress;
+                document.getElementById('co_address_type').value = 'zibun';
+                document.getElementById('co_address').style.display = 'block';
+                document.getElementById('co_address_street').style.display = 'none';
+            }
+
+            document.getElementById('co_new_zipcode').value = data.zonecode;
+            document.getElementById("co_address").value = data.jibunAddress || data.autoJibunAddress || addr;
+            document.getElementById("co_address_street").value = data.roadAddress || data.autoRoadAddress || ''; 
+
+            document.getElementById("co_address_detail").focus();
+        }
+    }).open();
+}
+
     </script>
 
 @endsection
