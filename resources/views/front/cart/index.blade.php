@@ -268,8 +268,8 @@
                                 </td>
                                 <td style="text-align: center; font-size: 13px;">{{ number_format($price) }}원</td>
                                 <td style="text-align: center; font-size: 13px; color: #888;">
-                                    @if(($pricing['ori_price'] - $price) > 0)
-                                        -{{ number_format($pricing['ori_price'] - $price) }}원
+                                    @if(($pricing['domae_price'] - $price) > 0)
+                                        -{{ number_format($pricing['domae_price'] - $price) }}원
                                     @else
                                         -
                                     @endif
