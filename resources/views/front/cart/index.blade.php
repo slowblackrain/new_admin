@@ -23,6 +23,19 @@
     </div>
 
         <div class="cart_list_area">
+            <div class="cart_button_wrap" style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <button type="button" class="btn_select_del" style="height: 32px; padding: 0 12px; background: #fff; border: 1px solid #ccc; font-size: 13px; border-radius: 3px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='#fff'">선택 삭제</button>
+                </div>
+                <div>
+                    @if(config('shop.shipping.useestimate', 'Y') === 'Y')
+                        <button type="button" class="btn_print_estimate" style="height: 32px; padding: 0 12px; background: #fff; border: 1px solid #ccc; font-size: 13px; border-radius: 3px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='#fff'" onclick="window.open('/prints/form_print_estimate?code=cart', '_estimate', 'width=960,height=640,scrollbar=1');">
+                            <i class="fas fa-print" style="margin-right: 4px;"></i> 견적서 인쇄
+                        </button>
+                    @endif
+                </div>
+            </div>
+
             <form name="cartForm" id="cartForm" method="post" action="">
                 @csrf
 
@@ -122,21 +135,25 @@
 
                                     {{-- Input Fields Display --}}
                                     @if($item->inputs->count() > 0)
-                                        <div class="g_inputs display_inputs_area">
+                                        <div class="g_inputs display_inputs_area" style="margin-top: 8px; font-size: 13px; line-height: 1.6;">
                                             @foreach($item->inputs as $input)
-                                                <div class="input_row">
-                                                    <span class="input_badge">[입력]</span>
-                                                    <strong>{{ $input->input_title }}:</strong>
+                                                <div class="input_row" style="display: flex; align-items: center; margin-bottom: 4px;">
+                                                    <i class="fas fa-edit" style="color: #9eabbb; margin-right: 6px; font-size: 12px;"></i>
+                                                    <strong style="color: #9eabbb; font-weight: bold; margin-right: 5px;">{{ $input->input_title }}:</strong>
                                                     @if($input->type == 'file')
                                                         @php
                                                             $fileUrl = asset('storage/' . $input->input_value);
                                                             $fileName = basename($input->input_value);
+                                                            $isImage = in_array(strtolower(pathinfo($fileName, PATHINFO_EXTENSION)), ['jpg', 'jpeg', 'png', 'gif', 'webp']);
                                                         @endphp
-                                                        <a href="{{ $fileUrl }}" target="_blank" class="file_link">
-                                                            {{ $fileName }} (확인)
+                                                        <a href="{{ $fileUrl }}" target="_blank" class="file_link" style="display: inline-flex; align-items: center; text-decoration: underline; color: #2b77f3;">
+                                                            @if($isImage)
+                                                                <img src="{{ $fileUrl }}" alt="인쇄이미지" style="width: 18px; height: 18px; object-fit: cover; border: 1px solid #ddd; margin-right: 5px; border-radius: 2px;">
+                                                            @endif
+                                                            <span style="font-size: 12px;">{{ $fileName }} (확인)</span>
                                                         </a>
                                                     @else
-                                                        {{ $input->input_value }}
+                                                        <span style="color: #333;">{{ $input->input_value }}</span>
                                                     @endif
                                                 </div>
                                             @endforeach
@@ -201,6 +218,7 @@
                 <div class="btn_area_center">
                     <button type="button" class="btn_order_all">전체상품주문</button>
                     <button type="button" class="btn_order_select">선택상품주문</button>
+                    <button type="button" class="btn_continue_shopping" style="height: 50px; padding: 0 24px; background: #fff; color: #333; font-size: 16px; font-weight: bold; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; margin-left: 10px; transition: all 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='#fff'" onclick="location.href='/';">계속 쇼핑하기</button>
                 </div>
             </form>
         </div>
@@ -366,7 +384,7 @@
                 let totalTax = 0; // Taxable items tax
 
                 const freeThreshold = {{ $freeShippingThreshold }};
-                const shippingCost = {{ $shippingCost ?? '2500' }}; // fallback
+                const shippingCost = {{ $baseShipping }}; // Synced with base shipping from config
                 const packagingCost = {{ $packagingCost }};
 
                 // Iterate over each Shipping Group (tbody)
@@ -401,7 +419,7 @@
                     let groupDelivery = 0;
                     if (hasCheckedItems && !hasPostpaid) {
                         if (groupTotalGoods < freeThreshold) {
-                            groupDelivery = 3000; // Base config rate for new dropship system
+                            groupDelivery = shippingCost; // Synced dynamically
                         }
                     }
                     grandTotalDelivery += groupDelivery;
@@ -450,6 +468,41 @@
                 const form = document.getElementById('cartForm');
                 form.action = "{{ route('order.form') }}";
                 form.submit();
+            });
+
+            // Selection Delete Items
+            document.querySelectorAll('.btn_select_del').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const selected = document.querySelectorAll('.chk_item:checked');
+                    if (selected.length === 0) {
+                        alert('삭제할 상품을 선택해 주세요.');
+                        return;
+                    }
+
+                    if (!confirm('선택한 상품을 삭제하시겠습니까?')) return;
+
+                    const cartSeqs = Array.from(selected).map(chk => chk.value);
+
+                    fetch('{{ route("cart.destroy") }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({ cart_seq: cartSeqs })
+                    })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                selected.forEach(chk => {
+                                    chk.closest('tr').remove();
+                                });
+                                calcTotal();
+                            } else {
+                                alert(data.message);
+                            }
+                        });
+                });
             });
 
             // Run calculation on initial load

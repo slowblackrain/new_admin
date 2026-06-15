@@ -1059,7 +1059,7 @@
             }
         }
 
-        document.addEventListener('DOMContentLoaded', function () {
+        function initializeGoodsView() {
             updateTotal();
             initStickySidebar();
 
@@ -1076,7 +1076,13 @@
                     quickDiv.style.display = 'none';
                 }
             });
-        });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeGoodsView);
+        } else {
+            initializeGoodsView();
+        }
 
         // Sticky Sidebar Logic (Original - kept for reference or removal if fully replaced)
         function initStickySidebar() {

@@ -46,4 +46,87 @@ class Cart extends Model
             return $query->where('session_id', Session::getId());
         }
     }
+
+    /**
+     * Merge session-based cart items into member-based cart items upon login
+     */
+    public static function mergeForMember($memberSeq, $sessionId)
+    {
+        if (!$memberSeq || !$sessionId) {
+            return;
+        }
+
+        $sessionCarts = self::where('session_id', $sessionId)
+            ->where(function($q) {
+                $q->where('member_seq', 0)->orWhereNull('member_seq');
+            })
+            ->with(['options', 'inputs'])
+            ->get();
+
+        foreach ($sessionCarts as $sessionCart) {
+            $sessionOption = $sessionCart->options->first();
+            if (!$sessionOption) {
+                $sessionCart->options()->delete();
+                $sessionCart->inputs()->delete();
+                $sessionCart->delete();
+                continue;
+            }
+
+            $memberCarts = self::where('member_seq', $memberSeq)
+                ->where('goods_seq', $sessionCart->goods_seq)
+                ->with(['options', 'inputs'])
+                ->get();
+
+            $existingCart = null;
+            foreach ($memberCarts as $memberCart) {
+                $memberOption = $memberCart->options->first();
+                if (!$memberOption) continue;
+
+                if (
+                    (string)$memberOption->option1 !== (string)$sessionOption->option1 ||
+                    (string)$memberOption->option2 !== (string)$sessionOption->option2 ||
+                    (string)$memberOption->option3 !== (string)$sessionOption->option3 ||
+                    (string)$memberOption->option4 !== (string)$sessionOption->option4 ||
+                    (string)$memberOption->option5 !== (string)$sessionOption->option5
+                ) {
+                    continue;
+                }
+
+                if ($memberCart->inputs->count() !== $sessionCart->inputs->count()) {
+                    continue;
+                }
+
+                $inputsMatch = true;
+                foreach ($sessionCart->inputs as $sInput) {
+                    $found = $memberCart->inputs->first(function($mInput) use ($sInput) {
+                        return (string)$mInput->input_title === (string)$sInput->input_title &&
+                               (string)$mInput->input_value === (string)$sInput->input_value;
+                    });
+                    if (!$found) {
+                        $inputsMatch = false;
+                        break;
+                    }
+                }
+
+                if ($inputsMatch) {
+                    $existingCart = $memberCart;
+                    break;
+                }
+            }
+
+            if ($existingCart) {
+                $existingOption = $existingCart->options->first();
+                $existingOption->ea += $sessionOption->ea;
+                $existingOption->save();
+
+                $sessionCart->options()->delete();
+                $sessionCart->inputs()->delete();
+                $sessionCart->delete();
+            } else {
+                $sessionCart->member_seq = $memberSeq;
+                $sessionCart->session_id = '';
+                $sessionCart->save();
+            }
+        }
+    }
 }

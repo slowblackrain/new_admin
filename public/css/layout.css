@@ -11,17 +11,115 @@
     background: #fff;
     min-height: 600px;
     position: relative;
-    /* For z-index context if needed */
 }
 
-/* Mobile / Tablet Responsive Reset */
-/* Matching the breakpoint in responsive.css (1210px) */
 @media screen and (max-width: 1210px) {
     #main-container {
         width: 100%;
         margin: 0;
         padding: 0 10px;
-        /* Prevent content from touching edges */
         box-sizing: border-box;
     }
+}
+
+/* ==========================================================================
+   Dometopia Header & Submenu Override (Fixing Cache Issues)
+   ========================================================================== */
+
+body #doto_scrollmenu .scrollmenu-inner {
+    position: relative !important;
+    width: 1200px !important;
+    margin: 0 auto !important;
+}
+
+body #doto_scrollmenu .menu_box_r {
+    flex: 0 0 100px !important;
+    float: none !important;
+    display: block !important;
+    height: 50px !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    position: relative !important;
+}
+
+/* Reset sub-elements if they were hidden */
+body #doto_scrollmenu .menu_box_r .icon_login a {
+    position: relative !important;
+    display: block !important;
+    width: 100% !important;
+    height: 50px !important;
+    line-height: 50px !important;
+    text-align: center !important;
+    color: #2979ff !important;
+    font-weight: bold !important;
+    font-size: 15px !important;
+    background: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-left: 1px solid #e9ecef !important;
+    border-right: 1px solid #e9ecef !important;
+    border-top: 1px solid #e9ecef !important;
+    border-bottom: none !important;
+    box-sizing: border-box !important;
+}
+
+body #doto_scrollmenu .menu_box_r .icon_login:hover > a {
+    border-left-color: #333 !important;
+    border-right-color: #333 !important;
+    border-top-color: #333 !important;
+}
+
+body #doto_scrollmenu .menu_box_r .icon_login {
+    float: right !important;
+    width: 82px !important;
+    height: 50px !important;
+    background: #f8f9fa !important;
+    position: relative !important;
+    box-sizing: border-box !important;
+    border: none !important;
+}
+
+body #doto_scrollmenu .menu_box_r .icon_login .submenu {
+    position: absolute !important;
+    top: 49px !important;
+    left: auto !important;
+    right: 0 !important;
+    transform: none !important;
+    width: 80px !important;
+    background-color: #fff !important;
+    border: 1px solid #333 !important;
+    z-index: 100 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+body #doto_scrollmenu .menu_box_r .icon_login .submenu dd {
+    position: static !important;
+    float: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    transform: none !important;
+    text-indent: 0 !important;
+    width: 100% !important;
+    height: 28px !important;
+    line-height: 28px !important;
+    text-align: center !important;
+    display: block !important;
+}
+
+body #doto_scrollmenu .menu_box_r .icon_login .submenu dd a {
+    position: static !important;
+    float: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    transform: none !important;
+    text-indent: 0 !important;
+    width: 100% !important;
+    height: 28px !important;
+    line-height: 28px !important;
+    text-align: center !important;
+    display: block !important;
+    color: #333 !important;
+    font-size: 13px !important;
+    font-weight: normal !important;
 }

@@ -102,4 +102,10 @@
 
         </div>
     </div>
+
+    @if($errors->any())
+        <script>
+            alert("{!! addslashes($errors->first()) !!}");
+        </script>
+    @endif
 @endsection

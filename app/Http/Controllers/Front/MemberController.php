@@ -26,6 +26,9 @@ class MemberController extends Controller
         $credentials = $request->validate([
             'userid' => 'required',
             'password' => 'required',
+        ], [
+            'userid.required' => '아이디를 입력해 주세요.',
+            'password.required' => '비밀번호를 입력해 주세요.',
         ]);
 
         $userid = $credentials['userid'];
@@ -78,6 +81,13 @@ class MemberController extends Controller
         if ($member) {
             // Login Success
             \Illuminate\Support\Facades\Auth::login($member);
+
+            // Merge guest cart to member cart upon successful login
+            try {
+                \App\Models\Cart::mergeForMember($member->member_seq, \Illuminate\Support\Facades\Session::getId());
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error("Failed to merge cart on login: " . $e->getMessage());
+            }
 
             if ($request->filled('return_url')) {
                 return redirect($request->input('return_url'));

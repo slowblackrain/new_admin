@@ -156,7 +156,7 @@ class CartController extends Controller
             $globalTotalShippingCost += $group['shipping_cost'];
         }
 
-        return view('front.cart.index', compact('groupedCart', 'validCartSeqs', 'globalTotalProductPrice', 'globalTotalShippingCost', 'freeShippingThreshold', 'packagingCost', 'totalVat'));
+        return view('front.cart.index', compact('groupedCart', 'validCartSeqs', 'globalTotalProductPrice', 'globalTotalShippingCost', 'freeShippingThreshold', 'packagingCost', 'totalVat', 'baseShipping'));
     }
 
     /**
