@@ -3,12 +3,93 @@
 @section('content')
     @push('styles')
         <link rel="stylesheet" href="/css/order.css?v={{ time() }}">
+        <style>
+            /* 헤더 아이콘 복원 */
+            .icon_sq_n, .icon_sq_w, .icon_sq_p, .icon_sq_s, .icon_sq_c {
+                display: inline-block;
+                width: 16px;
+                height: 16px;
+                line-height: 16px;
+                text-align: center;
+                background: #4a90e2;
+                color: #fff;
+                font-size: 10px;
+                font-weight: bold;
+                border-radius: 2px;
+                margin-right: 5px;
+            }
+            /* 필수 배지 복원 */
+            .badge_required {
+                color: #ff3300;
+                border: 1px solid #ff3300;
+                padding: 1px 4px;
+                font-size: 10px;
+                border-radius: 2px;
+                margin-left: 5px;
+                font-weight: normal;
+                display: inline-block;
+                vertical-align: middle;
+            }
+            /* 주문자 정보 폼 카드화 */
+            .order_info_card_container {
+                display: flex;
+                gap: 20px;
+                align-items: flex-start;
+                margin-top: 15px;
+            }
+            .order_info_card_left {
+                flex: 1;
+                border: 1px solid #ddd;
+                padding: 25px;
+                border-radius: 4px;
+                background: #fff;
+            }
+            .order_info_card_right {
+                width: 320px;
+                border: 1px solid #e2e8f0;
+                padding: 20px;
+                border-radius: 4px;
+                background: #f8fafc;
+                font-size: 12px;
+                color: #475569;
+            }
+            .order_info_card_right h3 {
+                margin-top: 0;
+                font-size: 14px;
+                color: #1e293b;
+                display: flex;
+                align-items: center;
+                gap: 5px;
+            }
+            .order_info_form_row {
+                display: flex;
+                align-items: center;
+                margin-bottom: 15px;
+            }
+            .order_info_form_row:last-child {
+                margin-bottom: 0;
+            }
+            .order_info_form_row label {
+                width: 130px;
+                font-weight: bold;
+                font-size: 13px;
+                display: flex;
+                align-items: center;
+            }
+            .order_info_form_row input.input_text {
+                width: 280px;
+                padding: 8px;
+                border: 1px solid #ccc;
+                border-radius: 2px;
+                font-size: 13px;
+            }
+        </style>
     @endpush
     <div class="order_header_v2">
         <div class="order_header_inner clearbox">
             <!-- Left: Title with Icon -->
             <div class="title_area">
-                <h2>주문/결제<i><img src="/images/icon/order_card.png" alt="Card Icon"></i></h2>
+                <h2>주문/결제<i><img src="https://dometopia.com/data/skin/beauty/images/icon/order_card.png" alt="Card Icon"></i></h2>
             </div>
             
             <!-- Right: Step Indicator -->
@@ -16,7 +97,7 @@
                 <ul>
                     <li><span class="num">1</span> <span class="txt">장바구니</span></li>
                     <li class="on"><span class="num">2</span> <span class="txt">주문/결제</span></li>
-                    <li><span class="num">3</span> <span class="txt">주문완료</span></li>
+                    <li><span class="num">3</span> <span class="txt">주문 완료</span></li>
                 </ul>
             </div>
         </div>
@@ -34,41 +115,57 @@
             </div>
         @endif
 
+        @inject('pricingService', 'App\Services\PricingService')
         <div class="cart_list_area">
             <h4>주문 리스트 확인</h4>
             <table class="cart_table">
                 <colgroup>
-                    <col width="100" />
                     <col width="*" />
-                    <col width="80" />
+                    <col width="60" />
                     <col width="100" />
                     <col width="100" />
                     <col width="100" />
+                    <col width="120" />
                     <col width="100" />
                 </colgroup>
                 <thead>
                     <tr>
-                        <th scope="col">이미지</th> {{-- No Text in Screenshot --}}
                         <th scope="col">주문상품</th>
                         <th scope="col"><span class="icon_sq_n">N</span> 수량</th>
                         <th scope="col"><span class="icon_sq_w">W</span> 단가</th>
                         <th scope="col"><span class="icon_sq_p">%</span> 할인</th>
                         <th scope="col"><span class="icon_sq_w">W</span> 주문금액</th>
                         <th scope="col"><span class="icon_sq_s">S</span> 배송비</th>
+                        <th scope="col"><span class="icon_sq_c">C</span> 쿠폰</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {{-- $finalPrice, $totalCheckPrice come from controller --}}
                     @foreach($cartItems as $item)
                         @php
                             $goods = $item->goods;
                             $option = $item->options->first();
-                            $price = $goods->option->first()->price ?? 0;
+                            
+                            $matchedOption = null;
+                            if ($goods && $goods->option) {
+                                $matchedOption = $goods->option->first(function($o) use ($option) {
+                                    return (string)$o->option1 == (string)$option->option1 &&
+                                        (string)$o->option2 == (string)$option->option2 &&
+                                        (string)$o->option3 == (string)$option->option3 &&
+                                        (string)$o->option4 == (string)$option->option4 &&
+                                        (string)$o->option5 == (string)$option->option5;
+                                });
+                            }
+                            $calcOption = $matchedOption ?? ($goods->option ? $goods->option->first() : null);
                             $ea = $option->ea ?? 1;
-                            $itemPrice = $price * $ea;
+
+                            $pricing = $pricingService->calculatePrice($goods, $calcOption, $ea);
+                            $unitPrice = $pricing['unit_price'];
+                            $itemPrice = $pricing['total_price'];
+
+                            $addSale = $pricing['domae_price'] - $unitPrice;
+                            $saleText = $addSale > 0 ? '-' . number_format($addSale * $ea) . '원' : '-';
 
                             $mainImage = $goods->images->where('image_type', 'list1')->first();
-                            
                             $imagePath = $mainImage ? $mainImage->image : '';
                             if ($imagePath && strpos($imagePath, '/data/goods/') === 0) {
                                 $imgSrc = "http://dometopia.com" . $imagePath;
@@ -86,31 +183,55 @@
                             }
                         @endphp
                         <tr>
-                            <td class="img_cell">
-                                <img src="{{ $imgSrc }}" alt="{{ $goods->goods_name }}" width="60">
-                            </td>
-                            <td class="info_cell">
-                                <div class="g_name">{{ $goods->goods_name }}</div>
-                                <div class="g_opt">옵션: {{ $option->option1 ?? '기본' }}</div>
+                            <td class="info_cell" style="text-align: left; padding: 10px;">
+                                <div style="float: left; margin-right: 15px;">
+                                    <img src="{{ $imgSrc }}" alt="{{ $goods->goods_name }}" width="60" style="border: 1px solid #ddd;">
+                                </div>
+                                <div style="float: left; padding-top: 5px;">
+                                    <div style="margin-bottom: 5px;">
+                                        <a href="/goods/view?goods_seq={{ $goods->goods_seq }}" style="color: #0088ff; font-weight: bold; text-decoration: none;">{{ $goods->goods_scode }}</a>
+                                    </div>
+                                    <div class="g_name" style="font-weight: bold; color: #333;">{{ $goods->goods_name }}</div>
+                                    @if($option->option1 && $option->option1 !== '기본' && $option->option1 !== '')
+                                        <div class="g_opt" style="color: #666; font-size: 11px; margin-top: 3px;">옵션: {{ $option->option1 }}</div>
+                                    @endif
+                                </div>
+                                <div style="clear: both;"></div>
                             </td>
                             <td>{{ $ea }}</td>
-                            <td>{{ number_format($price) }}원</td>
-                            <td>-</td> {{-- Discount Placeholder --}}
+                            <td>{{ number_format($unitPrice) }}원</td>
+                            <td>{{ $saleText }}</td>
                             <td class="price_bold">{{ number_format($itemPrice) }}원</td>
-                            <td>기본배송</td>
+                            <td>
+                                @if(($option->shipping_method ?? '') === 'postpaid')
+                                    본사<br>착불
+                                @else
+                                    본사<br>택배(선불)<br>{{ number_format(config('shop.shipping.base_cost', 2500)) }}
+                                    <div style="margin-top: 5px;">
+                                        <button type="button" class="btn_change_shipping" style="background: #0088ff; color: #fff; border: none; padding: 2px 8px; font-size: 11px; cursor: pointer; border-radius: 2px;">변경</button>
+                                    </div>
+                                    <div style="color: #888; font-size: 11px; margin-top: 3px;">+ {{ number_format(config('shop.shipping.packaging_cost', 300)) }}원</div>
+                                @endif
+                            </td>
+                            <td>-</td>
                         </tr>
                     @endforeach
                 </tbody>
             </table>
 
+            <div style="text-align: right; margin-top: 10px; font-size: 12px; color: #333;">
+                기본배송비 : <strong>{{ number_format(config('shop.shipping.base_cost', 2500)) }}원</strong> 
+                추가배송비 : <strong>{{ number_format(config('shop.shipping.packaging_cost', 300)) }}원</strong>
+            </div>
+
             <div class="cart_total_area_legacy">
                 <div class="total_left">
                     <div class="total_row">
-                        <span class="th">총 상품</span>
+                        <span class="th">총 상품:</span>
                         <span class="td"><strong>{{ count($cartItems) }}</strong></span>
                     </div>
                     <div class="total_row">
-                        <span class="th">총 수량</span>
+                        <span class="th">총 수량:</span>
                         <span class="td"><strong>{{ $cartItems->sum(function($item){ return $item->options->first()->ea ?? 0; }) }}</strong></span>
                     </div>
                 </div>
@@ -118,16 +239,11 @@
                     <div class="calc_box">
                         <span class="item">총 상품 금액: <strong>{{ number_format($totalPrice) }}</strong></span>
                         <span class="op plus">+</span>
-                        <span class="item">배송비: <strong>{{ number_format($shipping) }}</strong></span>
-                        <span class="op plus">+</span>
-                        <span class="item">포장비: <strong>{{ number_format($packagingCost) }}</strong></span>
+                        <span class="item">배송비: <strong id="total_shipping_display_text">{{ number_format($shipping + $packagingCost) }}</strong></span>
                         <span class="op minus">-</span>
                         <span class="item">총 할인: <strong id="coupon_discount_display_text">0</strong></span>
-                        <span class="item" id="extra_shipping_wrap" style="display:none; color: #d00; margin-left:10px;">
-                            <span class="op plus">+</span> 추가배송비: <strong id="extra_shipping_display">0</strong>
-                        </span>
                         <span class="op plus">+</span>
-                        <span class="item">총 부가세: <strong>{{ number_format($tax) }}</strong> (면세)</span>
+                        <span class="item">총 부가세: <strong>{{ number_format($tax) }}</strong></span>
                         <span class="item ml10">예상포인트: 0</span>
                         <span class="op equal">=</span>
                         <span class="item total">총 결제 금액: <strong class="final_price">{{ number_format($finalPrice) }}</strong></span>
@@ -145,46 +261,35 @@
                 {{-- 주문서 처리 로직은 다음 Phase에서 구현 --}}
 
                 <h4 class="mt50">주문자 정보</h4>
-                <div class="order_info_table">
-                    <table class="form_table">
-                        <colgroup>
-                            <col width="150" />
-                            <col width="*" />
-                        </colgroup>
-                        <tbody>
-                            <tr>
-                                <th>주문자명 <span class="required">*</span></th>
-                                <td><input type="text" name="order_user_name" value="{{ old('order_user_name', $user->user_name ?? '') }}"
-                                        class="input_text" required></td>
-                            </tr>
-                            <tr>
-                                <th>전화번호</th>
-                                <td><input type="text" name="order_phone" value="{{ old('order_phone', $user->phone ?? '') }}" class="input_text"></td>
-                            </tr>
-                            <tr>
-                                <th>휴대전화 <span class="required">*</span></th>
-                                <td><input type="text" name="order_cellphone" value="{{ old('order_cellphone', $user->cellphone ?? '') }}"
-                                        class="input_text" required></td>
-                            </tr>
-                            <tr>
-                                <th>이메일 <span class="required">*</span></th>
-                                <td><input type="email" name="order_email" value="{{ old('order_email', $user->email ?? '') }}"
-                                        class="input_text" required></td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div class="order_info_card_container">
+                    <div class="order_info_card_left">
+                        <div class="order_info_form_row">
+                            <label>이름<span class="badge_required">필수</span></label>
+                            <input type="text" name="order_user_name" value="{{ old('order_user_name', $user->user_name ?? '') }}" class="input_text" required>
+                        </div>
+                        <div class="order_info_form_row" style="margin-top: 15px;">
+                            <label>전화번호</label>
+                            <input type="text" name="order_phone" value="{{ old('order_phone', $user->phone ?? '') }}" class="input_text">
+                        </div>
+                        <div class="order_info_form_row" style="margin-top: 15px;">
+                            <label>휴대전화<span class="badge_required">필수</span></label>
+                            <input type="text" name="order_cellphone" value="{{ old('order_cellphone', $user->cellphone ?? '') }}" class="input_text" required>
+                        </div>
+                        <div class="order_info_form_row" style="margin-top: 15px;">
+                            <label>이메일<span class="badge_required">필수</span></label>
+                            <input type="email" name="order_email" value="{{ old('order_email', $user->email ?? '') }}" class="input_text" required>
+                        </div>
+                    </div>
+                    
+                    <div class="order_info_card_right">
+                        <h3><span style="color: #ff3300; font-size: 16px;">!</span> 주의사항</h3>
+                        <ul style="list-style: none; margin: 0; padding: 0; line-height: 1.8; color: #666;">
+                            <li style="margin-bottom: 5px; text-indent: -10px; padding-left: 10px;">ㆍ비회원의 주문배송조회를 위한 로그인은 주문번호와 이메일 정보로 확인할 수 있습니다.</li>
+                            <li style="margin-bottom: 5px; text-indent: -10px; padding-left: 10px;">ㆍ구매 내역은 이메일과 SMS로 발송됩니다.</li>
+                            <li style="text-indent: -10px; padding-left: 10px;">ㆍ정확한 이메일과 휴대폰번호를 입력해 주십시오.</li>
+                        </ul>
+                    </div>
                 </div>
-
-                @if(!auth()->check())
-                <div class="doto-order-info-alert">
-                    <h3>주의사항</h3>
-                    <ul>
-                        <li>ㆍ비회원의 주문배송조회를 위한 로그인은 주문번호와 이메일 정보로 확인할 수 있습니다.</li>
-                        <li>ㆍ구매 내역은 이메일과 SMS로 발송됩니다.</li>
-                        <li>ㆍ정확한 이메일과 휴대폰번호를 입력해 주십시오.</li>
-                    </ul>
-                </div>
-                @endif
 
                 <h4 class="mt30">배송지 정보 <label><input type="checkbox" id="copy_user_info"> 주문자 정보와 동일</label>
                 </h4>
@@ -802,8 +907,10 @@
             // Display Coupon Discount
             if (couponDiscount > 0) {
                  document.getElementById('coupon_discount_display').innerText = '-' + new Intl.NumberFormat().format(couponDiscount) + '원';
+                 document.getElementById('coupon_discount_display_text').innerText = new Intl.NumberFormat().format(couponDiscount);
             } else {
                  document.getElementById('coupon_discount_display').innerText = '';
+                 document.getElementById('coupon_discount_display_text').innerText = '0';
             }
 
             // Available total for points is (Final + ExtraShipping - Coupon)
@@ -852,6 +959,10 @@
             if (finalPrice < 0) finalPrice = 0;
 
             document.querySelector('.final_price').innerText = new Intl.NumberFormat().format(finalPrice);
+            
+            // 실시간 배송비 합산 업데이트 (기본 배송비 + 포장비 + 도서산간비)
+            const totalShipping = {{ $shipping + $packagingCost }} + extraShippingCost;
+            document.getElementById('total_shipping_display_text').innerText = new Intl.NumberFormat().format(totalShipping);
         }
 
         document.getElementById('use_emoney').addEventListener('change', updateFinalPrice);
