@@ -180,8 +180,9 @@ class OrderController extends Controller
         // Accumulate island/mountainous region extra shipping costs
         $shipping += $extraCost;
 
-        $tax = $totalVat;
+        $tax = floor($totalVat / 10) * 10;
         $finalPrice = $totalPrice + $shipping + $tax + $packagingCost;
+        $finalPrice = floor($finalPrice / 10) * 10;
 
         // Check for tax-exempt items (legacy: chk_tax_exempt)
         $hasExempt = $cartItems->contains(function($item) {
