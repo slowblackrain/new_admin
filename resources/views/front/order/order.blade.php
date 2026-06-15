@@ -1236,7 +1236,7 @@ function updateFinalPrice() {
     const paymentVal = document.querySelector('input[name="payment"]:checked')?.value || 'bank';
     let cardVat = 0;
     if (isBbbType && paymentVal === 'card') {
-        const baseAmount = (initialGoodsPrice - couponDiscount) + initialTax;
+        const baseAmount = initialGoodsPrice + initialTax;
         cardVat = Math.floor(baseAmount * 0.03);
     }
 
