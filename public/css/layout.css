@@ -123,3 +123,7 @@ body #doto_scrollmenu .menu_box_r .icon_login .submenu dd a {
     font-size: 13px !important;
     font-weight: normal !important;
 }
+
+.hide {
+    display: none !important;
+}

@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Schema;
 use App\Models\Goods;
 require __DIR__.'/seller.php';
 require __DIR__.'/admin.php';
+require __DIR__.'/affiliate.php';
 
 /*
 |--------------------------------------------------------------------------

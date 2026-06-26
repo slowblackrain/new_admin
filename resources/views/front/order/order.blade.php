@@ -18,70 +18,340 @@
                 border-radius: 2px;
                 margin-right: 5px;
             }
-            /* 필수 배지 복원 */
-            .badge_required {
-                color: #ff3300;
-                border: 1px solid #ff3300;
-                padding: 1px 4px;
-                font-size: 10px;
-                border-radius: 2px;
-                margin-left: 5px;
-                font-weight: normal;
-                display: inline-block;
-                vertical-align: middle;
+            /* 필수 배지 복원 (necessa class 호환) */
+            .necessa:after {  
+                content: ""; 
+                background: url(https://dometopia.com/data/skin/beauty/images/asset/necessary.png) no-repeat; 
+                width: 27px; 
+                height: 18px; 
+                vertical-align: middle; 
+                margin-left: 7px; 
+                display: inline-block; 
             }
-            /* 주문자 정보 폼 카드화 */
-            .order_info_card_container {
-                display: flex;
-                gap: 20px;
-                align-items: flex-start;
-                margin-top: 15px;
+            .fleft { float: left; }
+            .fright { float: right; }
+            .clearbox:after { content: ""; display: block; clear: both; }
+            .relative { position: relative; }
+            
+            /* 레거시 인풋 및 폼 스타일 이식 */
+            #order { font-family: 'Malgun Gothic', '맑은고딕'; }
+            #order .order-info-wrap h2:before { 
+                content: ""; 
+                background: url(https://dometopia.com/data/skin/beauty/images/asset/x_pattern.png) repeat-x; 
+                display: inline-block; 
+                width: 100%; 
+                height: 10px; 
+                padding-top: 40px; 
             }
-            .order_info_card_left {
-                flex: 1;
-                border: 1px solid #ddd;
-                padding: 25px;
-                border-radius: 4px;
-                background: #fff;
-            }
-            .order_info_card_right {
-                width: 320px;
-                border: 1px solid #e2e8f0;
-                padding: 20px;
-                border-radius: 4px;
-                background: #f8fafc;
-                font-size: 12px;
-                color: #475569;
-            }
-            .order_info_card_right h3 {
-                margin-top: 0;
-                font-size: 14px;
-                color: #1e293b;
-                display: flex;
-                align-items: center;
-                gap: 5px;
-            }
-            .order_info_form_row {
-                display: flex;
-                align-items: center;
-                margin-bottom: 15px;
-            }
-            .order_info_form_row:last-child {
+            #order .order-info-wrap h2 { 
+                font-size: 16px; 
+                font-weight: bold; 
+                color: #222; 
+                border-bottom: 3px solid #222; 
+                padding-bottom: 12px; 
+                line-height: 1; 
+                margin-top: 60px; 
                 margin-bottom: 0;
             }
-            .order_info_form_row label {
-                width: 130px;
+            #order .order-info-wrap h2 strong {  
+                font-size: 14px; 
+                font-weight: 300; 
+                color: #666; 
+                margin-left: 10px;
+            }
+            .order-info input[type='text'], .order-info input[type='email'], .order-info input[type='number'] { 
+                border: 1px solid #e9ecef; 
+                height: 50px; 
+                padding: 0 1em; 
+                font-size: 14px; 
+                font-weight: 500; 
+                color: #333; 
+                outline: none; 
+                box-sizing: border-box;
+            }
+            textarea { 
+                border: 1px solid #e9ecef; 
+                height: 50px; 
+                padding: 1em; 
+                font-size: 14px; 
+                font-weight: 500; 
+                color: #333; 
+                outline: none; 
+                box-sizing: border-box;
+            }
+            button.blue_line { 
+                border: 1px solid #3ba0ff; 
+                color: #3ba0ff; 
+                background: #fff;
+                height: 50px; 
+                width: 111px; 
+                line-height: 48px; 
                 font-weight: bold;
-                font-size: 13px;
+                cursor: pointer;
+                border-radius: 2px;
+            }
+            button.blue_line:hover {
+                background: #f4f9ff;
+            }
+            .order-info .order-row { 
+                display: flex; 
+                font-size: 14px; 
+                margin-bottom: 10px; 
+                align-items: center;
+            }
+            .order-info .order-input-title { 
+                display: flex; 
+                align-items: center; 
+                width: 138px; 
+                min-height: 50px; 
+                font-size: 14px; 
+                font-weight: bold; 
+                color: #222;
+            }
+            .order-info .order-input-wrap { 
+                display: flex; 
+                align-items: center; 
+                flex: 1; 
+                height: 50px; 
+            }
+            .order-info { 
+                border-bottom: 1px solid #e9ecef; 
+                overflow: hidden; 
+                background: #fff;
+            }
+            .order-info .addr-load {  
+                height: 88px; 
+                border-bottom: 1px solid #e9ecef; 
+                padding: 25px 29px; 
+                box-sizing: border-box;
+            }
+            .order-info .addr-load span, .order-info .addr-load label { 
+                display: inline-block; 
+                width: 141px; 
+                height: 37px; 
+                background: #f7f8f9; 
+                border: 1px solid #e9ecef; 
+                font-size: 13px; 
+                font-weight: bold; 
+                border-radius: 2px; 
+                line-height: 35px; 
+                text-align: center; 
+                cursor: pointer; 
+                vertical-align: top;
+                box-sizing: border-box;
+            }
+            .order-info .addr-load label input { display: none; }
+            .order-info .order-select-wrap { 
+                padding: 30px 40px 0 17px; 
+                box-sizing: border-box;
+            }
+            .order-select-wrap div { margin-left: 12px; margin-bottom: 25px; }
+            .order-select-wrap select { 
+                height: 35px; 
+                width: 100%; 
+                margin-top: 10px; 
+                border: 1px solid #e9ecef; 
+                padding-left: 8px; 
+            }
+            .order-select-wrap input { display: inline-block; margin: 0; vertical-align: middle; }
+            .order-select-wrap label { 
+                color: #888; 
+                font-size: 13px; 
+                line-height: 1; 
+                margin-left: 5px; 
+                vertical-align: middle;
+                cursor: pointer;
+            }
+            .order-select-wrap input[type="radio"]:checked + label { 
+                font-weight: bold; 
+                color: #000; 
+            }
+            
+            /* 주의사항 스타일 복원 */
+            .doto-order-info-alert { 
+                background: #f7f8f9; 
+                padding: 20px 25px; 
+                position: relative; 
+                width: 622px; 
+                box-sizing: border-box;
+                border: 1px solid #e9ecef;
+                margin: 0 !important;
+            }
+            .doto-order-info-alert h3 { 
+                width: 100%; 
+                padding-bottom: 10px; 
+                position: absolute; 
+                top: 0; 
+                height: 45px; 
+                line-height: 42px; 
+                left: 0; 
+                padding-left: 25px; 
+                background: #e4eff9; 
+                font-size: 14px; 
+                font-weight: bold; 
+                margin: 0;
+                box-sizing: border-box;
+            }
+            .doto-order-info-alert h3:after { 
+                content: ""; 
+                width: 100%; 
+                background: url(https://dometopia.com/data/skin/beauty/images/asset/alert_pattern.png); 
+                position: absolute; 
+                height: 2px; 
+                bottom: 0; 
+                left: 0; 
+            }
+            .doto-order-info-alert h3:before { 
+                content: ""; 
+                width: 22px; 
+                height: 22px; 
+                background: url(https://dometopia.com/data/skin/beauty/images/asset/exclamation_mark.png) no-repeat; 
+                display: inline-block; 
+                vertical-align: middle; 
+                margin-right: 5px; 
+            }
+            .doto-order-info-alert ul { margin-top: 45px; padding-left: 0; list-style: none; }
+            .doto-order-info-alert ul li { line-height: 1.3; font-size: 13px; color: #666; }
+            .doto-order-info-alert ul li + li { margin-top: 10px; }
+            
+            .hide { display: none !important; }
+            .ml5 { margin-left: 5px; }
+            .ml10 { margin-left: 10px; }
+            .mr5 { margin-right: 5px; }
+            .wx480 { width: 480px; }
+
+            /* 최종 결제 금액 확인 우측 영역 및 결제 레이아웃 CSS */
+            .order-bottom-container {
+                width: 1200px;
+                margin: 0 auto;
+                margin-top: 40px;
+                padding: 0;
+                overflow: hidden;
+                background: transparent;
+            }
+            .order-bottom-container .fleft {
+                float: left;
+                width: 738px;
+            }
+            .order-bottom-container .fright {
+                float: right;
+                width: 441px;
+                margin-left: 6px;
+            }
+
+
+
+            /* 배송비 정책 동의 */
+            .shipping-agree-wrap {
+                margin-top: 20px;
+            }
+            .shipping-agree-wrap .shipping-agree {
+                background: #f7f8f9;
+                border: 1px solid #cfd5da;
+                border-radius: 30px;
+                height: 56px;
+                line-height: 54px;
+                text-align: center;
+                box-shadow: inset 3px 3px 10px rgba(0,0,0,.03);
+                margin-bottom: 20px;
+            }
+            .shipping-agree-wrap .shipping-agree label {
+                font-size: 16px;
+                font-weight: bold;
+                color: #222;
+                cursor: pointer;
+            }
+            .shipping-agree-wrap .shipping-agree input {
+                width: 18px;
+                height: 18px;
+                vertical-align: middle;
+                margin-right: 8px;
+            }
+            .shipping-agree-wrap ul {
+                list-style: none;
+                padding: 0;
+                margin: 0;
+            }
+            .shipping-agree-wrap ul li {
+                font-size: 12px;
+                color: #666;
+                line-height: 1.6;
+                margin-bottom: 8px;
+            }
+
+            /* 결제 버튼 */
+            .btn-settle-submit {
+                display: block;
+                width: 100%;
+                height: 60px;
+                line-height: 60px;
+                background: #f44336;
+                color: #fff;
+                font-size: 22px;
+                font-weight: bold;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                margin-top: 20px;
+                text-align: center;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            }
+            .btn-settle-submit:hover {
+                background: #d32f2f;
+            }
+
+            .order-pay-box {  
+                background: #FFF; 
+                border: 1px solid #cfd5da; 
+                padding: 30px;
+                margin-bottom: 20px;
+                font-family: 'Malgun Gothic', '맑은고딕', sans-serif;
+            }
+            .order-pay-box h4 { 
+                font-size: 18px; 
+                font-weight: bold;
+                border-bottom: 2px solid #222; 
+                padding-bottom: 15px; 
+                line-height: 1; 
+                margin-top: 0;
+                margin-bottom: 20px;
+                color: #222;
+            }
+            .order-pay-box .order-row {
+                display: flex;
+                font-size: 14px;
+                margin-bottom: 15px;
+                align-items: center;
+            }
+            .order-pay-box .order-input-title {
+                width: 120px;
+                font-weight: bold;
+                color: #222;
+            }
+            .order-pay-box .order-input-wrap {
+                flex: 1;
                 display: flex;
                 align-items: center;
             }
-            .order_info_form_row input.input_text {
-                width: 280px;
-                padding: 8px;
-                border: 1px solid #ccc;
-                border-radius: 2px;
+            .order-pay-box input[type="text"], .order-pay-box select {
+                border: 1px solid #e9ecef;
+                height: 40px;
+                padding: 0 10px;
+                box-sizing: border-box;
                 font-size: 13px;
+            }
+            .order-pay-box .reserve-info {
+                list-style: none;
+                padding-left: 120px;
+                margin: 10px 0 0 0;
+            }
+            .order-pay-box .reserve-info li {
+                font-size: 12px;
+                color: #666;
+                margin-bottom: 5px;
+            }
+            .order-pay-box .reserve-info li strong {
+                color: #f44336;
             }
         </style>
     @endpush
@@ -102,7 +372,6 @@
             </div>
         </div>
     </div>    <!-- Subtitle or other content if needed -->
-        </div>
 
         @if ($errors->any())
             <div
@@ -250,8 +519,9 @@
                     </div>
                 </div>
             </div>
+        </div>
 
-            <form name="orderForm" id="orderForm" method="post" action="{{ route('order.store') }}">
+        <form name="orderForm" id="orderForm" method="post" action="{{ route('order.store') }}">
                 @csrf
                 @if(isset($cart_seqs))
                     @foreach($cart_seqs as $seq)
@@ -260,454 +530,575 @@
                 @endif
                 {{-- 주문서 처리 로직은 다음 Phase에서 구현 --}}
 
-                <h4 class="mt50">주문자 정보</h4>
-                <div class="order_info_card_container">
-                    <div class="order_info_card_left">
-                        <div class="order_info_form_row">
-                            <label>이름<span class="badge_required">필수</span></label>
-                            <input type="text" name="order_user_name" value="{{ old('order_user_name', $user->user_name ?? '') }}" class="input_text" required>
+            <div id="order">
+                <div class="order-info-wrap relative">
+                    <h2>주문자 정보 <strong>회원 정보를 입력하세요.</strong></h2>
+                    <div class="order-info clearbox" style="padding: 25px 0; overflow: hidden;">
+                        <!-- fleft -->
+                        <div class="fleft" style="width: 468px;">
+                            <div class="order-row name">
+                                <div class="order-input-title necessa">이름</div>
+                                <div class="order-input-wrap">
+                                    <input type="text" name="order_user_name" value="{{ old('order_user_name', $user->user_name ?? '') }}" required>
+                                </div>
+                            </div>
+                            @php
+                                $orderPhoneArr = explode('-', old('order_phone', $user->phone ?? ''));
+                                $orderCellphoneArr = explode('-', old('order_cellphone', $user->cellphone ?? ''));
+                            @endphp
+                            <div class="order-row phone">
+                                <div class="order-input-title necessa">주문자 핸드폰</div>
+                                <div class="order-input-wrap">
+                                    <input type="text" style="width:30%; text-align: center;" name="order_cellphone[]" value="{{ $orderCellphoneArr[0] ?? '' }}" required>
+                                    <span style="margin: 0px 5px;">-</span>
+                                    <input type="text" style="width:30%; text-align: center;" name="order_cellphone[]" value="{{ $orderCellphoneArr[1] ?? '' }}" required>
+                                    <span style="margin: 0px 5px;">-</span>
+                                    <input type="text" style="width:30%; text-align: center;" name="order_cellphone[]" value="{{ $orderCellphoneArr[2] ?? '' }}" required>
+                                </div>
+                            </div>
+                            <div class="order-row tel">
+                                <div class="order-input-title">주문자 전화번호</div>
+                                <div class="order-input-wrap">
+                                    <input type="text" style="width:30%; text-align: center;" name="order_phone[]" value="{{ $orderPhoneArr[0] ?? '' }}">
+                                    <span style="margin: 0px 5px;">-</span>
+                                    <input type="text" style="width:30%; text-align: center;" name="order_phone[]" value="{{ $orderPhoneArr[1] ?? '' }}">
+                                    <span style="margin: 0px 5px;">-</span>
+                                    <input type="text" style="width:30%; text-align: center;" name="order_phone[]" value="{{ $orderPhoneArr[2] ?? '' }}">
+                                </div>
+                            </div>
+                            <div class="order-row email">
+                                <div class="order-input-title necessa">주문자 이메일</div>
+                                <div class="order-input-wrap">
+                                    <input type="email" name="order_email" value="{{ old('order_email', $user->email ?? '') }}" required>
+                                </div>
+                            </div>
                         </div>
-                        @php
-                            $orderPhoneArr = explode('-', old('order_phone', $user->phone ?? ''));
-                            $orderCellphoneArr = explode('-', old('order_cellphone', $user->cellphone ?? ''));
-                        @endphp
-                        <div class="order_info_form_row" style="margin-top: 15px;">
-                            <label>전화번호</label>
-                            <input type="text" name="order_phone[]" value="{{ $orderPhoneArr[0] ?? '' }}" style="width: 20%; text-align: center;" class="input_text"> -
-                            <input type="text" name="order_phone[]" value="{{ $orderPhoneArr[1] ?? '' }}" style="width: 20%; text-align: center;" class="input_text"> -
-                            <input type="text" name="order_phone[]" value="{{ $orderPhoneArr[2] ?? '' }}" style="width: 20%; text-align: center;" class="input_text">
-                        </div>
-                        <div class="order_info_form_row" style="margin-top: 15px;">
-                            <label>휴대전화<span class="badge_required">필수</span></label>
-                            <input type="text" name="order_cellphone[]" value="{{ $orderCellphoneArr[0] ?? '' }}" style="width: 20%; text-align: center;" class="input_text" required> -
-                            <input type="text" name="order_cellphone[]" value="{{ $orderCellphoneArr[1] ?? '' }}" style="width: 20%; text-align: center;" class="input_text" required> -
-                            <input type="text" name="order_cellphone[]" value="{{ $orderCellphoneArr[2] ?? '' }}" style="width: 20%; text-align: center;" class="input_text" required>
-                        </div>
-                        <div class="order_info_form_row" style="margin-top: 15px;">
-                            <label>이메일<span class="badge_required">필수</span></label>
-                            <input type="email" name="order_email" value="{{ old('order_email', $user->email ?? '') }}" class="input_text" required>
-                        </div>
-                    </div>
-                    
-                    <div class="order_info_card_right">
-                        <h3><span style="color: #ff3300; font-size: 16px;">!</span> 주의사항</h3>
-                        <ul style="list-style: none; margin: 0; padding: 0; line-height: 1.8; color: #666;">
-                            <li style="margin-bottom: 5px; text-indent: -10px; padding-left: 10px;">ㆍ비회원의 주문배송조회를 위한 로그인은 주문번호와 이메일 정보로 확인할 수 있습니다.</li>
-                            <li style="margin-bottom: 5px; text-indent: -10px; padding-left: 10px;">ㆍ구매 내역은 이메일과 SMS로 발송됩니다.</li>
-                            <li style="text-indent: -10px; padding-left: 10px;">ㆍ정확한 이메일과 휴대폰번호를 입력해 주십시오.</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <h4 class="mt30">배송지 정보 <label><input type="checkbox" id="copy_user_info"> 주문자 정보와 동일</label>
-                </h4>
-                
-                {{-- [LEGACY PARITY] Quick Address Selector (chkQuickAddress) --}}
-                @if(auth()->check())
-                <div class="order_info_table" style="margin-bottom:10px;">
-                    <table class="form_table">
-                        <colgroup>
-                            <col width="150" />
-                            <col width="*" />
-                        </colgroup>
-                        <tbody>
-                            <tr>
-                                <th>배송지 불러오기</th>
-                                <td>
-                                    <div style="display: flex; gap: 15px; align-items: center;">
-                                        <label><input type="radio" name="chkQuickAddress" value="member" id="chkQuick_member"> 회원정보주소</label>
-                                        <label><input type="radio" name="chkQuickAddress" value="often" id="chkQuick_often"> 자주쓰는배송지</label>
-                                        <label><input type="radio" name="chkQuickAddress" value="lately" id="chkQuick_lately"> 최근배송지</label>
-                                        <label><input type="radio" name="chkQuickAddress" value="new" id="chkQuick_new" checked> 새로운 배송지</label>
-                                        
-                                        <select name="chkQuickAddressLately" id="chkQuickAddressLately" class="input_text" style="display:none; min-width:180px;">
-                                            <option value="">최근 배송지를 선택하세요</option>
-                                        </select>
-                                        
-                                        <button type="button" class="btn_base btn_addr_list" onclick="openAddressModal()">주소록 목록</button>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                @endif
-                <div class="order_info_table">
-                    <table class="form_table">
-                        <colgroup>
-                            <col width="150" />
-                            <col width="*" />
-                        </colgroup>
-                        <tbody>
-                            <tr>
-                                <th>수령인 <span class="required">*</span></th>
-                                <td><input type="text" name="recipient_user_name" id="recipient_user_name" value="{{ old('recipient_user_name') }}"
-                                        class="input_text" required></td>
-                            </tr>
-                            <tr>
-                                <th>전화번호</th>
-                                <td>
-                                    <input type="text" name="recipient_phone[]" id="recipient_phone_0" style="width: 20%; text-align: center;" class="input_text"> -
-                                    <input type="text" name="recipient_phone[]" id="recipient_phone_1" style="width: 20%; text-align: center;" class="input_text"> -
-                                    <input type="text" name="recipient_phone[]" id="recipient_phone_2" style="width: 20%; text-align: center;" class="input_text">
-                                </td>
-                            </tr>
-                            <tr>
-                                <th>휴대전화 <span class="required">*</span></th>
-                                <td>
-                                    <input type="text" name="recipient_cellphone[]" id="recipient_cellphone_0" style="width: 20%; text-align: center;" class="input_text" required> -
-                                    <input type="text" name="recipient_cellphone[]" id="recipient_cellphone_1" style="width: 20%; text-align: center;" class="input_text" required> -
-                                    <input type="text" name="recipient_cellphone[]" id="recipient_cellphone_2" style="width: 20%; text-align: center;" class="input_text" required>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th>주소 <span class="required">*</span></th>
-                                <td>
-                                    <input type="text" name="recipient_new_zipcode" id="recipient_new_zipcode" class="input_text" value="{{ old('recipient_new_zipcode') }}"
-                                        style="width: 80px;" placeholder="우편번호" readonly>
-                                    <button type="button" class="btn_base" onclick="openDaumPostcode()">우편번호 찾기</button>
-                                    <br>
-
-                                    {{-- Visible Address Input (Display Only) --}}
-                                    <input type="text" id="recipient_address_display" class="input_text" value="{{ old('recipient_address_type') == 'street' ? old('recipient_address_street') : old('recipient_address') }}"
-                                        style="width: 300px; margin-top: 5px;" placeholder="기본주소" readonly>
-
-                                    {{-- Actual Data Inputs --}}
-                                    <input type="hidden" name="recipient_address" id="recipient_address" value="{{ old('recipient_address') }}"> {{-- Jibun Address --}}
-                                    <input type="hidden" name="recipient_address_street" id="recipient_address_street" value="{{ old('recipient_address_street') }}"> {{-- Road Address --}}
-                                    <input type="hidden" name="recipient_address_type" id="recipient_address_type" value="{{ old('recipient_address_type') }}"> {{-- Type: street/zibun --}}
-
-                                    <input type="text" name="recipient_address_detail" id="recipient_address_detail" value="{{ old('recipient_address_detail') }}"
-                                        class="input_text" style="width: 200px; margin-top: 5px;" placeholder="상세주소">
-                                    
-                                    @if(auth()->check())
-                                    <div style="margin-top: 5px;">
-                                        <label><input type="checkbox" name="save_delivery_address" id="save_delivery_address" value="1"> <span style="color: #0088ff; font-size: 13px;">기본 배송지로 저장</span></label>
-                                    </div>
-                                    @endif
-                                </td>
-                            </tr>
-                            
-                            {{-- [LEGACY PARITY] Overseas English Address form --}}
-                            <tr id="international_address_row" style="display:none;">
-                                <th>해외배송 영문 주소</th>
-                                <td>
-                                    <div style="margin-bottom: 5px;">
-                                        <span style="display:inline-block; width:80px;">English Addr:</span>
-                                        <input type="text" name="international_address" id="international_address" class="input_text" style="width: 350px;">
-                                    </div>
-                                    <div style="margin-bottom: 5px;">
-                                        <span style="display:inline-block; width:80px;">Town/City:</span>
-                                        <input type="text" name="international_town_city" id="international_town_city" class="input_text" style="width: 150px;">
-                                        <span style="margin:0 10px;">County/State:</span>
-                                        <input type="text" name="international_county" id="international_county" class="input_text" style="width: 150px;">
-                                    </div>
-                                    <div>
-                                        <span style="display:inline-block; width:80px;">Postcode:</span>
-                                        <input type="text" name="international_postcode" id="international_postcode" class="input_text" style="width: 150px;">
-                                        <span style="margin:0 10px;">Country:</span>
-                                        <input type="text" name="international_country" id="international_country" class="input_text" style="width: 150px;">
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th>배송메시지</th>
-                                <td><input type="text" name="memo" value="{{ old('memo') }}" class="input_text full_width"></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <h4 class="mt30">할인 / 혜택 사용</h4>
-                <div class="order_info_table">
-                    <table class="form_table">
-                        <colgroup>
-                            <col width="150" />
-                            <col width="*" />
-                        </colgroup>
-                        <tbody>
-                            <tr id="coupon_use_row">
-                                <th>쿠폰 사용</th>
-                                <td>
-                                    <select name="download_seq" id="download_seq" class="input_text" style="min-width: 200px;">
-                                        <option value="">쿠폰을 선택하세요</option>
-                                        @foreach($coupons as $coupon)
-                                            <option value="{{ $coupon->download_seq }}" {{ old('download_seq') == $coupon->download_seq ? 'selected' : '' }}
-                                                data-type="{{ $coupon->sale_type }}"
-                                                data-percent="{{ $coupon->percent_goods_sale }}"
-                                                data-max="{{ $coupon->max_percent_goods_sale }}"
-                                                data-won="{{ $coupon->won_goods_sale }}">
-                                                {{ $coupon->coupon_name }} 
-                                                ({{ $coupon->sale_type == 'percent' ? $coupon->percent_goods_sale . '%' : number_format($coupon->won_goods_sale) . '원' }} 할인)
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    <span id="coupon_discount_display" style="color: #d00; font-weight: bold; margin-left: 10px;"></span>
-                                </td>
-                            </tr>
-                            <tr id="emoney_use_row">
-                                <th>적립금</th>
-                                <td>
-                                    <input type="number" name="use_emoney_view" id="use_emoney_view" class="input_text" value="{{ old('use_emoney', 0) }}" style="text-align:right; width: 120px;"> 원
-                                    <input type="hidden" name="use_emoney" id="use_emoney" value="{{ old('use_emoney', 0) }}">
-                                    
-                                    <span style="color:#888; margin-left:10px;">(보유: <strong>{{ number_format($user->emoney ?? 0) }}</strong>원)</span>
-                                    
-                                    <span class="emoney_input_button" style="margin-left:5px;"><button type="button" class="btn_base" onclick="useEmoneyBtn()">입력</button></span>
-                                    <span class="emoney_all_input_button" style="margin-left:5px;"><button type="button" class="btn_base" onclick="useAllEmoneyBtn()">전액사용</button></span>
-                                    <span class="emoney_cancel_button" style="margin-left:5px; display:none;"><button type="button" class="btn_base" onclick="cancelEmoneyBtn()">초기화</button></span>
-                                    
-                                    @if(isset($errReserve) && $errReserve)
-                                        <div style="color: #d00; font-size:11px; margin-top:4px;">※ {{ $errReserve }}</div>
-                                    @else
-                                        <div style="color: #666; font-size:11px; margin-top:4px;">※ 적립금은 100원 이상 보유 시, 최소 100원부터 사용 가능합니다.</div>
-                                    @endif
-                                </td>
-                            </tr>
-                            <tr id="cash_use_row">
-                                <th>캐시</th>
-                                <td>
-                                    <input type="number" name="use_cash_view" id="use_cash_view" class="input_text" value="{{ old('use_cash', 0) }}" style="text-align:right; width: 120px;"> 원
-                                    <input type="hidden" name="use_cash" id="use_cash" value="{{ old('use_cash', 0) }}">
-                                    
-                                    <span style="color:#888; margin-left:10px;">(보유: <strong>{{ number_format($user->cash ?? 0) }}</strong>원)</span>
-                                    
-                                    <span class="cash_input_button" style="margin-left:5px;"><button type="button" class="btn_base" onclick="useCashBtn()">입력</button></span>
-                                    <span class="cash_all_input_button" style="margin-left:5px;"><button type="button" class="btn_base" onclick="useAllCashBtn()">전액사용</button></span>
-                                    <span class="cash_cancel_button" style="margin-left:5px; display:none;"><button type="button" class="btn_base" onclick="cancelCashBtn()">초기화</button></span>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div class="order_info_table">
-                    <table class="form_table">
-                        <colgroup>
-                            <col width="150" />
-                            <col width="*" />
-                        </colgroup>
-                        <tbody>
-                            <tr>
-                                <th>결제 방법</th>
-                                <td>
-                                    <label><input type="radio" name="payment" value="bank" {{ old('payment', 'bank') == 'bank' ? 'checked' : '' }}> 무통장 입금</label>
-                                    <label style="margin-left: 20px;" id="card_payment_label"><input type="radio" name="payment" value="card" {{ old('payment') == 'card' ? 'checked' : '' }}> 신용카드</label>
-                                </td>
-                            </tr>
-                            <tr id="bank_info_row">
-                                <th>입금 계좌</th>
-                                <td>
-                                    <select name="bank_account" class="input_text">
-                                        <option value="국민은행 123-456-7890 도매토피아" {{ old('bank_account') == '국민은행 123-456-7890 도매토피아' ? 'selected' : '' }}>국민은행 123-456-7890 도매토피아</option>
-                                        <option value="농협 098-765-4321 도매토피아" {{ old('bank_account') == '농협 098-765-4321 도매토피아' ? 'selected' : '' }}>농협 098-765-4321 도매토피아</option>
-                                    </select>
-                                    <input type="text" name="depositor" value="{{ old('depositor') }}" class="input_text" placeholder="입금자명">
-                                </td>
-                            </tr>
-                            
-                            {{-- [LEGACY PARITY] Bank Refund Account Form (Shown for Bank, virtual, account payments) --}}
-                            <tr id="refund_info_row" style="display:none;">
-                                <th>환불시 입금 정보 입력<br>(선택사항)</th>
-                                <td>
-                                    <div style="margin-bottom: 5px;">
-                                        <span style="display:inline-block; width:100px;">입금자명(예금주)</span> 
-                                        <input type="text" name="refund_name" id="refund_name" value="{{ old('refund_name') }}" class="input_text" style="width:150px;">
-                                    </div>
-                                    <div style="margin-bottom: 5px;">
-                                        <span style="display:inline-block; width:100px;">입금은행</span> 
-                                        <input type="text" name="refund_bank" id="refund_bank" value="{{ old('refund_bank') }}" class="input_text" style="width:150px;">
-                                    </div>
-                                    <div>
-                                        <span style="display:inline-block; width:100px;">입금계좌</span> 
-                                        <input type="text" name="refund_acount" id="refund_acount" value="{{ old('refund_acount') }}" class="input_text" style="width:250px;" placeholder="'-'없이 입력">
-                                        <span style="color:#888; font-size:11px; margin-left:10px;">( 하이픈 [ - ] 없이 입력 )</span>
-                                    </div>
-                                    <div style="margin-top:5px; color:#555; font-size:11px;">
-                                        ※ 환불은 작성하신 계좌로 입금 됩니다. 입금자명 및 계좌를 정확히 입력해주세요.
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                {{-- [LEGACY PARITY] Tax Invoice & Cash Receipt Form Area --}}
-                <div class="order_info_table mt30" id="receipt_request_table">
-                    <h4 style="margin-bottom:10px;">증빙 서류 신청</h4>
-                    <table class="form_table">
-                        <colgroup>
-                            <col width="150" />
-                            <col width="*" />
-                        </colgroup>
-                        <tbody>
-                            <tr id="typereceipt_selection_row">
-                                <th>신청 선택</th>
-                                <td>
-                                    <label><input type="radio" name="typereceipt" value="0" {{ old('typereceipt', '0') == '0' ? 'checked' : '' }} onclick="toggleReceipt(0)"> 신청안함</label>
-                                    <label class="ml10" id="tax_invoice_label"><input type="radio" name="typereceipt" value="1" {{ old('typereceipt') == '1' ? 'checked' : '' }} onclick="toggleReceipt(1)"> 세금계산서</label>
-                                    <label class="ml10" id="cash_receipt_label"><input type="radio" name="typereceipt" value="2" {{ old('typereceipt') == '2' ? 'checked' : '' }} onclick="toggleReceipt(2)"> 현금영수증</label>
-                                    <span id="tax_exempt_warning" style="color:#d00; font-size:12px; margin-left:10px; display:none;">(비과세 상품 포함시 증빙서류 발급 불가)</span>
-                                </td>
-                            </tr>
-                            <tr id="receipt_form_row" class="hide">
-                                <th>정보 입력</th>
-                                <td>
-                                    {{-- Tax Invoice Form (co_new_zipcode, co_address, co_address_street, co_address_detail, person, phone, email) --}}
-                                    <div id="tax_form" class="hide">
-                                        <div class="receipt_row"><span class="label">상호명</span> <input type="text" name="co_name" id="co_name" value="{{ old('co_name') }}" class="input_text"></div>
-                                        <div class="receipt_row"><span class="label">사업자번호</span> <input type="text" name="busi_no" id="busi_no" value="{{ old('busi_no') }}" class="input_text" placeholder="'-'없이 입력"></div>
-                                        <div class="receipt_row"><span class="label">대표자명</span> <input type="text" name="co_ceo" id="co_ceo" value="{{ old('co_ceo') }}" class="input_text"></div>
-                                        <div class="receipt_row"><span class="label">업태</span> <input type="text" name="co_status" id="co_status" value="{{ old('co_status') }}" class="input_text"></div>
-                                        <div class="receipt_row"><span class="label">종목</span> <input type="text" name="co_type" id="co_type" value="{{ old('co_type') }}" class="input_text"></div>
-                                        
-                                        <div class="receipt_row">
-                                            <span class="label">사업장주소</span>
-                                            <button type="button" class="btn_base" onclick="openTaxDaumPostcode()">우편번호 찾기</button>
-                                            <input type="text" name="co_new_zipcode" id="co_new_zipcode" value="{{ old('co_new_zipcode') }}" class="input_text" style="width: 100px; margin-left:5px;" readonly>
-                                        </div>
-                                        <div class="receipt_row">
-                                            <span class="label" style="visibility:hidden;">주소</span>
-                                            <input type="text" name="co_address" id="co_address" value="{{ old('co_address') }}" class="input_text" style="width:300px;" placeholder="기본주소(지번)" readonly>
-                                            <input type="text" name="co_address_street" id="co_address_street" value="{{ old('co_address_street') }}" class="input_text hide" style="width:300px;" placeholder="도로명주소" readonly>
-                                            <input type="hidden" name="co_address_type" id="co_address_type" value="{{ old('co_address_type', 'zibun') }}">
-                                        </div>
-                                        <div class="receipt_row">
-                                            <span class="label" style="visibility:hidden;">상세주소</span>
-                                            <input type="text" name="co_address_detail" id="co_address_detail" value="{{ old('co_address_detail') }}" class="input_text" style="width:300px;" placeholder="상세주소">
-                                        </div>
-                                        
-                                        <div style="margin-top:10px; border-top:1px dashed #ddd; padding-top:10px;">
-                                            <div class="receipt_row"><span class="label">담당자명</span> <input type="text" name="person" id="person" value="{{ old('person') }}" class="input_text"></div>
-                                            <div class="receipt_row"><span class="label">연락처</span> <input type="text" name="phone" id="phone" value="{{ old('phone') }}" class="input_text"></div>
-                                            <div class="receipt_row"><span class="label">이메일</span> <input type="text" name="email" id="email" value="{{ old('email') }}" class="input_text"></div>
-                                        </div>
-                                    </div>
-                                    
-                                    {{-- Cash Receipt Form --}}
-                                    <div id="cash_form" class="hide">
-                                        <div class="receipt_row">
-                                            <label><input type="radio" name="cuse" value="0" {{ old('cuse', '0') == '0' ? 'checked' : '' }} onclick="toggleCashReceiptType(0)"> 개인소득공제용</label>
-                                            <label class="ml10"><input type="radio" name="cuse" value="1" {{ old('cuse') == '1' ? 'checked' : '' }} onclick="toggleCashReceiptType(1)"> 사업자지출증빙용</label>
-                                        </div>
-                                        <div class="receipt_row mt5" id="personal_receipt_row">
-                                            <span class="label">휴대폰번호</span> 
-                                            <input type="text" name="creceipt_number[]" value="{{ old('creceipt_number') ? (old('creceipt_number')[0] ?? '') : '' }}" class="input_text" placeholder="'-'없이 입력">
-                                        </div>
-                                        <div class="receipt_row mt5" id="business_receipt_row" style="display:none;">
-                                            <span class="label">사업자번호</span> 
-                                            <input type="text" name="creceipt_number[]" value="{{ old('creceipt_number') ? (old('creceipt_number')[1] ?? '') : '' }}" class="input_text" placeholder="'-'없이 입력">
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-
-
-                {{-- Phase 1: Agreements Section --}}
-                <div class="agreement_area">
-                
-                @if(true)
-                <div class="agreement_grid_container">
-                    {{-- Row 1: Shipping Policy & Cancellation Policy --}}
-                    {{-- Item 1: Shipping Policy --}}
-                    <div class="agreement_item agreement-full-width">
-                         <div style="margin-bottom:10px;">
-                            <label><input type="checkbox" name="delivery_chk"> <span style="font-weight:bold; color:#d00;">배송비 정책에 동의합니다</span></label>
-                        </div>
-                        <div class="shipping-agree-text">
-                            <ul style="list-style: none; padding-left: 0; font-size: 13px; color: #555;">
-                                <li style="margin-bottom: 5px;">1. 배송비는 15만원 이상 구매하면 무료입니다.</li>
-                                <li style="margin-bottom: 5px;">2. 선불/착불 선택 가능하며 선불은 기본 1박스만 선결제 됩니다.</li>
-                                <li style="margin-bottom: 5px;">3. 1박스를 선불로 결제하더라도 추가 박스 발생시 착불로 배송됩니다.<br>(전량 선불 결제를 원할 시 고객센터로 연락주세요.)</li>
-                                <li>4. 궁금한 점은 고객센터로 연락주시기 바랍니다.</li>
-                            </ul>
+                        <div class="fright" style="width: 622px;">
+                            <div class="doto-order-info-alert" style="height: 230px; margin: 0 !important;">
+                                <h3>주의사항</h3>
+                                <ul style="margin-top: 55px;">
+                                    <li>ㆍ비회원의 주문배송조회를 위한 로그인은 주문번호와 이메일 정보로 확인할 수 있습니다.</li>
+                                    <li>ㆍ구매 내역은 이메일과 SMS로 발송됩니다.</li>
+                                    <li>ㆍ정확한 이메일과 휴대폰번호를 입력해 주십시오.</li>
+                                    <li>ㆍ주문자 정보는 운송장에 표기되지 않으며, 주문 확인용으로만 사용됩니다.</li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
+                </div>
 
-                    {{-- Item 2: Cancellation Policy --}}
-                    <div class="agreement_item">
-                        <h6 class="fx20">청약철회 관련 방침</h6>
-                        <div class="agreement_box" contenteditable="false">
-                            1. 반품/교환 사유에 따른 요청 가능 기간<br>
-                            반품 시 먼저 판매자와 연락하셔서 반품사유, 택배사, 배송비, 반품지 주소 등을 협의하신 후 반품상품을 발송해 주시기 바랍니다.<br>
-                            구매자 단순변심 : 상품 수령 후 7일 이내 (구매자 반품 배송비 부담)<br>
-                            표시/광고와 상이, 상품 하자 : 상품 수령 후 3개월 이내 혹은 표시/광고와 다른 사실을 안 날로부터 30일 이내 (판매자 반품 배송비 부담) 둘 중 하나 경과 시 반품/교환 불가<br><br>
-                            2. 반품/교환 불가능 사유<br>
-                            - 반품 요청 기간이 지난 경우<br>
-                            - 구매자의 책임 있는 사유로 상품 등이 멸실 또는 훼손된 경우 (단, 상품의 내용을 확인하기 위하여 포장 등을 훼손한 경우는 제외)<br>
-                            - 포장을 개봉하였으나 포장이 훼손되어 상품가치가 현저히 상실된 경우<br>
-                            - 구매자의 사용 또는 일부 소비에 의하여 상품의 가치가 현저히 감소한 경우<br>
-                            - 시간의 경과에 의하여 재판매가 곤란할 정도로 상품 등의 가치가 현저히 감소한 경우<br>
-                            - 고객주문 확인 후 상품제작에 들어가는 주문제작상품 (판매자에게 회복 불가능한 손해가 예상되고, 그러한 예정으로 청약철회권 행사가 불가하다는 사실을 서면 동의 받은 경우)<br>
-                            - 복제가 가능한 상품 등의 포장을 훼손한 경우<br>
-                        </div>
-                        <div class="agreement_check center">
-                            <label><input type="radio" name="cancellation" value="Y"> 동의함</label>
-                            <label class="ml10"><input type="radio" name="cancellation" value="N" checked> 동의안함</label>
-                        </div>
-                    </div>
-                    
-                    {{-- Row 2: Privacy Agreement (Mandatory & Optional) --}}
-                    @if(!auth()->check())
-                    {{-- Item 3: Non-member Mandatory Privacy Agreement --}}
-                    <div class="agreement_item">
-                        <h6 class="fx20">비회원 개인정보 동의(필수)</h6>
-                        <div class="agreement_box" contenteditable="false">
-                            도매토피아는 회원님께 최대한으로 최적화되고 맞춤화된 서비스를 제공하기 위하여 다음과 같은 목적으로 개인정보를 수집하고 있습니다.
-                            @if(isset($Overseas) && $Overseas == 'Y')
-                            <table class="privacy_table">
-                                <tr align="center">
-                                    <th>목적</th>
-                                    <th>항목</th>
-                                    <th>보유기간</th>
-                                </tr>
-                                <tr align="center">
-                                    <td>상품 주문내역 안내, 상품배송</td>
-                                    <td>이름, 핸드폰번호, 주문자 이메일, 받는분 성함, 받는분 핸드폰, 받는분 주소</td>
-                                    <td>개인정보는 서비스 제공 기간동안 보유 및 이용하며, 탈퇴 시 즉시 파기됩니다.</td>
-                                </tr>
-                                <tr align="center">
-                                    <td>해외 직배송 상품 통관업무처리</td>
-                                    <td>개인통관번호</td>
-                                    <td>개인정보는 서비스 제공 기간동안 보유 및 이용하며, 탈퇴 시 즉시 파기됩니다.</td>
-                                </tr>
-                            </table>
-                            @else
-                            <table class="privacy_table">
-                                <tr align="center">
-                                    <th>목적</th>
-                                    <th>항목</th>
-                                    <th>보유기간</th>
-                                </tr>
-                                <tr align="center">
-                                    <td>상품 주문내역 안내, 상품배송</td>
-                                    <td>주문자 정보(전화번호) 배송지정보(이름, 핸드폰, 주소)</td>
-                                    <td>개인정보는 서비스 제공 기간동안 보유 및 이용하며, 탈퇴 시 즉시 파기됩니다.</td>
-                                </tr>
-                            </table>
+                <div class="order-info-wrap relative">
+                    <h2>배송지 입력<strong>배송내역 확인 후 주문하여 주시기 바랍니다.</strong></h2>
+                    <div class="order-info clearbox" style="overflow: unset;">
+                        <!-- fleft -->
+                        <div class="fleft" style="width: 384px;">
+                            <div class="addr-load">
+                                <label>
+                                    주문자 정보 불러오기
+                                    <input type="checkbox" id="copy_user_info">
+                                </label>
+                                @if(auth()->check())
+                                <span class="ml10" onclick="openAddressModal()">주소록에서 불러오기</span>
+                                @endif
+                            </div>
+                            @if(auth()->check())
+                            <div class="order-select-wrap">
+                                <div>
+                                    <input type="radio" name="chkQuickAddress" value="often" id="chkQuick_often"><label for="chkQuick_often">자주쓰는 배송지</label>
+                                </div>
+                                <div>
+                                    <input type="radio" name="chkQuickAddress" value="new" id="chkQuick_new" checked><label for="chkQuick_new">새로운 배송지</label>
+                                </div>
+                                <div>
+                                    <input type="radio" name="chkQuickAddress" value="member" id="chkQuick_member"><label for="chkQuick_member">회원정보주소</label>
+                                </div>
+                                <div>
+                                    <input type="radio" name="chkQuickAddress" value="lately" id="chkQuick_lately"><label for="chkQuick_lately">최근 배송지</label>
+                                </div>
+                                <select name="chkQuickAddressLately" id="chkQuickAddressLately" style="display:none; min-width: 180px;">
+                                    <option value="">최근 배송지를 선택하세요</option>
+                                </select>
+                            </div>
                             @endif
                         </div>
-                        <div class="agreement_check center">
-                            <label><input type="radio" name="privacy_agree" value="Y"> 개인정보 수집ㆍ이용에 동의</label>
-                            <label class="ml10"><input type="radio" name="privacy_agree" value="N" checked> 개인정보 수집ㆍ이용에 동의하지 않음</label>
+
+                        <!-- fright -->
+                        <div class="fleft" style="border-left: 1px solid #cfd5da; padding: 29px 25px; overflow: unset; width: 730px;">
+                            <div class="order-row name wx480">
+                                <div class="order-input-title necessa">받는분 성함</div>
+                                <div class="order-input-wrap">
+                                    <input type="text" name="recipient_user_name" id="recipient_user_name" value="{{ old('recipient_user_name') }}" required>
+                                </div>
+                            </div>
+                            <div class="order-row phone wx480">
+                                <div class="order-input-title necessa">받는분 핸드폰</div>
+                                <div class="order-input-wrap">
+                                    <input type="text" name="recipient_cellphone[]" id="recipient_cellphone_0" value="" style="width:30%; text-align: center;" required>
+                                    <span style="margin: 0px 5px;">-</span>
+                                    <input type="text" name="recipient_cellphone[]" id="recipient_cellphone_1" value="" style="width:30%; text-align: center;" required>
+                                    <span style="margin: 0px 5px;">-</span>
+                                    <input type="text" name="recipient_cellphone[]" id="recipient_cellphone_2" value="" style="width:30%; text-align: center;" required>
+                                </div>
+                            </div>
+                            <div class="order-row tel wx480">
+                                <div class="order-input-title">받는분 전화 번호</div>
+                                <div class="order-input-wrap">
+                                    <input type="text" name="recipient_phone[]" id="recipient_phone_0" value="" style="width:30%; text-align: center;">
+                                    <span style="margin: 0px 5px;">-</span>
+                                    <input type="text" name="recipient_phone[]" id="recipient_phone_1" value="" style="width:30%; text-align: center;">
+                                    <span style="margin: 0px 5px;">-</span>
+                                    <input type="text" name="recipient_phone[]" id="recipient_phone_2" value="" style="width:30%; text-align: center;">
+                                </div>
+                            </div>
+                            
+                            <!-- domestic -->
+                            <div class="domestic goods_delivery_info">
+                                <div class="order-row address wx480">
+                                    <div class="order-input-title necessa">주소입력</div>
+                                    <div class="order-input-wrap">
+                                        <button type="button" class="blue_line mr5" onclick="openDaumPostcode(); return false;">우편번호찾기</button>
+                                        <input type="text" name="recipient_new_zipcode" id="recipient_zipcode" value="{{ old('recipient_new_zipcode') }}" placeholder="우편번호" readonly style="width: 150px;">
+                                    </div>
+                                </div>
+                                <div class="order-row address2" style="width: 722px;">
+                                    <div class="order-input-title" style="visibility: hidden">주소상세</div>
+                                    <div class="order-input-wrap" style="height: auto; flex-wrap: wrap; gap: 5px;">
+                                        <input type="hidden" name="recipient_address_type" id="recipient_address_type" value="{{ old('recipient_address_type') }}">
+                                        <input type="text" name="recipient_address_street" id="recipient_address_street" value="{{ old('recipient_address_street') }}" class="hide" style="flex: none; width:342px;" readonly>
+                                        <input type="text" name="recipient_address" id="recipient_address" value="{{ old('recipient_address') }}" style="flex: none; width:342px;" readonly>
+                                        <input type="text" name="recipient_address_detail" id="recipient_address_detail" value="{{ old('recipient_address_detail') }}" placeholder="나머지 주소" style="width:232px;">
+                                        
+                                        {{-- Display only --}}
+                                        <input type="text" id="recipient_address_display" value="{{ old('recipient_address_type') == 'street' ? old('recipient_address_street') : old('recipient_address') }}" style="width: 342px; display: none;" placeholder="기본주소" readonly>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- international -->
+                            <div id="international_address_row" class="international goods_delivery_info" style="display:none;">
+                                <div class="order-row">
+                                    <div class="order-input-title">주소</div>
+                                    <div class="order-input-wrap">
+                                        <input type="text" name="international_address" id="international_address" value="">
+                                    </div>
+                                </div>
+                                <div class="order-row">
+                                    <div class="order-input-title">시도</div>
+                                    <div class="order-input-wrap">
+                                        <input type="text" name="international_town_city" id="international_town_city" value="">
+                                    </div>
+                                </div>
+                                <div class="order-row">
+                                    <div class="order-input-title">주</div>
+                                    <div class="order-input-wrap">
+                                        <input type="text" name="international_county" id="international_county" value="">
+                                    </div>
+                                </div>
+                                <div class="order-row">
+                                    <div class="order-input-title">우편번호</div>
+                                    <div class="order-input-wrap">
+                                        <input type="text" name="international_postcode" id="international_postcode" value="">
+                                    </div>
+                                </div>
+                                <div class="order-row">
+                                    <div class="order-input-title">국가</div>
+                                    <div class="order-input-wrap">
+                                        <input type="text" name="international_country" id="international_country" value="">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- memo -->
+                            <div class="order-row goods_delivery_info" style="margin-top: 15px;">
+                                <div class="order-input-title">배송 메시지</div>
+                                <div class="order-input-wrap" style="height: auto;">
+                                    <textarea name="memo" cols="70" rows="3" style="width: 100%; height: 80px; border: 1px solid #e9ecef; padding: 10px; box-sizing: border-box; resize: none;" placeholder="배송 메시지를 입력해주세요."></textarea>
+                                </div>
+                            </div>
+                            
+                            @if(auth()->check())
+                            <div style="margin-left: 138px; margin-top: 5px;">
+                                <input type="checkbox" name="save_delivery_address" id="save_delivery_address" value="1" style="height: 18px; margin: 0; vertical-align: middle;">
+                                <label for="save_delivery_address" style="color: #3ba0ff; line-height: 1.4; font-size: 13px; margin-left: 5px; cursor: pointer; vertical-align: middle;">기본 배송지로 저장</label>
+                            </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                <!-- order-bottom-container : 2단 분할 결제 정보 레이아웃 -->
+                <div class="order-bottom-container">
+                    <!-- fleft: 입력 영역 (혜택/결제수단/적립금/매출증빙) -->
+                <div class="fleft">
+                    <!-- 1. 쿠폰/혜택 사용하기 -->
+                    <div class="order-pay-box">
+                        <h4>1. 쿠폰/혜택 사용하기</h4>
+                        <div class="order-row" id="coupon_use_row" style="margin-bottom: 20px;">
+                            <div class="order-input-title">쿠폰 할인 금액</div>
+                            <div class="order-input-wrap">
+                                <select name="download_seq" id="download_seq" style="min-width: 250px; height: 40px; border: 1px solid #e9ecef; padding-left: 8px;">
+                                    <option value="">쿠폰을 선택하세요</option>
+                                    @foreach($coupons as $coupon)
+                                        <option value="{{ $coupon->download_seq }}" {{ old('download_seq') == $coupon->download_seq ? 'selected' : '' }}
+                                            data-type="{{ $coupon->sale_type }}"
+                                            data-percent="{{ $coupon->percent_goods_sale }}"
+                                            data-max="{{ $coupon->max_percent_goods_sale }}"
+                                            data-won="{{ $coupon->won_goods_sale }}">
+                                            {{ $coupon->coupon_name }} 
+                                            ({{ $coupon->sale_type == 'percent' ? $coupon->percent_goods_sale . '%' : number_format($coupon->won_goods_sale) . '원' }} 할인)
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <span id="coupon_discount_display" style="color: #d00; font-weight: bold; margin-left: 10px;"></span>
+                            </div>
+                        </div>
+                        <div class="order-row">
+                            <div class="order-input-title">코드 할인</div>
+                            <div class="order-input-wrap">
+                                <input type="text" name="coupon_code" placeholder="할인 코드 입력" style="width: 200px; height: 40px; border:1px solid #e9ecef; padding-left:10px;">
+                                <button type="button" class="blue_line ml5" style="height: 40px; line-height: 38px; width: 80px; cursor:pointer;">코드적용</button>
+                            </div>
                         </div>
                     </div>
 
-                    {{-- Item 4: Non-member Optional Privacy Agreement (Removed) --}}
-                    @endif
-                </div>
-                {{-- End Grid Container --}}
-                @endif
-                </div>
-                {{-- End Agreement Area --}}
+                    <!-- 2. 결제 수단 선택 -->
+                    <div class="order-pay-box payment_type">
+                        <h4>2. 결제 수단 선택</h4>
+                        <div style="margin-bottom: 20px; font-size: 14px;">
+                            <label style="cursor: pointer; margin-right: 25px; font-weight: bold; display: inline-block; vertical-align: middle;">
+                                <input type="radio" name="payment" value="bank" {{ old('payment', 'bank') == 'bank' ? 'checked' : '' }} style="width:16px; height:16px; vertical-align:middle; margin-right:5px;"> 무통장입금
+                            </label>
+                            <label style="cursor: pointer; margin-right: 25px; font-weight: bold; display: inline-block; vertical-align: middle;" id="card_payment_label">
+                                <input type="radio" name="payment" value="card" {{ old('payment') == 'card' ? 'checked' : '' }} style="width:16px; height:16px; vertical-align:middle; margin-right:5px;"> 신용카드
+                            </label>
+                        </div>
 
-                <div class="btn_area_center">
-                    <button type="submit" class="btn_order_all">결제하기</button>
-                    <a href="{{ route('cart.index') }}" class="btn_cancel">취소</a>
+                        <!-- 무통장 입금 정보 입력 박스 -->
+                        <div class="pay-bank-wrap bank" id="bank_info_row" style="height: auto; border: 2px solid #0088ff; padding: 20px; background: #fff; margin-bottom: 15px;">
+                            <h6 style="margin: 0 0 15px 0; font-size: 14px; font-weight: bold; color: #0088ff; border-bottom: 1px solid #e9ecef; padding-bottom: 10px; text-align: left; height: auto; line-height: 1;">무통장 입금 정보 입력</h6>
+                            <div style="display: flex; gap: 15px; align-items: center; margin-bottom: 15px; font-size: 13px;">
+                                <label style="font-weight: bold; width: 70px;">입금자명</label>
+                                <input type="text" name="depositor" value="{{ old('depositor') }}" style="width: 150px; height: 35px; border: 1px solid #e9ecef; padding: 0 8px;">
+                                <label style="font-weight: bold; width: 70px; margin-left: 15px;">입금은행</label>
+                                <select name="bank_account" style="flex: 1; height: 35px; border: 1px solid #e9ecef; padding-left: 8px;">
+                                    <option value="국민은행 123-456-7890 도매토피아" {{ old('bank_account') == '국민은행 123-456-7890 도매토피아' ? 'selected' : '' }}>국민은행 123-456-7890 도매토피아</option>
+                                    <option value="농협 098-765-4321 도매토피아" {{ old('bank_account') == '농협 098-765-4321 도매토피아' ? 'selected' : '' }}>농협 098-765-4321 도매토피아</option>
+                                </select>
+                            </div>
+                            <div style="background: #0088ff; color: #fff; font-size: 12px; padding: 8px 12px; font-weight: bold; line-height:1.4;">
+                                ※선택한 계좌로 입금 부탁드리며, 입금시 입금자명 및 금액이 작성된 내용과 다를시 자동처리가 안되니 주의바랍니다.
+                            </div>
+                        </div>
+
+                        <!-- 환불시 입금 정보 입력 -->
+                        <div class="pay-bank-wrap bank" id="refund_info_row" style="height: auto; border: 1px solid #cfd5da; padding: 20px; background: #fff; display: none;">
+                            <h6 style="margin: 0 0 15px 0; font-size: 14px; font-weight: bold; color: #222; border-bottom: 1px solid #e9ecef; padding-bottom: 10px; text-align: left; height: auto; line-height: 1;">환불시 입금 정보 입력(선택사항)</h6>
+                            <div style="font-size: 13px;">
+                                <div style="margin-bottom: 10px; display: flex; align-items: center;">
+                                    <span style="display: inline-block; width: 100px; font-weight: bold;">예금주명</span>
+                                    <input type="text" name="refund_name" id="refund_name" value="{{ old('refund_name') }}" style="width: 150px; height: 35px; border: 1px solid #e9ecef; padding: 0 8px;">
+                                </div>
+                                <div style="margin-bottom: 10px; display: flex; align-items: center;">
+                                    <span style="display: inline-block; width: 100px; font-weight: bold;">입금은행</span>
+                                    <input type="text" name="refund_bank" id="refund_bank" value="{{ old('refund_bank') }}" style="width: 150px; height: 35px; border: 1px solid #e9ecef; padding: 0 8px;">
+                                </div>
+                                <div style="margin-bottom: 10px; display: flex; align-items: center;">
+                                    <span style="display: inline-block; width: 100px; font-weight: bold;">입금계좌</span>
+                                    <input type="text" name="refund_acount" id="refund_acount" value="{{ old('refund_acount') }}" style="width: 250px; height: 35px; border: 1px solid #e9ecef; padding: 0 8px;" placeholder="'-'없이 입력">
+                                    <span style="color:#888; font-size:11px; margin-left:10px;">( 하이픈 [ - ] 없이 입력 )</span>
+                                </div>
+                                <div style="background: #f7f8f9; color: #666; font-size: 11px; padding: 8px 12px; margin-top: 5px; border: 1px solid #e9ecef; line-height:1.4;">
+                                    ※ 환불은 작성하신 계좌로 입금 됩니다. 입금자명 및 계좌를 정확히 입력해주세요.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. 적립금 및 캐시 사용 -->
+                    <div class="order-pay-box reserve">
+                        <h4>3. 적립금 및 캐시 사용</h4>
+                        <div class="order-row" id="emoney_use_row">
+                            <div class="order-input-title">적립금</div>
+                            <div class="order-input-wrap">
+                                <input type="number" name="use_emoney_view" id="use_emoney_view" value="{{ old('use_emoney', 0) }}" style="text-align:right; width: 120px; height: 40px; border:1px solid #e9ecef;">
+                                <span style="margin-left: 5px; font-weight: bold;">원</span>
+                                <input type="hidden" name="use_emoney" id="use_emoney" value="{{ old('use_emoney', 0) }}">
+                                
+                                <button type="button" class="blue_line ml10" onclick="useEmoneyBtn()" style="height: 40px; line-height: 38px; width: 80px; cursor:pointer;">입력</button>
+                                <button type="button" class="blue_line ml5" onclick="useAllEmoneyBtn()" style="height: 40px; line-height: 38px; width: 80px; cursor:pointer;">전액사용</button>
+                                <button type="button" class="blue_line ml5" id="emoney_cancel_btn" onclick="cancelEmoneyBtn()" style="height: 40px; line-height: 38px; width: 80px; display:none; cursor:pointer;">초기화</button>
+                            </div>
+                        </div>
+                        <ul class="reserve-info" style="margin-bottom: 20px;">
+                            <li>보유한 적립금: <strong>{{ number_format($user->emoney ?? 0) }}</strong>원</li>
+                            @if(isset($errReserve) && $errReserve)
+                                <li style="color: #d00;">※ {{ $errReserve }}</li>
+                            @else
+                                <li>※ 적립금은 100원 이상 보유 시, 최소 100원부터 사용 가능합니다.</li>
+                            @endif
+                        </ul>
+
+                        <div class="order-row" id="cash_use_row">
+                            <div class="order-input-title">캐시</div>
+                            <div class="order-input-wrap">
+                                <input type="number" name="use_cash_view" id="use_cash_view" value="{{ old('use_cash', 0) }}" style="text-align:right; width: 120px; height: 40px; border:1px solid #e9ecef;">
+                                <span style="margin-left: 5px; font-weight: bold;">원</span>
+                                <input type="hidden" name="use_cash" id="use_cash" value="{{ old('use_cash', 0) }}">
+                                
+                                <button type="button" class="blue_line ml10" onclick="useCashBtn()" style="height: 40px; line-height: 38px; width: 80px; cursor:pointer;">입력</button>
+                                <button type="button" class="blue_line ml5" onclick="useAllCashBtn()" style="height: 40px; line-height: 38px; width: 80px; cursor:pointer;">전액사용</button>
+                                <button type="button" class="blue_line ml5" id="cash_cancel_btn" onclick="cancelCashBtn()" style="height: 40px; line-height: 38px; width: 80px; display:none; cursor:pointer;">초기화</button>
+                            </div>
+                        </div>
+                        <ul class="reserve-info">
+                            <li>보유한 캐시: <strong>{{ number_format($user->cash ?? 0) }}</strong>원</li>
+                        </ul>
+                    </div>
+
+                    <!-- 4. 매출 증빙 신청 -->
+                    <div class="order-pay-box receipt" id="receipt_request_table">
+                        <h4>4. 매출 증빙 신청</h4>
+                        <div class="order-row" id="typereceipt_selection_row">
+                            <div class="order-input-title">신청 선택</div>
+                            <div class="order-input-wrap">
+                                <label style="cursor: pointer; margin-right: 15px; display: inline-block; vertical-align: middle;"><input type="radio" name="typereceipt" value="0" {{ old('typereceipt', '0') == '0' ? 'checked' : '' }} onclick="toggleReceipt(0)" style="width:15px; height:15px; vertical-align:middle; margin-right:3px;"> 신청안함</label>
+                                <label style="cursor: pointer; margin-right: 15px; display: inline-block; vertical-align: middle;" id="tax_invoice_label"><input type="radio" name="typereceipt" value="1" {{ old('typereceipt') == '1' ? 'checked' : '' }} onclick="toggleReceipt(1)" style="width:15px; height:15px; vertical-align:middle; margin-right:3px;"> 세금계산서</label>
+                                <label style="cursor: pointer; margin-right: 15px; display: inline-block; vertical-align: middle;" id="cash_receipt_label"><input type="radio" name="typereceipt" value="2" {{ old('typereceipt') == '2' ? 'checked' : '' }} onclick="toggleReceipt(2)" style="width:15px; height:15px; vertical-align:middle; margin-right:3px;"> 현금영수증</label>
+                                <span id="tax_exempt_warning" style="color:#d00; font-size:12px; margin-left:10px; display:none;">(비과세 상품 포함시 증빙서류 발급 불가)</span>
+                            </div>
+                        </div>
+
+                        <div id="proof-content" style="margin-top: 15px; border-top: 1px dashed #cfd5da; padding-top: 15px;">
+                            {{-- 세금계산서 --}}
+                            <div id="tax_form" class="hide">
+                                <div class="order-row"><div class="order-input-title">상호명</div><div class="order-input-wrap"><input type="text" name="co_name" id="co_name" value="{{ old('co_name') }}"></div></div>
+                                <div class="order-row"><div class="order-input-title">사업자번호</div><div class="order-input-wrap"><input type="text" name="busi_no" id="busi_no" value="{{ old('busi_no') }}" placeholder="'-'없이 입력"></div></div>
+                                <div class="order-row"><div class="order-input-title">대표자명</div><div class="order-input-wrap"><input type="text" name="co_ceo" id="co_ceo" value="{{ old('co_ceo') }}"></div></div>
+                                <div class="order-row"><div class="order-input-title">업태</div><div class="order-input-wrap"><input type="text" name="co_status" id="co_status" value="{{ old('co_status') }}"></div></div>
+                                <div class="order-row"><div class="order-input-title">종목</div><div class="order-input-wrap"><input type="text" name="co_type" id="co_type" value="{{ old('co_type') }}"></div></div>
+                                
+                                <div class="order-row">
+                                    <div class="order-input-title">주소입력</div>
+                                    <div class="order-input-wrap">
+                                        <button type="button" class="blue_line" style="height: 40px; line-height: 38px; width: 110px; cursor:pointer;" onclick="openTaxDaumPostcode()">우편번호찾기</button>
+                                        <input type="text" name="co_new_zipcode" id="co_new_zipcode" value="{{ old('co_new_zipcode') }}" style="width: 200px; margin-left: 10px; height:40px;" readonly>
+                                    </div>
+                                </div>
+                                <div class="order-row">
+                                    <div class="order-input-title" style="visibility:hidden;">기본주소</div>
+                                    <div class="order-input-wrap">
+                                        <input type="hidden" name="co_address_type" id="co_address_type" value="{{ old('co_address_type', 'zibun') }}">
+                                        <input type="text" name="co_address" id="co_address" value="{{ old('co_address') }}" placeholder="지번주소" readonly>
+                                        <input type="text" name="co_address_street" id="co_address_street" value="{{ old('co_address_street') }}" class="hide" placeholder="도로명주소" readonly>
+                                    </div>
+                                </div>
+                                <div class="order-row">
+                                    <div class="order-input-title" style="visibility:hidden;">상세주소</div>
+                                    <div class="order-input-wrap">
+                                        <input type="text" name="co_address_detail" id="co_address_detail" value="{{ old('co_address_detail') }}" placeholder="상세주소">
+                                    </div>
+                                </div>
+                                
+                                <div style="margin-top: 15px; border-top: 1px dashed #cfd5da; padding-top: 15px;">
+                                    <div class="order-row"><div class="order-input-title">담당자명</div><div class="order-input-wrap"><input type="text" name="person" id="person" value="{{ old('person') }}"></div></div>
+                                    <div class="order-row"><div class="order-input-title">담당자 연락처</div><div class="order-input-wrap"><input type="text" name="phone" id="phone" value="{{ old('phone') }}"></div></div>
+                                    <div class="order-row"><div class="order-input-title">담당자 메일</div><div class="order-input-wrap"><input type="text" name="email" id="email" value="{{ old('email') }}"></div></div>
+                                </div>
+                            </div>
+                            
+                            {{-- 현금영수증 --}}
+                            <div id="cash_form" class="hide">
+                                <div class="order-row">
+                                    <div class="order-input-title">발행용도</div>
+                                    <div class="order-input-wrap">
+                                        <label style="cursor: pointer; margin-right: 15px; display:inline-block; vertical-align:middle;"><input type="radio" name="cuse" value="0" {{ old('cuse', '0') == '0' ? 'checked' : '' }} onclick="toggleCashReceiptType(0)" style="width:15px; height:15px; vertical-align:middle; margin-right:3px;"> 개인 소득공제용</label>
+                                        <label style="cursor: pointer; margin-right: 15px; display:inline-block; vertical-align:middle;"><input type="radio" name="cuse" value="1" {{ old('cuse') == '1' ? 'checked' : '' }} onclick="toggleCashReceiptType(1)" style="width:15px; height:15px; vertical-align:middle; margin-right:3px;"> 사업자지출 증빙용</label>
+                                    </div>
+                                </div>
+                                <div class="order-row" id="personal_receipt_row">
+                                    <div class="order-input-title">휴대폰번호</div>
+                                    <div class="order-input-wrap">
+                                        <input type="text" name="creceipt_number[]" value="{{ old('creceipt_number') ? (old('creceipt_number')[0] ?? '') : '' }}" placeholder="'-'없이 입력">
+                                    </div>
+                                </div>
+                                <div class="order-row" id="business_receipt_row" style="display:none;">
+                                    <div class="order-input-title">사업자번호</div>
+                                    <div class="order-input-wrap">
+                                        <input type="text" name="creceipt_number[]" value="{{ old('creceipt_number') ? (old('creceipt_number')[1] ?? '') : '' }}" placeholder="'-'없이 입력">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+
+                <!-- fright: 고정 요약 및 동의 영역 -->
+                <div class="fright" style="position: sticky; top: 10px;">
+                    <!-- 최종 결제 금액 확인 -->
+                    <div class="total-pay-price-wrap">
+                        <h3>최종 결제 금액 확인</h3>
+                        <div class="total-pay-price">
+                            <div style="clear: both; overflow: hidden; height: 50px; line-height: 50px; position: relative;">
+                                <span class="pay-title" style="float: left;">총 주문금액</span>
+                                <span class="pay-contents plus" style="float: right;"><span>{{ number_format($totalPrice) }}</span></span>
+                            </div>
+                            <div style="clear: both; overflow: hidden; height: 50px; line-height: 50px; position: relative;">
+                                <span class="pay-title" style="float: left;">총 부가세</span>
+                                <span class="pay-contents plus" style="float: right;">
+                                    <span class="total_vat_price">{{ number_format($tax) }}</span>
+                                </span>
+                            </div>
+                            <div id="card_surcharge_row" style="display:none; clear: both; overflow: hidden; height: 50px; line-height: 50px; position: relative;">
+                                <span class="pay-title" style="float: left;">카드 수수료(3%)</span>
+                                <span class="pay-contents plus" style="float: right;"><span id="card_surcharge_amount">0</span></span>
+                            </div>
+                            <div class="goods_delivery_info" style="clear: both; height: 50px; line-height: 50px; position: relative; overflow: visible;">
+                                <span class="pay-title" style="float: left;">총 배송비</span>
+                                <span class="pay-contents plus" style="float: right;"><span id="total_shipping_display_text_2">{{ number_format($shipping + $packagingCost) }}</span></span>
+                                <img src="/data/skin/beauty/images/icon/order_detail.png" alt="상세내역" class="price_area hand total_org_shipping_price_btn" style="cursor:pointer; float: right; margin-right: 10px; margin-top: 13px; vertical-align: middle;" onclick="$('#delivery_detail_layer').toggleClass('hide')">
+                                <div id="delivery_detail_layer" class="absolute sale_price_layer hide doto_sale_layer" style="background:#fff; border:1px solid #ddd; padding:10px; z-index:100; right: 0; top:35px; width:200px; box-shadow:0 2px 5px rgba(0,0,0,0.15); line-height: 1.4; text-align: left;">
+                                    <h6 style="margin:0 0 5px 0; font-size:12px; font-weight:bold;">배송비내역</h6>
+                                    <table width="100%" style="font-size:11px; border-collapse:collapse;">
+                                        <tr><td style="padding:3px 0;">기본배송비</td><td style="text-align:right;">{{ number_format(config('shop.shipping.base_cost', 2500)) }}원</td></tr>
+                                        <tr><td style="padding:3px 0;">추가배송비</td><td style="text-align:right;">{{ number_format(config('shop.shipping.packaging_cost', 300)) }}원</td></tr>
+                                    </table>
+                                </div>
+                            </div>
+                            <div style="clear: both; overflow: hidden; height: 50px; line-height: 50px; position: relative;">
+                                <span class="pay-title" style="float: left;">총 할인 금액</span>
+                                <span class="pay-contents minus" style="float: right;"><span id="coupon_discount_display_text_2">0</span></span>
+                            </div>
+                            <div style="clear: both; overflow: hidden; height: 50px; line-height: 50px; position: relative;">
+                                <span class="pay-title" style="float: left;">사용한 적립금</span>
+                                <span class="pay-contents minus" style="float: right;"><span id="use_emoney_display">0</span></span>
+                            </div>
+                            <div style="clear: both; overflow: hidden; height: 50px; line-height: 50px; position: relative;">
+                                <span class="pay-title" style="float: left;">사용 캐시</span>
+                                <span class="pay-contents minus" style="float: right;"><span id="use_cash_display">0</span></span>
+                            </div>
+                            <div class="order-settle-price" style="clear: both; overflow: hidden; height: 77px; line-height: 77px; position: relative;">
+                                <span class="pay-title" style="float: left;">총 결제금액</span>
+                                <span class="pay-contents" style="float: right;"><span class="settle_price final_price">{{ number_format($finalPrice) }}</span></span>
+                            </div>
+                            <div class="total-pay-price-alert goods_delivery_info" style="clear: both; display: table; padding: 10px 0; height: 79px; box-sizing: content-box;">
+                                <p style="line-height: 1.5; font-size: 14px; font-weight: normal; vertical-align: middle; display: table-cell;">
+                                    ※배송비는 구매 금액에 상관없이 <strong>박스당 2,500원이 우선 청구</strong>되며
+                                    <strong style="color: #f44336;">추가 요금 발생시 착불로 청구</strong>됩니다.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 배송비 정책 동의 -->
+                    <div class="shipping-agree-wrap">
+                        <div class="shipping-agree">
+                            <label><input type="checkbox" name="delivery_chk" value="Y" required style="width:16px; height:16px; vertical-align:middle; margin-right:5px;"> 배송비 정책에 동의합니다.</label>
+                        </div>
+                        <ul style="list-style: none; padding-left: 0; font-size: 13px; color: #555;">
+                            <li style="margin-bottom: 5px;">1. 배송비는 15만원 이상 구매하면 무료입니다. (도서산간/제주 추가배송비 별도)</li>
+                            <li style="margin-bottom: 5px;">2. 선불/착불 선택 가능하며 선불은 기본 1박스만 선결제 됩니다.</li>
+                            <li style="margin-bottom: 5px;">3. 1박스를 선불로 결제하더라도 추가 박스 발생시 착불로 배송됩니다.<br>(전량 선불 결제를 원할 시 고객센터로 연락주세요.)</li>
+                            <li style="margin-bottom: 5px;">4. 궁금한 점은 고객센터로 연락주시기 바랍니다.</li>
+                        </ul>
+                    </div>
+
+                    <!-- 개인정보 동의(필수) -->
+                    <div style="margin-top: 15px; background: #fff; border: 1px solid #cfd5da; padding: 15px;">
+                        <h6 style="margin:0 0 10px 0; font-size:13px; font-weight:bold;">개인정보 동의(필수)</h6>
+                        <div style="font-size: 11px; color: #666; height: 120px; overflow-y: scroll; border: 1px solid #e9ecef; background: #fff; padding: 10px; box-sizing: border-box; line-height: 1.4; margin-bottom: 10px;">
+                            도매토피아는 회원님께 최대한으로 최적화되고 맞춤화된 서비스를 제공하기 위하여 다음과 같은 목적으로 개인정보를 수집하고 있습니다.
+                            <table class="privacy_table" style="width: 100%; font-size: 11px; border-collapse: collapse; margin-top: 10px; border: 1px solid #ddd;">
+                                <thead>
+                                    <tr style="background: #f7f8f9;">
+                                        <th style="border: 1px solid #ddd; padding: 5px; font-weight: bold;">목적</th>
+                                        <th style="border: 1px solid #ddd; padding: 5px; font-weight: bold;">항목</th>
+                                        <th style="border: 1px solid #ddd; padding: 5px; font-weight: bold;">보유기간</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr align="center">
+                                        <td style="border: 1px solid #ddd; padding: 5px;">상품 주문내역 안내, 상품배송</td>
+                                        <td style="border: 1px solid #ddd; padding: 5px;">
+                                            @if(isset($Overseas) && $Overseas == 'Y')
+                                                이름, 핸드폰번호, 주문자 이메일, 받는분 성함, 받는분 핸드폰, 받는분 주소
+                                            @else
+                                                주문자 정보(이름,핸드폰,이메일) 배송지정보(이름, 핸드폰, 주소)
+                                            @endif
+                                        </td>
+                                        <td style="border: 1px solid #ddd; padding: 5px;">개인정보는 서비스 제공 기간동안 보유 및 이용하며, 탈퇴 시 즉시 파기됩니다.</td>
+                                    </tr>
+                                    @if(isset($Overseas) && $Overseas == 'Y')
+                                    <tr align="center">
+                                        <td style="border: 1px solid #ddd; padding: 5px;">해외 직배송 상품 통관업무처리</td>
+                                        <td style="border: 1px solid #ddd; padding: 5px;">개인통관번호</td>
+                                        <td style="border: 1px solid #ddd; padding: 5px;">개인정보는 서비스 제공 기간동안 보유 및 이용하며, 탈퇴 시 즉시 파기됩니다.</td>
+                                    </tr>
+                                    @endif
+                                </tbody>
+                            </table>
+                            @if(!isset($Overseas) || $Overseas != 'Y')
+                                <div style="margin-top: 10px;">
+                                    개인정보 수집이용을 거부할 권리가 있습니다. <b>단, 거부시 상품구매 서비스를 이용하실 수 없습니다.</b>
+                                </div>
+                            @endif
+                        </div>
+                        <div style="font-size: 12px; text-align: center;">
+                            <label style="cursor:pointer;"><input type="radio" name="privacy_agree" value="Y"> 개인정보 수집ㆍ이용에 동의</label>
+                            <label style="cursor:pointer; margin-left:15px;"><input type="radio" name="privacy_agree" value="N" checked> 개인정보 수집ㆍ이용에 동의하지 않음</label>
+                        </div>
+                    </div>
+
+                    <!-- 개인정보 동의(선택) -->
+                    <div style="margin-top: 15px; background: #fff; border: 1px solid #cfd5da; padding: 15px;">
+                        <h6 style="margin:0 0 10px 0; font-size:13px; font-weight:bold;">개인정보 동의(선택)</h6>
+                        <div style="font-size: 11px; color: #666; height: 120px; overflow-y: scroll; border: 1px solid #e9ecef; background: #fff; padding: 10px; box-sizing: border-box; line-height: 1.4; margin-bottom: 10px;">
+                            도매토피아는 회원님께 최대한으로 최적화되고 맞춤화된 서비스를 제공하기 위하여 다음과 같은 목적으로 개인정보를 수집하고 있습니다.
+                            <table class="privacy_table" style="width: 100%; font-size: 11px; border-collapse: collapse; margin-top: 10px; border: 1px solid #ddd;">
+                                <thead>
+                                    <tr style="background: #f7f8f9;">
+                                        <th style="border: 1px solid #ddd; padding: 5px; font-weight: bold;">목적</th>
+                                        <th style="border: 1px solid #ddd; padding: 5px; font-weight: bold;">항목</th>
+                                        <th style="border: 1px solid #ddd; padding: 5px; font-weight: bold;">보유기간</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr align="center">
+                                        <td style="border: 1px solid #ddd; padding: 5px;">상품 주문내역 안내, 상품배송</td>
+                                        <td style="border: 1px solid #ddd; padding: 5px;">
+                                            @if(isset($Overseas) && $Overseas == 'Y')
+                                                주문자 전화 번호, 받는분 전화번호
+                                            @else
+                                                주문자 정보(전화번호) 배송지정보(전화번호)
+                                            @endif
+                                        </td>
+                                        <td style="border: 1px solid #ddd; padding: 5px;">
+                                            @if(isset($Overseas) && $Overseas == 'Y')
+                                                개인정보는 서비스제공기간동안 보유 및 이용하며, 탈퇴시 즉시 파기됩니다.
+                                            @else
+                                                개인정보는 서비스 제공 기간동안 보유 및 이용하며, 탈퇴 시 즉시 파기됩니다.
+                                            @endif
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            @if(!isset($Overseas) || $Overseas != 'Y')
+                                <div style="margin-top: 10px;">
+                                    개인정보 수집이용을 거부할 권리가 있습니다. 단, 거부시 서비스 이용에는 제한이 없습니다.
+                                </div>
+                            @endif
+                        </div>
+                        <div style="font-size: 12px; text-align: center;">
+                            <label style="cursor:pointer;"><input type="radio" name="privacy_agree_2" value="Y"> 개인정보 수집ㆍ이용에 동의</label>
+                            <label style="cursor:pointer; margin-left:15px;"><input type="radio" name="privacy_agree_2" value="N" checked> 개인정보 수집ㆍ이용에 동의하지 않음</label>
+                        </div>
+                    </div>
+
+                    <div class="btn_area_center" style="margin-top: 20px;">
+                        <button type="submit" class="btn-settle-submit">바로구매</button>
+                        <a href="{{ route('cart.index') }}" class="btn_cancel" style="display:block; width:100%; margin-top:10px; height:45px; line-height:43px; box-sizing:border-box; background:#555; color:#fff; text-align:center; text-decoration:none; font-weight:bold; border-radius:4px;">장바구니 돌아가기</a>
+                    </div>
+                </div>
+            </div>
 
                 @foreach($cart_seqs as $seq)
                     <input type="hidden" name="cart_seq[]" value="{{ $seq }}">
@@ -1243,10 +1634,40 @@ function updateFinalPrice() {
     let finalPrice = initialFinalPrice + extraShippingCost - couponDiscount - useEmoney - useCash + cardVat;
     if (finalPrice < 0) finalPrice = 0;
 
-    document.querySelector('.final_price').innerText = new Intl.NumberFormat().format(finalPrice);
+    // 모든 .final_price 클래스를 가진 엘리먼트 갱신
+    document.querySelectorAll('.final_price').forEach(el => {
+        el.innerText = new Intl.NumberFormat().format(finalPrice);
+    });
     
     const totalShipping = {{ $shipping + $packagingCost }} + extraShippingCost;
-    document.getElementById('total_shipping_display_text').innerText = new Intl.NumberFormat().format(totalShipping);
+    const shippingText = new Intl.NumberFormat().format(totalShipping);
+    
+    // 배송비 및 개별 할인/적립금 항목 실시간 갱신
+    const ship1 = document.getElementById('total_shipping_display_text');
+    if (ship1) ship1.innerText = shippingText;
+    const ship2 = document.getElementById('total_shipping_display_text_2');
+    if (ship2) ship2.innerText = shippingText;
+
+    const emoneyDisp = document.getElementById('use_emoney_display');
+    if (emoneyDisp) emoneyDisp.innerText = new Intl.NumberFormat().format(useEmoney);
+    const cashDisp = document.getElementById('use_cash_display');
+    if (cashDisp) cashDisp.innerText = new Intl.NumberFormat().format(useCash);
+
+    const couponDisp2 = document.getElementById('coupon_discount_display_text_2');
+    if (couponDisp2) couponDisp2.innerText = new Intl.NumberFormat().format(couponDiscount);
+
+    // 카드 수수료 가산 표기 제어
+    const surchargeRow = document.getElementById('card_surcharge_row');
+    const surchargeAmt = document.getElementById('card_surcharge_amount');
+    if (surchargeRow && surchargeAmt) {
+        if (cardVat > 0) {
+            surchargeRow.style.display = 'flex';
+            surchargeAmt.innerText = new Intl.NumberFormat().format(cardVat);
+        } else {
+            surchargeRow.style.display = 'none';
+            surchargeAmt.innerText = '0';
+        }
+    }
 }
 
 document.getElementById('download_seq').addEventListener('change', updateFinalPrice);
@@ -1262,11 +1683,11 @@ function toggleReceipt(type) {
         taxForm.style.display = 'none';
         cashForm.style.display = 'none';
     } else if (type == 1) { 
-        row.style.display = 'table-row';
+        row.style.display = 'block';
         taxForm.style.display = 'block';
         cashForm.style.display = 'none';
     } else if (type == 2) { 
-        row.style.display = 'table-row';
+        row.style.display = 'block';
         taxForm.style.display = 'none';
         cashForm.style.display = 'block';
     }
@@ -1388,15 +1809,10 @@ document.getElementById('orderForm').addEventListener('submit', function(e) {
         e.preventDefault();
         return false;
     }
-    const cancelAgree = document.querySelector('input[name="cancellation"]:checked');
-    if (!cancelAgree || cancelAgree.value !== 'Y') {
-        alert('청약철회 관련 방침에 동의하셔야 합니다.');
-        e.preventDefault();
-        return false;
-    }
     const privacyAgree = document.querySelector('input[name="privacy_agree"]:checked');
-    if (privacyAgree && privacyAgree.value !== 'Y') {
-        alert('비회원 개인정보 수집 이용에 동의하셔야 합니다.');
+    if (!privacyAgree || privacyAgree.value !== 'Y') {
+        alert('개인정보 수집ㆍ이용에 동의하셔야 합니다.');
+        if (privacyAgree) privacyAgree.focus();
         e.preventDefault();
         return false;
     }

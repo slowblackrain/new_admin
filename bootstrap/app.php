@@ -20,9 +20,9 @@ return Application::configure(basePath: dirname(__DIR__))
         
         // SAFE MODE: Rollback transactions on write methods when in local environment
         if (env('APP_ENV') === 'local') {
-            $middleware->web(append: [
-                \App\Http\Middleware\ForceTransactionRollback::class,
-            ]);
+            // $middleware->web(append: [
+            //     \App\Http\Middleware\ForceTransactionRollback::class,
+            // ]);
         }
 
         $middleware->redirectGuestsTo(function ($request) {
