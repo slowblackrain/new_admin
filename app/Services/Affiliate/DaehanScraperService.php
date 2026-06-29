@@ -11,11 +11,15 @@ class DaehanScraperService
     protected $loginId;
     protected $loginPassword;
 
-    public function __construct($loginId = 'dotob2b', $loginPassword = '0000')
+    public function __construct($loginId = null, $loginPassword = null)
     {
-        $this->baseUrl = 'https://www.daehan87.com';
-        $this->loginId = $loginId;
-        $this->loginPassword = $loginPassword;
+        $this->baseUrl = 'https://daehan87.com';
+        
+        $site = \App\Models\AffiliateSite::firstOrCreate(['name' => '대한판촉']);
+        $setting = \App\Models\AffiliateSetting::where('affiliate_site_id', $site->id)->first();
+        
+        $this->loginId = $loginId ?? ($setting->login_id ?? 'dotob2b');
+        $this->loginPassword = $loginPassword ?? ($setting->login_password ?? '0000');
     }
 
     /**
@@ -40,63 +44,124 @@ class DaehanScraperService
     public function registerProduct($goods)
     {
         $session = $this->login();
-        $client = $session['client'];
+        $jar = $session['jar'];
         
         // 1. 설정값 (마진, 배송비) 및 매핑된 카테고리 불러오기
         $site = \App\Models\AffiliateSite::firstOrCreate(['name' => '대한판촉']);
         $setting = \App\Models\AffiliateSetting::where('affiliate_site_id', $site->id)->first();
         $marginRate = $setting ? $setting->margin_rate : 0;
+        $shippingFee = $setting ? $setting->shipping_fee : 3000;
         
-        // 카테고리 매핑 로직 (단순화: 첫번째 매핑된 카테고리 사용)
-        $mapping = \App\Models\AffiliateCategoryMapping::where('affiliate_site_id', $site->id)
-            ->whereNotNull('affiliate_category_code')
-            ->first();
-        $affiliateCategory = $mapping ? $mapping->affiliate_category_code : '001001'; // Default fallback
-        
+        // 카테고리 매핑 로직 (해당 상품의 카테고리 중 첫번째 매핑된 것 사용)
+        $mappedCategory = \Illuminate\Support\Facades\DB::table('fm_category_link as cl')
+            ->join('affiliate_category_mappings as acm', 'cl.category_code', '=', 'acm.dometopia_category_code')
+            ->where('cl.goods_seq', $goods->goods_seq)
+            ->where('acm.affiliate_site_id', $site->id)
+            ->whereNotNull('acm.affiliate_category_code')
+            ->value('acm.affiliate_category_code');
+            
+        $affiliateCategory = $mappedCategory ?: '001001'; // Default fallback
+
         // 2. 소비자가 산출 (공급가 + 마진)
-        $supplyPrice = $goods->p_spl1 ?? 1000;
+        $supplyPrice = $goods->supply_price ?? ($goods->price ?? 1000);
         $sellingPrice = round($supplyPrice * (1 + ($marginRate / 100)));
 
-        // 3. 폼 파라미터 매핑 (대한판촉 양식)
+        // 3. 토큰 발급 (보안 우회)
+        $tokenResponse = Http::withoutVerifying()->withOptions(['cookies' => $jar])
+            ->withHeaders([
+                'Referer' => $this->baseUrl . '/mypage/page.php?code=seller_goods_form',
+                'X-Requested-With' => 'XMLHttpRequest'
+            ])
+            ->post($this->baseUrl . '/admin/ajax.token.php');
+            
+        $token = $tokenResponse->json('token') ?? '';
+
+        $sel_ca1 = substr($affiliateCategory, 0, 3);
+        $sel_ca2 = strlen($affiliateCategory) >= 6 ? substr($affiliateCategory, 0, 6) : '';
+        $sel_ca3 = strlen($affiliateCategory) >= 9 ? substr($affiliateCategory, 0, 9) : '';
+        $sel_ca4 = strlen($affiliateCategory) >= 12 ? substr($affiliateCategory, 0, 12) : '';
+        $sel_ca5 = strlen($affiliateCategory) >= 15 ? substr($affiliateCategory, 0, 15) : '';
+
+        // 4. 전송 파라미터 매핑 (대한판촉 양식)
         $multipartData = [
+            ['name' => 'token', 'contents' => $token],
             ['name' => 'w', 'contents' => ''],
-            ['name' => 'sel_ca_id', 'contents' => $affiliateCategory],
+            ['name' => 'gs_id', 'contents' => ''],
+            ['name' => 'mb_id', 'contents' => 'AP-10691'], // Use correct internal ID
+            ['name' => 'new_cate_str', 'contents' => $affiliateCategory],
+            ['name' => 'sel_ca1', 'contents' => $sel_ca1],
+            ['name' => 'sel_ca2', 'contents' => $sel_ca2],
+            ['name' => 'sel_ca3', 'contents' => $sel_ca3],
+            ['name' => 'sel_ca4', 'contents' => $sel_ca4],
+            ['name' => 'sel_ca5', 'contents' => $sel_ca5],
+            ['name' => 'isopen', 'contents' => '2'],
+            ['name' => 'notax', 'contents' => '1'],
             ['name' => 'gname', 'contents' => $goods->goods_name ?? '테스트 상품'],
             ['name' => 'gcode', 'contents' => $goods->goods_seq ?? time()],
-            ['name' => 'explan', 'contents' => $goods->goods_explan ?? '<p>상세설명입니다.</p>'],
+            ['name' => 'explan', 'contents' => $goods->contents ?? '<p>상세설명</p>'],
             ['name' => 'p_spl1', 'contents' => $supplyPrice],
             ['name' => 'p_mny1', 'contents' => $sellingPrice],
             ['name' => 'it_qty_set', 'contents' => '1'],
+            ['name' => 'is_free', 'contents' => '0'], // 0: 조건부, 1: 무료
+            ['name' => 'sc_price', 'contents' => $shippingFee],
+            ['name' => 'notax', 'contents' => ($goods->tax_type ?? 'tax') === 'tax' ? '0' : '1'], // 0: 과세, 1: 비과세
+            ['name' => 'opt_use', 'contents' => '0'],
             ['name' => 'image_use_yn', 'contents' => 'y'],
             ['name' => 'agree', 'contents' => 'on'], // 약관 동의
+            ['name' => 'naver_shop_use', 'contents' => 'N'],
+            ['name' => 'daum_shop_use', 'contents' => 'N'],
+            ['name' => 'it_opt1_txt', 'contents' => '기본옵션'], // 규격
+            ['name' => 'buy_level', 'contents' => '10'],
+            ['name' => 'stock_mod', 'contents' => '0'],
+            ['name' => 'money_type', 'contents' => '0'],
+            ['name' => 'money_yo', 'contents' => '%'],
+            ['name' => 'money_dan', 'contents' => '0'],
+            ['name' => 'img_mod', 'contents' => '0']
         ];
         
-        // 이미지 추가 로직 (생략 - 실제 구현 시 URL에서 다운로드 후 첨부)
-        
-        $dummyImage = tmpfile();
-        fwrite($dummyImage, 'dummy content');
-        fseek($dummyImage, 0);
-        $dummyPath = stream_get_meta_data($dummyImage)['uri'];
+        // 4-1. 대표 이미지 처리 (URL 다운로드 후 임시파일로 첨부)
+        $firstImage = $goods->images->first();
+        $dummyPath = '';
+        if ($firstImage && $firstImage->image) {
+            $imageUrl = $firstImage->image;
+            // 만약 상대경로라면 기본 도메인 추가 (안전장치)
+            if (!str_starts_with($imageUrl, 'http')) {
+                $imageUrl = 'https://dometopia.com' . (str_starts_with($imageUrl, '/') ? '' : '/') . $imageUrl;
+            }
+            try {
+                $imageContent = file_get_contents($imageUrl);
+                if ($imageContent) {
+                    $tempFile = tmpfile();
+                    fwrite($tempFile, $imageContent);
+                    fseek($tempFile, 0);
+                    $dummyPath = stream_get_meta_data($tempFile)['uri'];
+                    
+                    $multipartData[] = [
+                        'name' => 'simg1',
+                        'contents' => fopen($dummyPath, 'r'),
+                        'filename' => basename($imageUrl)
+                    ];
+                }
+            } catch (\Exception $e) {
+                // 다운로드 실패 시 무시
+            }
+        }
 
-        $multipartData[] = [
-            'name' => 'simg1',
-            'contents' => fopen($dummyPath, 'r'),
-            'filename' => 'dummy.jpg'
-        ];
-
-        // 4. POST 전송
+        // 5. POST 전송
         try {
-            $response = $client->asMultipart()->withHeaders([
-                'Referer' => $this->baseUrl . '/mypage/page.php?code=seller_goods_form'
+            $response = Http::withoutVerifying()->withOptions(['cookies' => $jar])
+                ->asMultipart()->withHeaders([
+                'Referer' => $this->baseUrl . '/mypage/page.php?code=seller_goods_form',
+                'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
             ])->post($this->baseUrl . '/mypage/seller_goods_form_update.php', $multipartData);
             
-            // 등록 성공 여부를 응답 HTML 기반으로 판단
-            // update.php는 통상적으로 alert를 띄우고 리다이렉트 시키거나 바로 리다이렉트 합니다.
             $body = $response->body();
+            \Illuminate\Support\Facades\Log::info("Daehan87 Response Body: \n" . $body);
+            
             $isSuccess = strpos($body, '등록되었습니다') !== false 
                          || $response->status() == 302 
                          || strpos($body, 'location.replace') !== false;
-            
+                         
             $errorMessage = null;
             if (!$isSuccess) {
                 if (strpos($body, '올바른 방법으로 이용해 주십시오') !== false) {
@@ -109,7 +174,7 @@ class DaehanScraperService
             return [
                 'success' => $isSuccess,
                 'message' => $errorMessage ?? '성공',
-                'affiliate_goods_code' => $goods->goods_seq,
+                'affiliate_goods_code' => $goods->goods_seq ?? null,
                 'selling_price' => $sellingPrice
             ];
         } catch (\Exception $e) {
@@ -126,9 +191,10 @@ class DaehanScraperService
     public function fetchCategories()
     {
         $session = $this->login();
-        $client = $session['client'];
+        $jar = $session['jar'];
         
-        $response = $client->get($this->baseUrl . '/mypage/page.php?code=seller_goods_form');
+        $response = Http::withoutVerifying()->withOptions(['cookies' => $jar])
+                        ->get($this->baseUrl . '/mypage/page.php?code=seller_goods_form');
         $html = $response->body();
         
         // 대한판촉은 HTML 태그가 아니라 Javascript 변수(multi_select)로 카테고리를 가지고 있음
@@ -178,9 +244,10 @@ class DaehanScraperService
     public function fetchOrders($date = null)
     {
         $session = $this->login();
-        $client = $session['client'];
+        $jar = $session['jar'];
         
-        $response = $client->get($this->baseUrl . '/mypage/page.php?code=seller_itemorder_sel');
+        $response = Http::withoutVerifying()->withOptions(['cookies' => $jar])
+                        ->get($this->baseUrl . '/mypage/page.php?code=seller_itemorder_sel');
         $html = $response->body();
         $crawler = new Crawler($html);
         

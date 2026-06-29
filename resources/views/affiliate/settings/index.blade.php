@@ -30,8 +30,30 @@
         
         <div class="bg-white/80 backdrop-blur-xl shadow-sm ring-1 ring-slate-900/5 sm:rounded-xl overflow-hidden mb-8">
             <div class="px-4 py-5 sm:p-6">
-                <h3 class="text-base font-semibold leading-6 text-slate-900 mb-5">판매 정책 설정</h3>
+                <h3 class="text-base font-semibold leading-6 text-slate-900 mb-5">계정 및 판매 정책 설정</h3>
                 
+                <div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6 mb-8 border-b border-slate-900/10 pb-8">
+                    <div class="sm:col-span-3">
+                        <label for="login_id" class="block text-sm font-medium leading-6 text-slate-900">대한판촉 로그인 아이디</label>
+                        <div class="mt-2 relative rounded-md shadow-sm">
+                            <input type="text" name="login_id" id="login_id" value="{{ old('login_id', $setting->login_id ?? 'dotob2b') }}" class="block w-full rounded-md border-0 py-2.5 pl-3 pr-4 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 transition-all" placeholder="아이디 입력">
+                        </div>
+                        @error('login_id')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div class="sm:col-span-3">
+                        <label for="login_password" class="block text-sm font-medium leading-6 text-slate-900">대한판촉 로그인 비밀번호</label>
+                        <div class="mt-2 relative rounded-md shadow-sm">
+                            <input type="password" name="login_password" id="login_password" value="{{ old('login_password', $setting->login_password ?? '0000') }}" class="block w-full rounded-md border-0 py-2.5 pl-3 pr-4 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 transition-all" placeholder="비밀번호 입력">
+                        </div>
+                        @error('login_password')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
                     <div class="sm:col-span-3">
                         <label for="margin_rate" class="block text-sm font-medium leading-6 text-slate-900">기본 마진율 (%)</label>

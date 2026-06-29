@@ -28,20 +28,20 @@ class TestDaehanProductSync extends Command
     {
         $this->info('대한판촉 스크래핑 상품 등록 테스트를 시작합니다...');
 
-        $scraper = new DaehanScraperService('dotob2b', '0000');
+        $scraper = new DaehanScraperService();
         
-        // Mock Dometopia Goods Object
-        $mockGoods = new \stdClass();
-        $mockGoods->goods_seq = 'TEST_' . date('His');
-        $mockGoods->goods_name = '[테스트] 도매토피아 자동 연동 상품 ' . date('His');
-        $mockGoods->goods_explan = '<p>자동 연동 테스트 상세설명입니다.</p>';
-        $mockGoods->p_spl1 = 5000; // Supply Price
+        $goods = \App\Models\Goods::with(['images', 'defaultOption.supply'])->first();
+        if (!$goods) {
+            $this->error('상품을 찾을 수 없습니다.');
+            return;
+        }
         
-        $this->info('테스트 상품 데이터를 전송합니다...');
-        $this->line('상품명: ' . $mockGoods->goods_name);
-        $this->line('공급가: ' . number_format($mockGoods->p_spl1) . '원');
+        $this->info('테스트 상품 데이터를 전송합니다... (Dry-Run)');
+        $this->line('상품명: ' . $goods->goods_name);
+        $this->line('공급가: ' . number_format($goods->supply_price) . '원');
+        $this->line('이미지: ' . ($goods->images->first()->image ?? '없음'));
         
-        $result = $scraper->registerProduct($mockGoods);
+        $result = $scraper->registerProduct($goods);
 
         if ($result['success']) {
             $this->info('상품 등록 스크래핑 폼 전송 성공!');

@@ -13,15 +13,23 @@
             selectedName: initialName || '',
             options: window.daehanCategories,
             
-            get filteredOptions() {
+            get fullFilteredOptions() {
                 if (this.search === '') {
-                    return this.options.slice(0, 100);
+                    return this.options;
                 }
                 const q = this.search.toLowerCase();
                 return this.options.filter(i => 
                     i.name.toLowerCase().includes(q) || 
                     i.code.includes(q)
-                ).slice(0, 100);
+                );
+            },
+            
+            get filteredOptions() {
+                return this.fullFilteredOptions.slice(0, 100);
+            },
+            
+            get hasMore() {
+                return this.fullFilteredOptions.length > 100;
             },
             
             selectItem(item) {
@@ -107,28 +115,44 @@
         </form>
     </div>
 
-    <div class="mb-6 flex space-x-2 border-b border-gray-200 pb-4">
-        <a href="{{ request()->fullUrlWithQuery(['filter' => 'all']) }}" 
-           class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium transition-colors border {{ request('filter', 'all') == 'all' ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50' }}">
-            전체 리스트
-            <span class="ml-2 inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold {{ request('filter', 'all') == 'all' ? 'bg-white text-slate-800' : 'bg-slate-100 text-slate-600' }}">
-                {{ number_format($counts['all'] ?? 0) }}
-            </span>
-        </a>
-        <a href="{{ request()->fullUrlWithQuery(['filter' => 'mapped']) }}" 
-           class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium transition-colors border {{ request('filter') == 'mapped' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50' }}">
-            매핑 완료
-            <span class="ml-2 inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold {{ request('filter') == 'mapped' ? 'bg-white text-emerald-700' : 'bg-slate-100 text-slate-600' }}">
-                {{ number_format($counts['mapped'] ?? 0) }}
-            </span>
-        </a>
-        <a href="{{ request()->fullUrlWithQuery(['filter' => 'unmapped']) }}" 
-           class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium transition-colors border {{ request('filter') == 'unmapped' ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50' }}">
-            미매핑
-            <span class="ml-2 inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold {{ request('filter') == 'unmapped' ? 'bg-white text-amber-700' : 'bg-slate-100 text-slate-600' }}">
-                {{ number_format($counts['unmapped'] ?? 0) }}
-            </span>
-        </a>
+    <div class="mb-6 flex space-x-2 border-b border-gray-200 pb-4 justify-between items-center">
+        <div class="flex space-x-2">
+            <a href="{{ request()->fullUrlWithQuery(['filter' => 'all', 'page' => 1]) }}" 
+               class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium transition-colors border {{ request('filter', 'all') == 'all' ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50' }}">
+                전체 리스트
+                <span class="ml-2 inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold {{ request('filter', 'all') == 'all' ? 'bg-white text-slate-800' : 'bg-slate-100 text-slate-600' }}">
+                    {{ number_format($counts['all'] ?? 0) }}
+                </span>
+            </a>
+            <a href="{{ request()->fullUrlWithQuery(['filter' => 'mapped', 'page' => 1]) }}" 
+               class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium transition-colors border {{ request('filter') == 'mapped' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50' }}">
+                매핑 완료
+                <span class="ml-2 inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold {{ request('filter') == 'mapped' ? 'bg-white text-emerald-700' : 'bg-slate-100 text-slate-600' }}">
+                    {{ number_format($counts['mapped'] ?? 0) }}
+                </span>
+            </a>
+            <a href="{{ request()->fullUrlWithQuery(['filter' => 'unmapped', 'page' => 1]) }}" 
+               class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium transition-colors border {{ request('filter') == 'unmapped' ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50' }}">
+                미매핑
+                <span class="ml-2 inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold {{ request('filter') == 'unmapped' ? 'bg-white text-amber-700' : 'bg-slate-100 text-slate-600' }}">
+                    {{ number_format($counts['unmapped'] ?? 0) }}
+                </span>
+            </a>
+        </div>
+        
+        <div>
+            <form id="categoryFilterForm" method="GET" action="{{ route('affiliate.settings.category') }}" class="flex items-center">
+                <input type="hidden" name="filter" value="{{ request('filter', 'all') }}">
+                <select name="category_code" onchange="document.getElementById('categoryFilterForm').submit()" class="block w-64 rounded-md border-0 py-1.5 pl-3 pr-10 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <option value="">대분류 필터 (전체보기)</option>
+                    @foreach($syncCategories as $cat)
+                    <option value="{{ $cat->category_code }}" {{ $selectedCategory == $cat->category_code ? 'selected' : '' }}>
+                        {{ $cat->title }}
+                    </option>
+                    @endforeach
+                </select>
+            </form>
+        </div>
     </div>
 
     @if(session('success'))
@@ -203,15 +227,18 @@
                                         </div>
                                     </div>
                                         
-                                    <div x-cloak x-show="open" class="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm border border-slate-200">
+                                    <div x-cloak x-show="open" class="absolute z-50 mt-1 max-h-60 min-w-full w-[400px] max-w-[90vw] overflow-y-auto overflow-x-hidden rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm border border-slate-200" style="white-space: normal;">
                                         <template x-for="item in filteredOptions" :key="item.code">
                                             <div @click="selectItem(item)" class="relative cursor-pointer select-none py-2 pl-3 pr-4 text-slate-900 hover:bg-indigo-600 hover:text-white group">
-                                                <span class="block truncate font-medium text-sm group-hover:text-white" x-text="item.name"></span>
-                                                <span class="block truncate text-xs text-slate-500 group-hover:text-indigo-200 mt-0.5" x-text="item.code"></span>
+                                                <span class="block font-medium text-sm group-hover:text-white leading-relaxed" x-text="item.name" style="white-space: normal; word-break: keep-all; overflow-wrap: break-word;"></span>
+                                                <span class="block mt-1 text-xs text-slate-500 group-hover:text-indigo-200" x-text="item.code"></span>
                                             </div>
                                         </template>
                                         <div x-show="filteredOptions.length === 0" class="relative cursor-default select-none py-3 pl-3 pr-9 text-slate-500 text-sm">
                                             검색 결과가 없습니다.
+                                        </div>
+                                        <div x-show="hasMore" class="relative cursor-default select-none py-2.5 pl-3 pr-4 text-indigo-600 text-sm bg-indigo-50 border-t border-indigo-100 font-medium text-center">
+                                            결과가 100건이 넘습니다. 검색어를 더 구체적으로 입력해 주세요.
                                         </div>
                                     </div>
                                 </div>

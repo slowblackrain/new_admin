@@ -14,6 +14,46 @@ use Illuminate\Support\Facades\Cache;
 class AffiliateSettingController extends Controller
 {
     /**
+     * 제휴처 기본 환경설정 화면 (마진율, 배송비 등)
+     */
+    public function index()
+    {
+        $site = AffiliateSite::firstOrCreate(['name' => '대한판촉']);
+        $setting = AffiliateSetting::firstOrCreate(
+            ['affiliate_site_id' => $site->id],
+            ['margin_rate' => 0, 'shipping_fee' => 3000]
+        );
+
+        return view('affiliate.settings.index', compact('site', 'setting'));
+    }
+
+    /**
+     * 제휴처 기본 환경설정 저장
+     */
+    public function store(Request $request)
+    {
+        $request->validate([
+            'site_id' => 'required|exists:affiliate_sites,id',
+            'login_id' => 'nullable|string|max:255',
+            'login_password' => 'nullable|string|max:255',
+            'margin_rate' => 'required|numeric|min:0|max:1000',
+            'shipping_fee' => 'required|numeric|min:0',
+        ]);
+
+        AffiliateSetting::updateOrCreate(
+            ['affiliate_site_id' => $request->site_id],
+            [
+                'login_id' => $request->login_id,
+                'login_password' => $request->login_password,
+                'margin_rate' => $request->margin_rate,
+                'shipping_fee' => $request->shipping_fee,
+            ]
+        );
+
+        return back()->with('success', '설정이 성공적으로 저장되었습니다.');
+    }
+
+    /**
      * 카테고리 매핑 설정 화면
      */
     public function categoryMapping(Request $request)
@@ -21,16 +61,28 @@ class AffiliateSettingController extends Controller
         $site = AffiliateSite::firstOrCreate(['name' => '대한판촉']);
         
         $daehanCategories = Cache::remember('daehan_categories', 86400, function () {
-            $scraper = new DaehanScraperService('dotob2b', '0000');
+            $scraper = new DaehanScraperService();
             return $scraper->fetchCategories();
         });
         
+        $daehanCategoryCodes = array_keys($daehanCategories);
         $daehanCategoriesList = [];
         foreach ($daehanCategories as $code => $name) {
-            $daehanCategoriesList[] = [
-                'code' => $code,
-                'name' => $name
-            ];
+            // 자식 카테고리가 있는지 검사 (자신을 제외하고, 이 코드로 시작하는 코드가 있는지)
+            $isLeaf = true;
+            foreach ($daehanCategoryCodes as $otherCode) {
+                if ($code !== $otherCode && str_starts_with($otherCode, $code)) {
+                    $isLeaf = false;
+                    break;
+                }
+            }
+            
+            if ($isLeaf) {
+                $daehanCategoriesList[] = [
+                    'code' => $code,
+                    'name' => $name
+                ];
+            }
         }
         
         // 1. 부모 조회용 전체 카테고리 (해시맵)
@@ -38,14 +90,26 @@ class AffiliateSettingController extends Controller
         
         // 2. 리프 카테고리 추출
         // 조건: hide = '0', list_use = 'y', level >= 2, 자식이 없는 카테고리(리프)
-        $leaves = Category::where('hide', '0')
+        $selectedCategory = $request->input('category_code');
+        
+        $syncCategories = \App\Models\Category::where('level', 2)
+            ->where('hide', '0')
+            ->orderBy('position')
+            ->get();
+            
+        $leavesQuery = Category::where('hide', '0')
             ->where('list_use', 'y')
             ->where('level', '>=', 2)
             ->whereDoesntHave('children', function($query) {
                 $query->where('hide', '0')
                       ->where('list_use', 'y');
-            })
-            ->get();
+            });
+            
+        if ($selectedCategory) {
+            $leavesQuery->where('category_code', 'like', $selectedCategory . '%');
+        }
+            
+        $leaves = $leavesQuery->get();
 
         $mappedCodes = AffiliateCategoryMapping::where('affiliate_site_id', $site->id)
             ->pluck('dometopia_category_code')
@@ -137,7 +201,9 @@ class AffiliateSettingController extends Controller
             'categories' => $paginatedCategories, 
             'mappings' => $mappings,
             'counts' => $counts,
-            'daehanCategoriesJson' => json_encode($daehanCategoriesList)
+            'daehanCategoriesJson' => json_encode($daehanCategoriesList),
+            'syncCategories' => $syncCategories,
+            'selectedCategory' => $selectedCategory
         ]);
     }
 
@@ -185,7 +251,7 @@ class AffiliateSettingController extends Controller
         
         // 카테고리 스크래핑 및 캐싱 (1일 보관)
         $daehanCategories = Cache::remember('daehan_categories', 86400, function () {
-            $scraper = new DaehanScraperService('dotob2b', '0000');
+            $scraper = new DaehanScraperService();
             return $scraper->fetchCategories();
         });
 
@@ -290,19 +356,35 @@ class AffiliateSettingController extends Controller
     /**
      * 상품 동기화 대시보드 화면
      */
-    public function syncIndex()
+    public function syncIndex(Request $request)
     {
-        $site = AffiliateSite::firstOrCreate(['name' => '대한판촉']);
+        $siteId = $request->input('site_id');
+        $sites = AffiliateSite::where('is_active', 1)->get();
+        if ($siteId) {
+            $site = $sites->where('id', $siteId)->first();
+        } else {
+            $site = $sites->first();
+        }
         
+        if (!$site) {
+            // Fallback
+            $site = AffiliateSite::firstOrCreate(['name' => '대한판촉', 'is_active' => 1]);
+            $sites = collect([$site]);
+        }
         $mappedCodes = AffiliateCategoryMapping::where('affiliate_site_id', $site->id)
             ->whereNotNull('affiliate_category_code')
             ->pluck('dometopia_category_code')
             ->toArray();
+        $selectedCategory = $request->input('category_code');
+        
+        $syncCategories = \App\Models\Category::where('level', 2)
+            ->where('hide', '0')
+            ->orderBy('position')
+            ->get();
             
         // 매핑된 카테고리에 속한 대상 상품의 고유 개수 (정상/노출/특정 scode 제외/link_yn='Y')
-        $totalTargetCount = \Illuminate\Support\Facades\DB::table('fm_category_link')
+        $query = \Illuminate\Support\Facades\DB::table('fm_category_link')
             ->join('fm_goods', 'fm_category_link.goods_seq', '=', 'fm_goods.goods_seq')
-            ->whereIn('fm_category_link.category_code', $mappedCodes)
             ->where('fm_goods.link_yn', 'Y')
             ->where('fm_goods.goods_view', 'Look')
             ->where('fm_goods.goods_status', 'normal')
@@ -313,23 +395,152 @@ class AffiliateSettingController extends Controller
                   ->where('fm_goods.goods_scode', 'not like', 'GUS%')
                   ->where('fm_goods.goods_scode', 'not like', 'TRO%')
                   ->orWhereNull('fm_goods.goods_scode'); // null인 경우도 포함 (조건에 따라)
+            });
+            
+        if ($selectedCategory) {
+            // 선택된 카테고리로 시작하는 카테고리 (하위 포함) 중 매핑된 것만
+            $filteredMappedCodes = array_filter($mappedCodes, function($code) use ($selectedCategory) {
+                return str_starts_with($code, $selectedCategory);
+            });
+            
+            if (empty($filteredMappedCodes)) {
+                $query->whereRaw('1 = 0'); // 결과 없도록 강제
+            } else {
+                $query->whereIn('fm_category_link.category_code', $filteredMappedCodes);
+            }
+        } else {
+            $query->whereIn('fm_category_link.category_code', $mappedCodes);
+        }
+            
+        $totalTargetCount = $query->distinct('fm_category_link.goods_seq')
+            ->count('fm_category_link.goods_seq');
+            
+        // 서브쿼리로 대상 중 성공/실패 수 조회
+        // 카테고리 필터가 있는 경우, 조인을 통해 필터링
+        $successCount = (clone $query)
+            ->join('affiliate_goods_syncs as s', function($join) use ($site) {
+                $join->on('fm_category_link.goods_seq', '=', 's.goods_seq')
+                     ->where('s.affiliate_site_id', '=', $site->id)
+                     ->where('s.sync_status', '=', 'success');
             })
             ->distinct('fm_category_link.goods_seq')
             ->count('fm_category_link.goods_seq');
             
-        // 서브쿼리로 대상 중 성공/실패 수 조회
-        $successCount = \App\Models\AffiliateGoodsSync::where('affiliate_site_id', $site->id)
-            ->where('sync_status', 'success')
-            ->count();
-            
-        $failedCount = \App\Models\AffiliateGoodsSync::where('affiliate_site_id', $site->id)
-            ->where('sync_status', 'failed')
-            ->count();
+        $failedCount = (clone $query)
+            ->join('affiliate_goods_syncs as s', function($join) use ($site) {
+                $join->on('fm_category_link.goods_seq', '=', 's.goods_seq')
+                     ->where('s.affiliate_site_id', '=', $site->id)
+                     ->where('s.sync_status', '=', 'failed');
+            })
+            ->distinct('fm_category_link.goods_seq')
+            ->count('fm_category_link.goods_seq');
             
         $pendingCount = $totalTargetCount - $successCount;
         if ($pendingCount < 0) $pendingCount = 0;
 
-        return view('affiliate.settings.sync', compact('site', 'totalTargetCount', 'successCount', 'failedCount', 'pendingCount'));
+        // === 최적화된 수동 페이징 로직 (MySQL 옵티마이저 버그 우회 및 Set Difference 기법) ===
+        $tab = $request->input('tab', 'all');
+        $page = (int)$request->input('page', 1);
+        $perPage = 50;
+
+        // 1. 전체 대상 상품의 ID만 빠르게 추출 (약 0.5초 소요)
+        $targetIdsQuery = \Illuminate\Support\Facades\DB::table('fm_goods as g')
+            ->select('g.goods_seq')
+            ->join('fm_category_link as cl', 'g.goods_seq', '=', 'cl.goods_seq');
+
+        if ($selectedCategory) {
+            if (empty($filteredMappedCodes)) {
+                $targetIdsQuery->whereRaw('1 = 0');
+            } else {
+                $targetIdsQuery->whereIn('cl.category_code', $filteredMappedCodes);
+            }
+        } else {
+            $targetIdsQuery->whereIn('cl.category_code', $mappedCodes);
+        }
+
+        $targetIdsQuery->where('g.link_yn', 'Y')
+                       ->where('g.goods_view', 'Look')
+                       ->where('g.goods_status', 'normal')
+                       ->where(function($q) {
+                           $q->where('g.goods_scode', 'not like', 'AKS%')
+                             ->where('g.goods_scode', 'not like', 'ATS%')
+                             ->where('g.goods_scode', 'not like', 'GKM%')
+                             ->where('g.goods_scode', 'not like', 'GUS%')
+                             ->where('g.goods_scode', 'not like', 'TRO%')
+                             ->orWhereNull('g.goods_scode');
+                       });
+
+        // 타겟 상품 고유 시퀀스 추출
+        $targetIds = $targetIdsQuery->distinct()->pluck('g.goods_seq')->toArray();
+
+        // 2. 탭 조건에 맞게 PHP 메모리 상에서 차집합/교집합 수행 (0.1초 내외)
+        $finalIds = [];
+
+        if ($tab === 'all') {
+            $finalIds = $targetIds;
+        } else {
+            // 해당 제휴사의 성공 및 실패한 상품 번호만 빠르게 추출
+            $successIds = \Illuminate\Support\Facades\DB::table('affiliate_goods_syncs')
+                ->where('affiliate_site_id', $site->id)
+                ->where('sync_status', 'success')
+                ->pluck('goods_seq')->toArray();
+
+            $failedIds = \Illuminate\Support\Facades\DB::table('affiliate_goods_syncs')
+                ->where('affiliate_site_id', $site->id)
+                ->where('sync_status', 'failed')
+                ->pluck('goods_seq')->toArray();
+
+            if ($tab === 'success') {
+                $finalIds = array_values(array_intersect($targetIds, $successIds));
+            } elseif ($tab === 'failed') {
+                $finalIds = array_values(array_intersect($targetIds, $failedIds));
+            } elseif ($tab === 'pending') {
+                // 대기(미전송) = 타겟 전체 - (성공 + 실패)
+                $syncedIds = array_merge($successIds, $failedIds);
+                $finalIds = array_values(array_diff($targetIds, $syncedIds));
+            }
+        }
+
+        // 3. 최신순으로 정렬 후 현재 페이지에 표출될 50개 항목만 자르기 (array_slice)
+        rsort($finalIds);
+        $totalItems = count($finalIds);
+        $seqs = array_slice($finalIds, ($page - 1) * $perPage, $perPage);
+
+        // 4. 수동 Paginator 객체 생성
+        $paginatedGoods = new \Illuminate\Pagination\LengthAwarePaginator(
+            [], // 컬렉션은 하단에서 맵핑 후 주입
+            $totalItems,
+            $perPage,
+            $page,
+            ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath(), 'query' => $request->all()]
+        );
+
+        if (!empty($seqs)) {
+            $fullItems = \Illuminate\Support\Facades\DB::table('fm_goods as g')
+                ->select(
+                    'g.goods_seq', 'g.goods_name', 'g.goods_scode', 'go.price', 
+                    's.sync_status', 's.error_message', 's.last_synced_at', 's.affiliate_goods_code'
+                )
+                ->leftJoin('fm_goods_option as go', function($join) {
+                    $join->on('g.goods_seq', '=', 'go.goods_seq')
+                         ->where('go.default_option', '=', 'y');
+                })
+                ->leftJoin('affiliate_goods_syncs as s', function($join) use ($site) {
+                    $join->on('g.goods_seq', '=', 's.goods_seq')
+                         ->where('s.affiliate_site_id', '=', $site->id);
+                })
+                ->whereIn('g.goods_seq', $seqs)
+                ->get();
+                
+            $keyedItems = $fullItems->keyBy('goods_seq');
+            $sortedItems = collect($seqs)->map(function($seq) use ($keyedItems) {
+                return $keyedItems[$seq] ?? null;
+            })->filter();
+            
+            $paginatedGoods->setCollection($sortedItems);
+        }
+
+        return view('affiliate.settings.sync', compact('sites', 'site', 'totalTargetCount', 'successCount', 'failedCount', 'pendingCount', 'syncCategories', 'selectedCategory', 'paginatedGoods', 'tab'));
     }
 
     /**
@@ -337,7 +548,12 @@ class AffiliateSettingController extends Controller
      */
     public function syncChunk(Request $request)
     {
-        $site = AffiliateSite::firstOrCreate(['name' => '대한판촉']);
+        $siteId = $request->input('site_id');
+        $site = AffiliateSite::find($siteId);
+        if (!$site) {
+            return response()->json(['status' => 'error', 'message' => '제휴처를 찾을 수 없습니다.']);
+        }
+        
         $chunkSize = 1; // 테스트 모드: 한 번에 1개씩만 전송
         
         $mappedCodes = AffiliateCategoryMapping::where('affiliate_site_id', $site->id)
@@ -354,10 +570,11 @@ class AffiliateSettingController extends Controller
             ->pluck('goods_seq')
             ->toArray();
             
+        $selectedCategory = $request->input('category_code');
+        
         // 미전송(또는 실패) 상품 추출 (정상/노출/특정 scode 제외/link_yn='Y')
         $query = \Illuminate\Support\Facades\DB::table('fm_category_link')
             ->join('fm_goods', 'fm_category_link.goods_seq', '=', 'fm_goods.goods_seq')
-            ->whereIn('fm_category_link.category_code', $mappedCodes)
             ->where('fm_goods.link_yn', 'Y')
             ->where('fm_goods.goods_view', 'Look')
             ->where('fm_goods.goods_status', 'normal')
@@ -369,6 +586,19 @@ class AffiliateSettingController extends Controller
                   ->where('fm_goods.goods_scode', 'not like', 'TRO%')
                   ->orWhereNull('fm_goods.goods_scode');
             });
+            
+        if ($selectedCategory) {
+            $filteredMappedCodes = array_filter($mappedCodes, function($code) use ($selectedCategory) {
+                return str_starts_with($code, $selectedCategory);
+            });
+            
+            if (empty($filteredMappedCodes)) {
+                return response()->json(['status' => 'done', 'message' => '해당 카테고리에 매핑된 상품이 없습니다.']);
+            }
+            $query->whereIn('fm_category_link.category_code', $filteredMappedCodes);
+        } else {
+            $query->whereIn('fm_category_link.category_code', $mappedCodes);
+        }
             
         if (!empty($alreadySuccessSeqs)) {
             $query->whereNotIn('fm_category_link.goods_seq', $alreadySuccessSeqs);
@@ -385,10 +615,66 @@ class AffiliateSettingController extends Controller
         }
         
         $results = [];
-        $scraper = new DaehanScraperService('dotob2b', '0000');
+        if ($site->name === '오너클랜') {
+            $scraper = new \App\Services\Affiliate\OwnerclanService();
+        } else {
+            $scraper = new \App\Services\Affiliate\DaehanScraperService();
+        }
         
         $goodsList = \Illuminate\Support\Facades\DB::table('fm_goods')
             ->whereIn('goods_seq', $goodsSeqsToSync)
+            ->get();
+            
+        foreach ($goodsList as $goods) {
+            $res = $scraper->registerProduct($goods);
+            
+            \App\Models\AffiliateGoodsSync::updateOrCreate(
+                ['affiliate_site_id' => $site->id, 'goods_seq' => $goods->goods_seq],
+                [
+                    'sync_status' => $res['success'] ? 'success' : 'failed',
+                    'error_message' => $res['message'] ?? null,
+                    'last_synced_at' => now(),
+                    'affiliate_goods_code' => $res['affiliate_goods_code'] ?? null
+                ]
+            );
+            
+            $results[] = [
+                'goods_seq' => $goods->goods_seq,
+                'goods_name' => $goods->goods_name,
+                'success' => $res['success'],
+                'message' => $res['message'] ?? '전송 성공'
+            ];
+        }
+        
+        return response()->json(['status' => 'ok', 'results' => $results]);
+    }
+
+    /**
+     * 선택된 상품 강제 동기화 (AJAX)
+     */
+    public function syncSelected(Request $request)
+    {
+        $siteId = $request->input('site_id');
+        $site = AffiliateSite::find($siteId);
+        if (!$site) {
+            return response()->json(['status' => 'error', 'message' => '제휴처를 찾을 수 없습니다.']);
+        }
+        
+        $goodsSeqs = $request->input('goods_seqs', []);
+        
+        if (empty($goodsSeqs)) {
+            return response()->json(['status' => 'error', 'message' => '선택된 상품이 없습니다.']);
+        }
+        
+        $results = [];
+        if ($site->name === '오너클랜') {
+            $scraper = new \App\Services\Affiliate\OwnerclanService();
+        } else {
+            $scraper = new \App\Services\Affiliate\DaehanScraperService();
+        }
+        
+        $goodsList = \Illuminate\Support\Facades\DB::table('fm_goods')
+            ->whereIn('goods_seq', $goodsSeqs)
             ->get();
             
         foreach ($goodsList as $goods) {

@@ -14,9 +14,9 @@ return new class extends Migration
         Schema::create('affiliate_goods_syncs', function (Blueprint $table) {
             $table->id();
             $table->foreignId('affiliate_site_id')->constrained()->onDelete('cascade');
-            $table->string('goods_seq')->comment('도매토피아 상품 번호');
+            $table->string('goods_seq')->comment('도매토피아 상품 번호')->index();
             $table->string('affiliate_goods_code')->nullable()->comment('제휴사 측 상품 코드');
-            $table->enum('sync_status', ['pending', 'success', 'failed'])->default('pending');
+            $table->enum('sync_status', ['pending', 'success', 'failed'])->default('pending')->index();
             $table->text('error_message')->nullable();
             $table->timestamp('last_synced_at')->nullable();
             $table->timestamps();

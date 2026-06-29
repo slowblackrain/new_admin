@@ -34,6 +34,9 @@
                             <a href="{{ route('affiliate.dashboard') }}" class="{{ request()->routeIs('affiliate.dashboard') ? 'border-indigo-500 text-slate-900' : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700' }} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                                 대시보드
                             </a>
+                            <a href="{{ route('affiliate.settings.index') }}" class="{{ request()->routeIs('affiliate.settings.index') ? 'border-indigo-500 text-slate-900' : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700' }} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
+                                환경설정
+                            </a>
                             <a href="{{ route('affiliate.settings.category') }}" class="{{ request()->routeIs('affiliate.settings.category') ? 'border-indigo-500 text-slate-900' : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700' }} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
                                 카테고리 맵핑
                             </a>

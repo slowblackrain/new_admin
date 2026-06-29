@@ -10,10 +10,27 @@
                 상품 대량 동기화 (Batch)
             </h2>
             <p class="mt-2 text-sm text-slate-500">
-                카테고리가 매핑된 도매토피아 상품들을 대한판촉으로 자동 전송합니다.
+                카테고리가 매핑된 도매토피아 상품들을 대한판촉으로 자동 전송합니다. 카테고리를 지정하여 특정 분류만 동기화할 수도 있습니다.
             </p>
         </div>
-        <div class="mt-4 flex md:ml-4 md:mt-0">
+        <div class="mt-4 flex md:ml-4 md:mt-0 items-center space-x-3">
+            <form id="categoryFilterForm" method="GET" action="{{ route('affiliate.settings.sync') }}" class="flex items-center space-x-2">
+                <select name="site_id" onchange="document.getElementById('categoryFilterForm').submit()" class="block w-32 rounded-md border-0 py-1.5 pl-3 pr-8 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    @foreach($sites as $s)
+                        <option value="{{ $s->id }}" {{ $site->id == $s->id ? 'selected' : '' }}>
+                            {{ $s->name }}
+                        </option>
+                    @endforeach
+                </select>
+                <select name="category_code" onchange="document.getElementById('categoryFilterForm').submit()" class="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <option value="">전체 상품 동기화</option>
+                    @foreach($syncCategories as $cat)
+                    <option value="{{ $cat->category_code }}" {{ $selectedCategory == $cat->category_code ? 'selected' : '' }}>
+                        {{ $cat->title }}
+                    </option>
+                    @endforeach
+                </select>
+            </form>
             <button @click="startSync()" :disabled="isSyncing || pendingCount === 0" type="button" class="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
                 <svg x-show="isSyncing" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                 <span x-text="isSyncing ? '동기화 진행 중...' : '동기화 일괄 시작'"></span>
@@ -26,7 +43,7 @@
     </div>
 
     <!-- 대시보드 통계 카드 -->
-    <div class="grid grid-cols-1 gap-5 sm:grid-cols-4 mb-8">
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
         <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6 border border-slate-200">
             <dt class="truncate text-sm font-medium text-slate-500">전체 대상 상품</dt>
             <dd class="mt-1 text-3xl font-semibold tracking-tight text-slate-900" x-text="Number(totalCount).toLocaleString()">{{ number_format($totalTargetCount) }}</dd>
@@ -76,6 +93,106 @@
             <div x-show="logs.length === 0" class="text-slate-500 italic">동기화를 시작하면 여기에 로그가 표시됩니다...</div>
         </div>
     </div>
+
+    <!-- 상품 상세 리스트 뷰 -->
+    <div class="mt-8 bg-white rounded-lg shadow border border-slate-200 overflow-hidden">
+        <div class="px-4 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between bg-slate-50">
+            <div class="flex space-x-4">
+                <a href="{{ request()->fullUrlWithQuery(['tab' => 'all']) }}" class="text-sm font-medium px-3 py-1.5 rounded-md {{ $tab === 'all' ? 'bg-indigo-100 text-indigo-700' : 'text-slate-600 hover:bg-slate-100' }}">
+                    전체 보기
+                </a>
+                <a href="{{ request()->fullUrlWithQuery(['tab' => 'pending']) }}" class="text-sm font-medium px-3 py-1.5 rounded-md {{ $tab === 'pending' ? 'bg-amber-100 text-amber-700' : 'text-slate-600 hover:bg-slate-100' }}">
+                    미전송 (대기)
+                </a>
+                <a href="{{ request()->fullUrlWithQuery(['tab' => 'success']) }}" class="text-sm font-medium px-3 py-1.5 rounded-md {{ $tab === 'success' ? 'bg-emerald-100 text-emerald-700' : 'text-slate-600 hover:bg-slate-100' }}">
+                    전송 성공
+                </a>
+                <a href="{{ request()->fullUrlWithQuery(['tab' => 'failed']) }}" class="text-sm font-medium px-3 py-1.5 rounded-md {{ $tab === 'failed' ? 'bg-rose-100 text-rose-700' : 'text-slate-600 hover:bg-slate-100' }}">
+                    전송 실패
+                </a>
+            </div>
+            <div class="mt-4 sm:mt-0">
+                <button @click="syncSelectedItems()" :disabled="selectedItems.length === 0 || isSyncing" type="button" class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50 disabled:opacity-50">
+                    <svg class="-ml-0.5 mr-1.5 h-5 w-5 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M15.312 11.424a5.5 5.5 0 01-9.201 2.466l-.312-.311h2.433a.75.75 0 000-1.5H3.989a.75.75 0 00-.75.75v4.242a.75.75 0 001.5 0v-2.43l.31.31a7 7 0 0011.712-3.138.75.75 0 00-1.449-.39zm1.23-3.723a.75.75 0 00.219-.53V2.929a.75.75 0 00-1.5 0V5.36l-.31-.31A7 7 0 003.239 8.188a.75.75 0 101.448.389A5.5 5.5 0 0113.89 6.11l.311.31h-2.432a.75.75 0 000 1.5h4.243a.75.75 0 00.53-.219z" clip-rule="evenodd" />
+                    </svg>
+                    선택 항목 일괄 전송 (<span x-text="selectedItems.length">0</span>)
+                </button>
+            </div>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-300">
+                <thead class="bg-slate-50">
+                    <tr>
+                        <th scope="col" class="relative px-4 py-3.5 sm:px-6 w-12">
+                            <input type="checkbox" @change="toggleAll($event)" class="absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                        </th>
+                        <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-slate-900 sm:pl-6">상품정보</th>
+                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-slate-900">판매가</th>
+                        <th scope="col" class="px-3 py-3.5 text-center text-sm font-semibold text-slate-900">상태</th>
+                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-slate-900">상세 내용</th>
+                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-slate-900">최근 연동</th>
+                        <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6 text-right">
+                            <span class="sr-only">동작</span>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200 bg-white">
+                    @forelse($paginatedGoods as $item)
+                    <tr>
+                        <td class="relative px-4 py-4 sm:px-6">
+                            <input type="checkbox" value="{{ $item->goods_seq }}" x-model="selectedItems" class="absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                        </td>
+                        <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
+                            <div class="font-medium text-slate-900">{{ $item->goods_name }}</div>
+                            <div class="text-slate-500">도매: {{ $item->goods_seq }} @if($item->goods_scode)| SCode: {{ $item->goods_scode }}@endif</div>
+                        </td>
+                        <td class="whitespace-nowrap px-3 py-4 text-sm text-slate-500">
+                            {{ number_format($item->price) }}원
+                        </td>
+                        <td class="whitespace-nowrap px-3 py-4 text-sm text-center">
+                            @if($item->sync_status === 'success')
+                                <span class="inline-flex items-center rounded-md bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">성공</span>
+                            @elseif($item->sync_status === 'failed')
+                                <span class="inline-flex items-center rounded-md bg-rose-50 px-2 py-1 text-xs font-medium text-rose-700 ring-1 ring-inset ring-rose-600/10">실패</span>
+                            @else
+                                <span class="inline-flex items-center rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-500/10">대기</span>
+                            @endif
+                        </td>
+                        <td class="px-3 py-4 text-sm text-slate-500 max-w-xs truncate" title="{{ $item->error_message }}">
+                            @if($item->sync_status === 'success')
+                                {{ $site->name }} 코드: <span class="font-medium text-slate-900">{{ $item->affiliate_goods_code }}</span>
+                            @elseif($item->sync_status === 'failed')
+                                <span class="text-rose-600">{{ Str::limit($item->error_message, 40) }}</span>
+                            @else
+                                -
+                            @endif
+                        </td>
+                        <td class="whitespace-nowrap px-3 py-4 text-sm text-slate-500">
+                            {{ $item->last_synced_at ? \Carbon\Carbon::parse($item->last_synced_at)->format('Y-m-d H:i') : '-' }}
+                        </td>
+                        <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                            <button @click="syncSingleItem('{{ $item->goods_seq }}')" type="button" class="text-indigo-600 hover:text-indigo-900">
+                                @if($item->sync_status) 재전송 @else 전송 @endif
+                            </button>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="7" class="px-4 py-8 text-center text-sm text-slate-500">
+                            조회된 상품이 없습니다.
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+        @if($paginatedGoods->hasPages())
+        <div class="px-4 py-3 border-t border-slate-200 sm:px-6 bg-slate-50">
+            {{ $paginatedGoods->links() }}
+        </div>
+        @endif
+    </div>
 </div>
 
 <script>
@@ -88,8 +205,84 @@
             successCount: {{ $successCount }},
             failedCount: {{ $failedCount }},
             pendingCount: {{ $pendingCount }},
+            categoryCode: '{{ $selectedCategory ?? '' }}',
             
             logs: [],
+            selectedItems: [],
+            
+            toggleAll(e) {
+                if (e.target.checked) {
+                    const checkboxes = document.querySelectorAll('tbody input[type="checkbox"]');
+                    this.selectedItems = Array.from(checkboxes).map(cb => cb.value);
+                } else {
+                    this.selectedItems = [];
+                }
+            },
+            
+            async syncSingleItem(goodsSeq) {
+                if (this.isSyncing) return;
+                
+                this.isSyncing = true;
+                this.addLog(`단독 동기화 시작: 상품 번호 ${goodsSeq}`, 'info');
+                
+                await this.callSyncSelectedApi([goodsSeq]);
+            },
+            
+            async syncSelectedItems() {
+                if (this.isSyncing || this.selectedItems.length === 0) return;
+                
+                if (!confirm(`선택한 ${this.selectedItems.length}개 상품을 동기화 하시겠습니까?`)) return;
+                
+                this.isSyncing = true;
+                this.addLog(`일괄 동기화 시작: ${this.selectedItems.length}개 상품`, 'info');
+                
+                await this.callSyncSelectedApi(this.selectedItems);
+            },
+            
+            async callSyncSelectedApi(seqs) {
+                const token = document.querySelector('meta[name="csrf-token"]') ? 
+                              document.querySelector('meta[name="csrf-token"]').getAttribute('content') : 
+                              '{{ csrf_token() }}';
+                              
+                try {
+                    const response = await fetch('{{ route('affiliate.settings.sync.selected') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': token,
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            site_id: '{{ $site->id }}',
+                            goods_seqs: seqs
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.status === 'ok' && data.results) {
+                        data.results.forEach(item => {
+                            if (item.success) {
+                                this.addLog(`[성공] ${item.goods_name} (Seq: ${item.goods_seq})`, 'success');
+                            } else {
+                                this.addLog(`[실패] ${item.goods_name} - 사유: ${item.message}`, 'error');
+                            }
+                        });
+                        
+                        this.addLog('<b>선택 상품 동기화가 완료되었습니다. 페이지를 새로고침합니다.</b>', 'info');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1500);
+                    } else {
+                        let errorMsg = data.message ? data.message : '서버 응답 오류가 발생했습니다.';
+                        this.addLog(errorMsg, 'error');
+                    }
+                } catch (e) {
+                    this.addLog(`네트워크 또는 서버 오류: ${e.message}`, 'error');
+                } finally {
+                    this.isSyncing = false;
+                }
+            },
             
             get progressPercent() {
                 if (this.totalCount === 0) return 0;
@@ -148,7 +341,11 @@
                             'Content-Type': 'application/json',
                             'X-CSRF-TOKEN': token,
                             'Accept': 'application/json'
-                        }
+                        },
+                        body: JSON.stringify({
+                            site_id: '{{ $site->id }}',
+                            category_code: this.categoryCode
+                        })
                     });
                     
                     const data = await response.json();

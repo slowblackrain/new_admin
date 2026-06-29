@@ -7,6 +7,11 @@ use App\Http\Controllers\Affiliate\AffiliateSettingController;
 
 Route::prefix('affiliate')->name('affiliate.')->group(function () {
     
+    // Redirect root to dashboard
+    Route::get('/', function () {
+        return redirect()->route('affiliate.dashboard');
+    });
+
     // Auth Routes
     Route::get('login', [AffiliateAuthController::class, 'showLoginForm'])->name('login');
     Route::post('login', [AffiliateAuthController::class, 'login'])->name('login.post');
@@ -28,6 +33,7 @@ Route::prefix('affiliate')->name('affiliate.')->group(function () {
         // Goods Sync (Batch)
         Route::get('/settings/sync', [AffiliateSettingController::class, 'syncIndex'])->name('settings.sync');
         Route::post('/settings/sync/chunk', [AffiliateSettingController::class, 'syncChunk'])->name('settings.sync.chunk');
+        Route::post('/settings/sync/selected', [AffiliateSettingController::class, 'syncSelected'])->name('settings.sync.selected');
     });
 
 });

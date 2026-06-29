@@ -28,7 +28,7 @@ class TestDaehanScraping extends Command
     {
         $this->info('대한판촉 스크래핑 테스트를 시작합니다...');
 
-        $scraper = new DaehanScraperService('dotob2b', '0000');
+        $scraper = new DaehanScraperService();
         
         $this->info('주문 목록 조회를 시도합니다...');
         $result = $scraper->fetchOrders();
