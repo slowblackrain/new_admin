@@ -32,6 +32,9 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($request->is('seller') || $request->is('seller/*')) {
                 return route('seller.login');
             }
+            if ($request->is('affiliate') || $request->is('affiliate/*')) {
+                return route('affiliate.login');
+            }
             return route('member.login');
         });
     })
