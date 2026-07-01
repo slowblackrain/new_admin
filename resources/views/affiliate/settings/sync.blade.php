@@ -44,58 +44,42 @@
 
     <!-- 대시보드 통계 카드 -->
     <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-        <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6 border border-slate-200">
+        <div class="relative overflow-hidden rounded-xl bg-white px-4 py-5 shadow-sm hover:shadow-md transition-all hover:-translate-y-1 sm:p-6 border border-slate-200">
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-slate-400 to-slate-500"></div>
             <dt class="truncate text-sm font-medium text-slate-500">전체 대상 상품</dt>
-            <dd class="mt-1 text-3xl font-semibold tracking-tight text-slate-900" x-text="Number(totalCount).toLocaleString()">{{ number_format($totalTargetCount) }}</dd>
+            <dd class="mt-2 text-3xl font-bold tracking-tight text-slate-900" x-text="Number(totalCount).toLocaleString()">{{ number_format($totalTargetCount) }}</dd>
         </div>
-        <div class="overflow-hidden rounded-lg bg-emerald-50 px-4 py-5 shadow sm:p-6 border border-emerald-200">
+        <div class="relative overflow-hidden rounded-xl bg-white px-4 py-5 shadow-sm hover:shadow-md transition-all hover:-translate-y-1 sm:p-6 border border-slate-200">
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 to-teal-500"></div>
             <dt class="truncate text-sm font-medium text-emerald-600">전송 성공</dt>
-            <dd class="mt-1 text-3xl font-semibold tracking-tight text-emerald-900" x-text="Number(successCount).toLocaleString()">{{ number_format($successCount) }}</dd>
+            <dd class="mt-2 text-3xl font-bold tracking-tight text-emerald-700" x-text="Number(successCount).toLocaleString()">{{ number_format($successCount) }}</dd>
         </div>
-        <div class="overflow-hidden rounded-lg bg-amber-50 px-4 py-5 shadow sm:p-6 border border-amber-200">
+        <div class="relative overflow-hidden rounded-xl bg-white px-4 py-5 shadow-sm hover:shadow-md transition-all hover:-translate-y-1 sm:p-6 border border-slate-200">
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-400 to-orange-400"></div>
             <dt class="truncate text-sm font-medium text-amber-600">미전송 (대기)</dt>
-            <dd class="mt-1 text-3xl font-semibold tracking-tight text-amber-900" x-text="Number(pendingCount).toLocaleString()">{{ number_format($pendingCount) }}</dd>
+            <dd class="mt-2 text-3xl font-bold tracking-tight text-amber-700" x-text="Number(pendingCount).toLocaleString()">{{ number_format($pendingCount) }}</dd>
         </div>
-        <div class="overflow-hidden rounded-lg bg-rose-50 px-4 py-5 shadow sm:p-6 border border-rose-200">
+        <div class="relative overflow-hidden rounded-xl bg-white px-4 py-5 shadow-sm hover:shadow-md transition-all hover:-translate-y-1 sm:p-6 border border-slate-200">
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-rose-400 to-red-500"></div>
             <dt class="truncate text-sm font-medium text-rose-600">전송 실패</dt>
-            <dd class="mt-1 text-3xl font-semibold tracking-tight text-rose-900" x-text="Number(failedCount).toLocaleString()">{{ number_format($failedCount) }}</dd>
+            <dd class="mt-2 text-3xl font-bold tracking-tight text-rose-700" x-text="Number(failedCount).toLocaleString()">{{ number_format($failedCount) }}</dd>
         </div>
     </div>
 
     <!-- 진행 상태 표시 (프로그레스 바) -->
-    <div class="bg-white rounded-lg shadow border border-slate-200 p-6 mb-8">
-        <h3 class="text-base font-semibold leading-6 text-slate-900 mb-4">동기화 진행 상태</h3>
-        <div class="w-full bg-slate-200 rounded-full h-4 mb-2 overflow-hidden">
-            <div class="bg-indigo-600 h-4 rounded-full transition-all duration-500 ease-out" :style="'width: ' + progressPercent + '%'"></div>
+    <div class="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
+        <h3 class="text-base font-semibold leading-6 text-slate-800 mb-4">동기화 진행 상태</h3>
+        <div class="w-full bg-slate-100 rounded-full h-3 mb-3 overflow-hidden shadow-inner">
+            <div class="bg-gradient-to-r from-indigo-500 to-purple-600 h-3 rounded-full transition-all duration-500 ease-out" :style="'width: ' + progressPercent + '%'"></div>
         </div>
-        <div class="flex justify-between text-sm text-slate-600 font-medium">
+        <div class="flex justify-between text-sm text-slate-500 font-medium">
             <span x-text="progressPercent + '% 완료'">0% 완료</span>
-            <span x-text="successCount + failedCount + ' / ' + totalCount + ' 처리됨'">0 / 0 처리됨</span>
-        </div>
-    </div>
-
-    <!-- 실시간 로그 콘솔 -->
-    <div class="bg-slate-900 rounded-lg shadow overflow-hidden">
-        <div class="px-4 py-3 border-b border-slate-800 flex justify-between items-center bg-slate-800">
-            <h3 class="text-sm font-semibold text-slate-200 flex items-center">
-                <svg class="w-4 h-4 mr-2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M4 17h16a2 2 0 002-2V5a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                실시간 전송 로그
-            </h3>
-            <button @click="logs = []" class="text-xs text-slate-400 hover:text-white transition-colors">로그 지우기</button>
-        </div>
-        <div class="p-4 h-96 overflow-y-auto font-mono text-sm" id="logConsole">
-            <template x-for="(log, index) in logs" :key="index">
-                <div class="mb-1" :class="{'text-emerald-400': log.type === 'success', 'text-rose-400': log.type === 'error', 'text-slate-300': log.type === 'info'}">
-                    <span class="text-slate-500 mr-2" x-text="log.time"></span>
-                    <span x-html="log.message"></span>
-                </div>
-            </template>
-            <div x-show="logs.length === 0" class="text-slate-500 italic">동기화를 시작하면 여기에 로그가 표시됩니다...</div>
+            <span x-text="Number(successCount + failedCount).toLocaleString() + ' / ' + Number(totalCount).toLocaleString() + ' 처리됨'">0 / 0 처리됨</span>
         </div>
     </div>
 
     <!-- 상품 상세 리스트 뷰 -->
-    <div class="mt-8 bg-white rounded-lg shadow border border-slate-200 overflow-hidden">
+    <div class="bg-white rounded-lg shadow border border-slate-200 overflow-hidden">
         <div class="px-4 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between bg-slate-50">
             <div class="flex space-x-4">
                 <a href="{{ request()->fullUrlWithQuery(['tab' => 'all']) }}" class="text-sm font-medium px-3 py-1.5 rounded-md {{ $tab === 'all' ? 'bg-indigo-100 text-indigo-700' : 'text-slate-600 hover:bg-slate-100' }}">
@@ -139,40 +123,47 @@
                 </thead>
                 <tbody class="divide-y divide-slate-200 bg-white">
                     @forelse($paginatedGoods as $item)
-                    <tr>
+                    <tr class="hover:bg-slate-50 transition-colors group">
                         <td class="relative px-4 py-4 sm:px-6">
                             <input type="checkbox" value="{{ $item->goods_seq }}" x-model="selectedItems" class="absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600">
                         </td>
                         <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
-                            <div class="font-medium text-slate-900">{{ $item->goods_name }}</div>
-                            <div class="text-slate-500">도매: {{ $item->goods_seq }} @if($item->goods_scode)| SCode: {{ $item->goods_scode }}@endif</div>
+                            <div class="font-semibold text-slate-900">{{ $item->goods_name }}</div>
+                            <div class="text-slate-500 text-xs mt-0.5">도매: {{ $item->goods_seq }} @if($item->goods_scode)<span class="mx-1">|</span>SCode: {{ $item->goods_scode }}@endif</div>
                         </td>
-                        <td class="whitespace-nowrap px-3 py-4 text-sm text-slate-500">
+                        <td class="whitespace-nowrap px-3 py-4 text-sm font-medium text-slate-700">
                             {{ number_format($item->price) }}원
                         </td>
                         <td class="whitespace-nowrap px-3 py-4 text-sm text-center">
                             @if($item->sync_status === 'success')
-                                <span class="inline-flex items-center rounded-md bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">성공</span>
+                                <span class="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-800">성공</span>
                             @elseif($item->sync_status === 'failed')
-                                <span class="inline-flex items-center rounded-md bg-rose-50 px-2 py-1 text-xs font-medium text-rose-700 ring-1 ring-inset ring-rose-600/10">실패</span>
+                                <span class="inline-flex items-center rounded-full bg-rose-100 px-2.5 py-0.5 text-xs font-medium text-rose-800">실패</span>
                             @else
-                                <span class="inline-flex items-center rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-500/10">대기</span>
+                                <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700">대기</span>
                             @endif
                         </td>
-                        <td class="px-3 py-4 text-sm text-slate-500 max-w-xs truncate" title="{{ $item->error_message }}">
+                        <td class="px-3 py-4 text-sm text-slate-500 max-w-xs relative">
                             @if($item->sync_status === 'success')
-                                {{ $site->name }} 코드: <span class="font-medium text-slate-900">{{ $item->affiliate_goods_code }}</span>
+                                <span class="inline-flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>{{ $site->name }} 코드: <strong class="text-slate-900">{{ $item->affiliate_goods_code }}</strong></span>
                             @elseif($item->sync_status === 'failed')
-                                <span class="text-rose-600">{{ Str::limit($item->error_message, 40) }}</span>
+                                <div class="truncate text-rose-600 cursor-help">{{ Str::limit($item->error_message, 40) }}</div>
+                                <!-- 커스텀 툴팁 -->
+                                <div class="pointer-events-none absolute left-0 bottom-full mb-2 w-max max-w-xs opacity-0 transition-opacity group-hover:opacity-100 z-10">
+                                    <div class="rounded bg-slate-800 px-3 py-2 text-xs text-white shadow-lg break-words whitespace-normal leading-relaxed">
+                                        {{ $item->error_message }}
+                                    </div>
+                                    <div class="absolute -bottom-1 left-4 h-2 w-2 rotate-45 bg-slate-800"></div>
+                                </div>
                             @else
-                                -
+                                <span class="text-slate-300">-</span>
                             @endif
                         </td>
                         <td class="whitespace-nowrap px-3 py-4 text-sm text-slate-500">
-                            {{ $item->last_synced_at ? \Carbon\Carbon::parse($item->last_synced_at)->format('Y-m-d H:i') : '-' }}
+                            {{ $item->last_synced_at ? \Carbon\Carbon::parse($item->last_synced_at)->format('y.m.d H:i') : '-' }}
                         </td>
                         <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                            <button @click="syncSingleItem('{{ $item->goods_seq }}')" type="button" class="text-indigo-600 hover:text-indigo-900">
+                            <button @click="syncSingleItem('{{ $item->goods_seq }}')" type="button" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-md transition-colors">
                                 @if($item->sync_status) 재전송 @else 전송 @endif
                             </button>
                         </td>
@@ -189,9 +180,43 @@
         </div>
         @if($paginatedGoods->hasPages())
         <div class="px-4 py-3 border-t border-slate-200 sm:px-6 bg-slate-50">
-            {{ $paginatedGoods->links() }}
+            {{ $paginatedGoods->links('pagination::tailwind') }}
         </div>
         @endif
+    </div>
+
+    <!-- 실시간 로그 콘솔 -->
+    <div class="mt-8 bg-slate-900 rounded-lg shadow overflow-hidden">
+        <div class="px-4 py-3 border-b border-slate-800 flex justify-between items-center bg-slate-800">
+            <h3 class="text-sm font-semibold text-slate-200 flex items-center">
+                <svg class="w-4 h-4 mr-2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M4 17h16a2 2 0 002-2V5a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                실시간 전송 로그
+            </h3>
+            <button @click="logs = []" class="text-xs text-slate-400 hover:text-white transition-colors">로그 지우기</button>
+        </div>
+        <div class="p-4 h-96 overflow-y-auto font-mono text-sm space-y-2" id="logConsole">
+            <template x-for="(log, index) in logs" :key="index">
+                <div class="flex items-start rounded px-2 py-1.5 transition-all duration-300 ease-out" 
+                     :class="{
+                         'bg-emerald-900/30 text-emerald-300 border-l-2 border-emerald-500': log.type === 'success', 
+                         'bg-rose-900/30 text-rose-300 border-l-2 border-rose-500': log.type === 'error', 
+                         'text-slate-300 hover:bg-slate-800/50': log.type === 'info'
+                     }"
+                     x-data="{ show: false }" x-init="setTimeout(() => show = true, 50)" :style="show ? 'opacity: 1; transform: translateY(0)' : 'opacity: 0; transform: translateY(4px)'">
+                    <span class="text-slate-500 mr-3 text-xs mt-0.5 shrink-0" x-text="log.time"></span>
+                    
+                    <!-- 아이콘 분기 -->
+                    <span class="mr-2 shrink-0 mt-0.5">
+                        <svg x-show="log.type === 'success'" class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        <svg x-show="log.type === 'error'" class="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        <svg x-show="log.type === 'info'" class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </span>
+
+                    <span class="break-all" x-html="log.message"></span>
+                </div>
+            </template>
+            <div x-show="logs.length === 0" class="text-slate-500 italic flex items-center justify-center h-full">동기화를 시작하면 여기에 실시간 로그가 표시됩니다...</div>
+        </div>
     </div>
 </div>
 

@@ -58,38 +58,65 @@ class AffiliateSettingController extends Controller
      */
     public function categoryMapping(Request $request)
     {
-        $site = AffiliateSite::firstOrCreate(['name' => '대한판촉']);
+        // 1. 모든 활성화된 제휴사 로드
+        $sites = AffiliateSite::where('is_active', 1)->get();
+        if ($sites->isEmpty()) {
+            $site = AffiliateSite::firstOrCreate(['name' => '대한판촉', 'is_active' => 1]);
+            $sites = collect([$site]);
+        }
         
-        $daehanCategories = Cache::remember('daehan_categories', 86400, function () {
-            $scraper = new DaehanScraperService();
-            return $scraper->fetchCategories();
-        });
-        
-        $daehanCategoryCodes = array_keys($daehanCategories);
-        $daehanCategoriesList = [];
-        foreach ($daehanCategories as $code => $name) {
-            // 자식 카테고리가 있는지 검사 (자신을 제외하고, 이 코드로 시작하는 코드가 있는지)
-            $isLeaf = true;
-            foreach ($daehanCategoryCodes as $otherCode) {
-                if ($code !== $otherCode && str_starts_with($otherCode, $code)) {
-                    $isLeaf = false;
-                    break;
+        // 2. 제휴사별 카테고리 목록 로드
+        $affiliateCategoriesList = [];
+        $serviceMap = [
+            '대한판촉' => \App\Services\Affiliate\DaehanScraperService::class,
+            '오너클랜' => \App\Services\Affiliate\OwnerclanService::class,
+        ];
+
+        foreach ($sites as $site) {
+            if (isset($serviceMap[$site->name])) {
+                $serviceClass = $serviceMap[$site->name];
+                $scraper = new $serviceClass();
+                $categories = $scraper->fetchCategories();
+                
+                $list = [];
+                if ($site->name === '대한판촉') {
+                    // 대한판촉은 leaf 노드 검사 필요 (key => name 형태 반환)
+                    $daehanCategoryCodes = array_keys($categories);
+                    foreach ($categories as $code => $name) {
+                        $isLeaf = true;
+                        foreach ($daehanCategoryCodes as $otherCode) {
+                            if ($code !== $otherCode && str_starts_with($otherCode, $code)) {
+                                $isLeaf = false;
+                                break;
+                            }
+                        }
+                        if ($isLeaf) {
+                            $list[] = ['code' => $code, 'name' => $name];
+                        }
+                    }
+                } else if ($site->name === '오너클랜') {
+                    // 오너클랜 리프 카테고리 필터링 (이름 기반 O(N log N) 알고리즘)
+                    usort($categories, function($a, $b) {
+                        return strcmp($a['name'], $b['name']);
+                    });
+                    $count = count($categories);
+                    for ($i = 0; $i < $count; $i++) {
+                        // 정렬된 상태이므로, 바로 다음 항목이 '현재항목>' 으로 시작하면 부모 노드임
+                        if ($i < $count - 1 && str_starts_with($categories[$i+1]['name'], $categories[$i]['name'] . '>')) {
+                            continue;
+                        }
+                        $list[] = $categories[$i];
+                    }
                 }
-            }
-            
-            if ($isLeaf) {
-                $daehanCategoriesList[] = [
-                    'code' => $code,
-                    'name' => $name
-                ];
+                
+                $affiliateCategoriesList[$site->id] = $list;
+            } else {
+                $affiliateCategoriesList[$site->id] = [];
             }
         }
         
-        // 1. 부모 조회용 전체 카테고리 (해시맵)
+        // 3. 도매토피아 리프 카테고리 추출
         $allCategories = Category::all()->keyBy('id');
-        
-        // 2. 리프 카테고리 추출
-        // 조건: hide = '0', list_use = 'y', level >= 2, 자식이 없는 카테고리(리프)
         $selectedCategory = $request->input('category_code');
         
         $syncCategories = \App\Models\Category::where('level', 2)
@@ -105,62 +132,65 @@ class AffiliateSettingController extends Controller
                       ->where('list_use', 'y');
             });
             
+        // 판매중 상품이 존재하는 대표 카테고리만 기본 조건으로 필터링
+        $activeCategoryCodes = \Illuminate\Support\Facades\DB::table('fm_category_link as cl')
+            ->join('fm_goods as g', 'cl.goods_seq', '=', 'g.goods_seq')
+            ->where('cl.link', 1) // 대표 카테고리만 체크
+            ->where('g.goods_view', 'look')
+            ->select('cl.category_code')
+            ->distinct()
+            ->pluck('category_code')
+            ->toArray();
+            
+        $leavesQuery->whereIn('category_code', $activeCategoryCodes);
+            
         if ($selectedCategory) {
             $leavesQuery->where('category_code', 'like', $selectedCategory . '%');
         }
             
         $leaves = $leavesQuery->get();
 
-        $mappedCodes = AffiliateCategoryMapping::where('affiliate_site_id', $site->id)
-            ->pluck('dometopia_category_code')
-            ->toArray();
-            
+        // 4. 전체 제휴사 매핑 데이터 먼저 조회 (필터링에 사용)
+        $allMappings = AffiliateCategoryMapping::whereIn('affiliate_site_id', $sites->pluck('id'))->get();
+        $mappingsByDomCode = [];
+        $mappedCodesAllSites = [];
+        foreach ($allMappings as $mapping) {
+            $mappingsByDomCode[$mapping->dometopia_category_code][$mapping->affiliate_site_id] = $mapping;
+            $mappedCodesAllSites[] = $mapping->dometopia_category_code;
+        }
+        $mappedCodesAllSites = array_unique($mappedCodesAllSites);
+
         $filter = $request->input('filter', 'all');
+        $leafCategories = collect();
         $mappedCount = 0;
         $unmappedCount = 0;
-            
-        $leafCategories = collect();
+        
         foreach ($leaves as $cat) {
             $fullName = $cat->title;
             $curr = $cat;
             $isValidChain = true;
             $rootPosition = ($cat->level == 2) ? $cat->position : 999999;
             
-            // 상위 카테고리를 추적하여 정상적으로 최상단(level 1 이하)까지 도달하는지 확인
             while ($curr->parent_id && $allCategories->has($curr->parent_id)) {
                 $curr = $allCategories->get($curr->parent_id);
-                // 최상위 쇼핑몰(level 1) 이름은 경로에서 제외
-                if ($curr->level < 2) {
-                    break;
-                }
-                
-                if ($curr->level == 2) {
-                    $rootPosition = $curr->position;
-                }
-                
-                // 부모 카테고리 중 하나라도 hide가 '0'이 아니거나 list_use가 'y'가 아니면 유효하지 않은 체인으로 간주
+                if ($curr->level < 2) break;
+                if ($curr->level == 2) $rootPosition = $curr->position;
                 if ($curr->hide !== '0' || $curr->list_use !== 'y') {
                     $isValidChain = false;
                     break;
                 }
-                
                 $fullName = $curr->title . ' > ' . $fullName;
             }
             
-            // 상위 카테고리가 삭제되어 추적이 중간에 끊겼거나, 숨김/미사용 부모가 포함되어 있다면 배제
-            if ($curr->level > 2 || !$isValidChain) {
-                continue;
-            }
+            if ($curr->level > 2 || !$isValidChain) continue;
 
-            // 필터 적용 전 카운트 집계
-            $isMapped = in_array($cat->category_code, $mappedCodes);
+            $isMapped = in_array($cat->category_code, $mappedCodesAllSites);
             if ($isMapped) {
                 $mappedCount++;
             } else {
                 $unmappedCount++;
             }
 
-            // 필터 적용
             if ($filter === 'mapped' && !$isMapped) continue;
             if ($filter === 'unmapped' && $isMapped) continue;
 
@@ -175,13 +205,11 @@ class AffiliateSettingController extends Controller
             'unmapped' => $unmappedCount,
         ];
 
-        // 대분류(Level 2)의 position 우선 정렬, 그다음 카테고리 코드 순 정렬
         $leafCategories = $leafCategories->sortBy([
             ['root_position', 'asc'],
             ['category_code', 'asc']
         ]);
 
-        // 페이징 처리
         $perPage = 50;
         $page = $request->input('page', 1);
         $paginatedCategories = new \Illuminate\Pagination\LengthAwarePaginator(
@@ -192,16 +220,15 @@ class AffiliateSettingController extends Controller
             ['path' => $request->url(), 'query' => $request->query()]
         );
 
-        $mappings = AffiliateCategoryMapping::where('affiliate_site_id', $site->id)
-            ->get()
-            ->keyBy('dometopia_category_code');
+        // 5. 페이지네이션 객체 생성
+
             
         return view('affiliate.settings.category', [
-            'site' => $site, 
+            'sites' => $sites,
             'categories' => $paginatedCategories, 
-            'mappings' => $mappings,
+            'mappings' => $mappingsByDomCode,
             'counts' => $counts,
-            'daehanCategoriesJson' => json_encode($daehanCategoriesList),
+            'affiliateCategoriesJson' => json_encode($affiliateCategoriesList),
             'syncCategories' => $syncCategories,
             'selectedCategory' => $selectedCategory
         ]);
@@ -242,115 +269,241 @@ class AffiliateSettingController extends Controller
         return back()->with('success', '카테고리 매핑이 저장되었습니다.');
     }
 
-    /**
-     * 카테고리 자동 매핑 (이름 유사도 기반)
-     */
     public function autoMapCategories(Request $request)
     {
-        $site = AffiliateSite::firstOrCreate(['name' => '대한판촉']);
+        // 1. 제휴사 목록 로드
+        $sites = AffiliateSite::where('is_active', 1)->get();
+        $serviceMap = [
+            '대한판촉' => \App\Services\Affiliate\DaehanScraperService::class,
+            '오너클랜' => \App\Services\Affiliate\OwnerclanService::class,
+        ];
         
-        // 카테고리 스크래핑 및 캐싱 (1일 보관)
-        $daehanCategories = Cache::remember('daehan_categories', 86400, function () {
-            $scraper = new DaehanScraperService();
-            return $scraper->fetchCategories();
-        });
-
-        // 1. 부모 조회용 전체 카테고리 (해시맵)
+        $affiliateCategoriesList = [];
+        foreach ($sites as $site) {
+            if (isset($serviceMap[$site->name])) {
+                $serviceClass = $serviceMap[$site->name];
+                $scraper = new $serviceClass();
+                $categories = $scraper->fetchCategories();
+                
+                $list = [];
+                if ($site->name === '대한판촉') {
+                    // 대한판촉은 leaf 노드 검사 필요
+                    $daehanCategoryCodes = array_keys($categories);
+                    foreach ($categories as $code => $name) {
+                        $isLeaf = true;
+                        foreach ($daehanCategoryCodes as $otherCode) {
+                            if ($code !== $otherCode && str_starts_with($otherCode, $code)) {
+                                $isLeaf = false;
+                                break;
+                            }
+                        }
+                        if ($isLeaf) {
+                            $list[] = ['code' => $code, 'name' => $name];
+                        }
+                    }
+                } else if ($site->name === '오너클랜') {
+                    // 오너클랜 리프 카테고리 필터링
+                    usort($categories, function($a, $b) {
+                        return strcmp($a['name'], $b['name']);
+                    });
+                    $count = count($categories);
+                    for ($i = 0; $i < $count; $i++) {
+                        if ($i < $count - 1 && str_starts_with($categories[$i+1]['name'], $categories[$i]['name'] . '>')) {
+                            continue;
+                        }
+                        $list[] = $categories[$i];
+                    }
+                }
+                
+                $affiliateCategoriesList[$site->id] = $list;
+            }
+        }
+        
+        // 판매중 상품이 존재하는 대표 카테고리만 필터링
+        $activeCategoryCodes = \Illuminate\Support\Facades\DB::table('fm_category_link as cl')
+            ->join('fm_goods as g', 'cl.goods_seq', '=', 'g.goods_seq')
+            ->where('cl.link', 1) // 대표 카테고리만 체크
+            ->where('g.goods_view', 'look')
+            ->select('cl.category_code')
+            ->distinct()
+            ->pluck('category_code')
+            ->toArray();
+            
+        // 2. 도매토피아 유효 리프 카테고리 추출
         $allCategories = Category::all()->keyBy('id');
-        
-        // 2. 리프 카테고리 추출
         $leaves = Category::where('hide', '0')
             ->where('list_use', 'y')
             ->where('level', '>=', 2)
+            ->whereIn('category_code', $activeCategoryCodes)
             ->whereDoesntHave('children', function($query) {
-                $query->where('hide', '0')
-                      ->where('list_use', 'y');
-            })
-            ->get();
-
-        $mappedCount = 0;
-        $mappedCodes = AffiliateCategoryMapping::where('affiliate_site_id', $site->id)
-            ->pluck('dometopia_category_code')
-            ->toArray();
-        
+                $query->where('hide', '0')->where('list_use', 'y');
+            })->get();
+            
+        $validLeaves = [];
         foreach ($leaves as $cat) {
             $curr = $cat;
             $isValidChain = true;
-            
             while ($curr->parent_id && $allCategories->has($curr->parent_id)) {
                 $curr = $allCategories->get($curr->parent_id);
-                if ($curr->level < 2) {
-                    break;
-                }
-                
+                if ($curr->level < 2) break;
                 if ($curr->hide !== '0' || $curr->list_use !== 'y') {
                     $isValidChain = false;
                     break;
                 }
             }
-            if ($curr->level > 2 || !$isValidChain) {
-                continue;
+            if ($curr->level <= 2 && $isValidChain) {
+                $validLeaves[] = $cat;
             }
-
-            // 미매핑 카테고리만 진행 (이미 매핑된 카테고리 건너뛰기)
-            if (in_array($cat->category_code, $mappedCodes)) {
-                continue;
+        }
+        
+        // 3. 기존 매핑 조회
+        $allMappings = AffiliateCategoryMapping::all()->groupBy('dometopia_category_code');
+        
+        // 유틸리티 함수: 텍스트 정규화
+        $normalize = function($string) {
+            $string = preg_replace("/[ #\&\+\-%@=\/\\\:;,\.'\"\^`~\_|\!\?\*$#<>\[\]\{\}]/i", " ", $string);
+            $string = preg_replace('/\s+/', ' ', $string);
+            return trim($string);
+        };
+        
+        // 유틸리티 함수: 토큰화
+        $tokenize = function($string) use ($normalize) {
+            $parts = explode('>', $string);
+            $leaf = trim(end($parts));
+            $leafTokens = explode('/', $leaf);
+            $leafNormalized = [];
+            foreach ($leafTokens as $t) {
+                $norm = $normalize($t);
+                if (mb_strlen($norm) >= 2) {
+                    $leafNormalized[] = $norm;
+                }
             }
-
-            $leafTitleRaw = str_replace(' ', '', $cat->title);
-            $searchTerms = array_map('trim', explode('/', $leafTitleRaw));
             
-            foreach ($daehanCategories as $dCode => $dName) {
-                // 대한판촉 카테고리의 마지막 노드명 추출
-                $dParts = explode('>', $dName);
-                $dLeafTitleRaw = str_replace(' ', '', trim(end($dParts)));
-                $dSearchTerms = array_map('trim', explode('/', $dLeafTitleRaw));
+            $tokens = [];
+            foreach ($parts as $p) {
+                $p = $normalize($p);
+                $words = explode(' ', $p);
+                foreach ($words as $w) {
+                    if (mb_strlen($w) >= 2) {
+                        $tokens[] = $w;
+                    }
+                }
+            }
+            return [
+                'leaf' => $leafNormalized,
+                'tokens' => array_unique($tokens),
+                'raw' => $string
+            ];
+        };
+        
+        // 유틸리티 함수: 점수 산출
+        $calculateScore = function($domTokens, $affTokens) {
+            $score = 0;
+            $leafMatched = false;
+            
+            // 1. Leaf exact match (가장 강력한 가중치)
+            foreach ($domTokens['leaf'] as $dLeaf) {
+                foreach ($affTokens['leaf'] as $aLeaf) {
+                    if ($dLeaf && $aLeaf && $dLeaf === $aLeaf) {
+                        $score += 50;
+                        $leafMatched = true;
+                        break 2;
+                    } else if ($dLeaf && $aLeaf && (str_contains($dLeaf, $aLeaf) || str_contains($aLeaf, $dLeaf))) {
+                        $score += 20;
+                        $leafMatched = true;
+                    }
+                }
+            }
+            
+            // 2. Token intersections (경로 내 단어 매칭)
+            $intersect = array_intersect($domTokens['tokens'], $affTokens['tokens']);
+            $score += count($intersect) * 10;
+            
+            // 3. 완전히 다른 경로인데 리프만 같은 경우 페널티 방어 (문맥 검증)
+            if ($leafMatched && count($intersect) <= 1) {
+                $score -= 10; // 우연히 마지막 단어만 겹칠 확률 패널티
+            }
+            
+            return $score;
+        };
+
+        // 4. 미리 제휴사 카테고리를 토큰화 해둔다 (루프 성능 최적화)
+        $tokenizedAffiliates = [];
+        foreach ($sites as $site) {
+            if (!isset($affiliateCategoriesList[$site->id])) continue;
+            foreach ($affiliateCategoriesList[$site->id] as $affCat) {
+                $tokenizedAffiliates[$site->id][] = [
+                    'code' => $affCat['code'],
+                    'name' => $affCat['name'],
+                    'tokens' => $tokenize($affCat['name'])
+                ];
+            }
+        }
+
+        $mappedCount = 0;
+        $threshold = 30; // 30점 이상일 때만 매핑 (오매핑 방지 임계치)
+
+        foreach ($validLeaves as $cat) {
+            $domCode = $cat->category_code;
+            
+            $fullName = $cat->title;
+            $curr = $cat;
+            while ($curr->parent_id && $allCategories->has($curr->parent_id)) {
+                $curr = $allCategories->get($curr->parent_id);
+                if ($curr->level < 2) break;
+                $fullName = $curr->title . ' > ' . $fullName;
+            }
+            
+            $domTokens = $tokenize($fullName);
+            
+            $existingMappings = $allMappings->has($domCode) ? $allMappings->get($domCode)->keyBy('affiliate_site_id') : collect();
+            
+            foreach ($sites as $site) {
+                if (!isset($tokenizedAffiliates[$site->id])) continue;
                 
-                $matched = false;
+                // 이미 정상적으로 매핑되어 있으면 건너뜀 (코드는 있는데 이름이 비어있는 과거 찌꺼기 데이터는 덮어씌움)
+                $existingMapping = $existingMappings->get($site->id);
+                if ($existingMapping && 
+                    !empty($existingMapping->affiliate_category_code) && 
+                    !empty($existingMapping->affiliate_category_name)
+                ) {
+                    continue;
+                }
                 
-                // '/' 기준으로 분리된 단어들끼리 교차 검증
-                foreach ($searchTerms as $term) {
-                    if (empty($term) || mb_strlen($term) < 2) continue; // 너무 짧은 단어 제외
-                    
-                    foreach ($dSearchTerms as $dTerm) {
-                        if (empty($dTerm) || mb_strlen($dTerm) < 2) continue;
-                        
-                        // 완벽히 일치하거나 포함되는 경우
-                        if ($term === $dTerm || str_contains($term, $dTerm) || str_contains($dTerm, $term)) {
-                            $matched = true;
-                            break 2;
-                        }
+                $bestMatch = null;
+                $highestScore = -1;
+                
+                // 해당 제휴사의 모든 카테고리를 순회하여 가장 높은 점수를 찾음
+                foreach ($tokenizedAffiliates[$site->id] as $affData) {
+                    $score = $calculateScore($domTokens, $affData['tokens']);
+                    if ($score > $highestScore) {
+                        $highestScore = $score;
+                        $bestMatch = $affData;
                     }
                 }
                 
-                // 단어 교차로 매핑되지 않았을 경우, 전체 이름으로 다시 비교
-                if (!$matched) {
-                    if ($leafTitleRaw === $dLeafTitleRaw || 
-                        (mb_strlen($leafTitleRaw) > 1 && mb_strlen($dLeafTitleRaw) > 1 && 
-                         (strpos($leafTitleRaw, $dLeafTitleRaw) !== false || strpos($dLeafTitleRaw, $leafTitleRaw) !== false))
-                    ) {
-                        $matched = true;
-                    }
+                // 베스트 매치가 임계치를 넘으면 저장
+                if ($domCode === '002000260010') {
+                    \Log::info("Testing $domCode for Ownerclan: Best Match: " . json_encode($bestMatch, JSON_UNESCAPED_UNICODE) . " Score: " . $highestScore);
                 }
-                
-                if ($matched) {
+
+                if ($highestScore >= $threshold && $bestMatch) {
                     AffiliateCategoryMapping::updateOrCreate(
                         [
                             'affiliate_site_id' => $site->id,
-                            'dometopia_category_code' => $cat->category_code
+                            'dometopia_category_code' => $domCode
                         ],
                         [
-                            'affiliate_category_code' => $dCode,
-                            'affiliate_category_name' => $dName
+                            'affiliate_category_code' => $bestMatch['code'],
+                            'affiliate_category_name' => $bestMatch['name']
                         ]
                     );
                     $mappedCount++;
-                    break;
                 }
             }
         }
         
-        return back()->with('success', "미매핑 카테고리 중 총 {$mappedCount}개가 추가로 자동 매핑되었습니다.");
+        return back()->with('success', "가중치 기반 자동 매핑을 완료했습니다. 총 {$mappedCount}개가 다중 제휴사에 새롭게 매핑되었습니다.");
     }
 
     /**

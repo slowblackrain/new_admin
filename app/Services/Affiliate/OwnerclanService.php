@@ -198,7 +198,7 @@ class OwnerclanService
                     'value' => (float)$s_price // 소비자가
                 ],
                 'metadata' => [
-                    'vcode' => $goodsRecord->goods_code ?? '', // 상품고유코드
+                    'vcode' => (string)($goodsRecord->goods_code ?? ''), // 상품고유코드
                     'certificateInformation' => [],
                     'productNotificationInformation' => [
                         'code' => 35, // 기존 로직
@@ -273,5 +273,101 @@ class OwnerclanService
             'success' => true,
             'orders' => []
         ];
+    }
+
+    /**
+     * 오너클랜 카테고리 목록 가져오기 (파일 캐싱)
+     */
+    public function fetchCategories($force = false)
+    {
+        $filePath = storage_path('app/affiliate/ownerclan_categories.json');
+
+        if (!$force && file_exists($filePath)) {
+            $content = file_get_contents($filePath);
+            $data = json_decode($content, true);
+            if (is_array($data)) {
+                return $data;
+            }
+        }
+
+        $token = $this->authenticate();
+        if (!$token) {
+            return [];
+        }
+
+        $query = '
+          query getCategories($after: String) {
+            allCategories(first: 100, after: $after) {
+              edges {
+                node {
+                  key
+                  name
+                  fullName
+                }
+              }
+              pageInfo {
+                hasNextPage
+                endCursor
+              }
+            }
+          }
+        ';
+
+        $categories = [];
+        $hasNextPage = true;
+        $endCursor = null;
+
+        while ($hasNextPage) {
+            $variables = [];
+            if ($endCursor) {
+                $variables['after'] = $endCursor;
+            }
+
+            try {
+                $response = Http::withHeaders([
+                    'Authorization' => 'Bearer ' . $token,
+                    'Content-Type' => 'application/json',
+                ])->withoutVerifying()->post($this->apiUrl . '/graphql', [
+                    'query' => $query,
+                    'variables' => $variables
+                ]);
+
+                if ($response->successful()) {
+                    $result = $response->json();
+                    if (isset($result['data']['allCategories'])) {
+                        $allCat = $result['data']['allCategories'];
+                        foreach ($allCat['edges'] as $edge) {
+                            $node = $edge['node'];
+                            // fullName을 사용하되, 없으면 name 사용
+                            $catName = !empty($node['fullName']) ? $node['fullName'] : $node['name'];
+                            
+                            $categories[] = [
+                                'code' => (string)$node['key'],
+                                'name' => $catName
+                            ];
+                        }
+                        
+                        $hasNextPage = $allCat['pageInfo']['hasNextPage'] ?? false;
+                        $endCursor = $allCat['pageInfo']['endCursor'] ?? null;
+                    } else {
+                        break;
+                    }
+                } else {
+                    break;
+                }
+            } catch (\Exception $e) {
+                \Log::error('Ownerclan fetchCategories Error: ' . $e->getMessage());
+                break;
+            }
+        }
+
+        if (!empty($categories)) {
+            if (!file_exists(dirname($filePath))) {
+                mkdir(dirname($filePath), 0755, true);
+            }
+            file_put_contents($filePath, json_encode($categories, JSON_UNESCAPED_UNICODE));
+        }
+
+        return $categories;
     }
 }

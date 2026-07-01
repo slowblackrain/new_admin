@@ -188,8 +188,18 @@ class DaehanScraperService
     /**
      * 대한판촉의 상품 카테고리 목록을 스크래핑하여 반환
      */
-    public function fetchCategories()
+    public function fetchCategories($force = false)
     {
+        $filePath = storage_path('app/affiliate/daehan_categories.json');
+
+        if (!$force && file_exists($filePath)) {
+            $content = file_get_contents($filePath);
+            $data = json_decode($content, true);
+            if (is_array($data)) {
+                return $data;
+            }
+        }
+
         $session = $this->login();
         $jar = $session['jar'];
         
@@ -235,6 +245,13 @@ class DaehanScraperService
             }
         }
         
+        if (!empty($categories)) {
+            if (!file_exists(dirname($filePath))) {
+                mkdir(dirname($filePath), 0755, true);
+            }
+            file_put_contents($filePath, json_encode($categories, JSON_UNESCAPED_UNICODE));
+        }
+
         return $categories;
     }
 
