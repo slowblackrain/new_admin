@@ -322,7 +322,7 @@
                                             <template x-for="item in filteredOptions" :key="item.code">
                                                 <div @click="selectItem(item)" class="relative cursor-pointer select-none py-2 pl-3 pr-9 text-slate-900 hover:bg-indigo-600 hover:text-white group">
                                                     <div class="flex items-center">
-                                                        <span class="font-normal block truncate" x-text="item.name"></span>
+                                                        <span class="font-normal block whitespace-normal break-words" x-text="item.name"></span>
                                                     </div>
                                                     <span x-show="item.code === selectedCode" class="absolute inset-y-0 right-0 flex items-center pr-4 text-indigo-600 group-hover:text-white">
                                                         <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
