@@ -8,12 +8,21 @@
     
     document.addEventListener('alpine:init', () => {
         Alpine.data('mappingGrid', () => ({
-            sites: {!! $sites->toJson() !!}.map(s => ({ ...s, visible: true })),
+            sites: {!! $sites->toJson() !!},
             
             toggleSite(siteId) {
                 const site = this.sites.find(s => s.id === siteId);
                 if (site) {
                     site.visible = !site.visible;
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete('sites[]');
+                    this.sites.forEach(s => {
+                        if (s.visible) {
+                            url.searchParams.append('sites[]', s.id);
+                        }
+                    });
+                    url.searchParams.set('page', '1');
+                    window.location.href = url.toString();
                 }
             },
             
@@ -234,6 +243,12 @@
         
         <div>
             <form id="categoryFilterForm" method="GET" action="{{ route('affiliate.settings.category') }}" class="flex items-center">
+                @if(request()->has('sites'))
+                    @foreach(request('sites') as $siteId)
+                        <input type="hidden" name="sites[]" value="{{ $siteId }}">
+                    @endforeach
+                @endif
+                <input type="hidden" name="filter" value="{{ request('filter', 'all') }}">
                 <select name="category_code" onchange="document.getElementById('categoryFilterForm').submit()" class="block w-64 rounded-md border-0 py-1.5 pl-3 pr-10 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6">
                     <option value="">대분류 필터 (전체보기)</option>
                     @foreach($syncCategories as $cat)

@@ -150,8 +150,19 @@ class AffiliateSettingController extends Controller
             
         $leaves = $leavesQuery->get();
 
-        // 4. 전체 제휴사 매핑 데이터 먼저 조회 (필터링에 사용)
-        $allMappings = AffiliateCategoryMapping::whereIn('affiliate_site_id', $sites->pluck('id'))->get();
+        // 선택된 사이트 필터링 로직 추가
+        $selectedSites = $request->input('sites');
+        if (empty($selectedSites)) {
+            $selectedSites = $sites->pluck('id')->toArray();
+        }
+        // $sites 객체에 visible 속성 추가
+        $sites->map(function($site) use ($selectedSites) {
+            $site->visible = in_array($site->id, $selectedSites);
+            return $site;
+        });
+
+        // 4. 선택된 제휴사 매핑 데이터 먼저 조회 (필터링에 사용)
+        $allMappings = AffiliateCategoryMapping::whereIn('affiliate_site_id', $selectedSites)->get();
         $mappingsByDomCode = [];
         $mappedCodesAllSites = [];
         foreach ($allMappings as $mapping) {
