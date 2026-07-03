@@ -70,12 +70,19 @@ class AffiliateSettingController extends Controller
         $serviceMap = [
             '대한판촉' => \App\Services\Affiliate\DaehanScraperService::class,
             '오너클랜' => \App\Services\Affiliate\OwnerclanService::class,
+            '도매매'   => \App\Services\Affiliate\DomemeService::class,
         ];
 
         foreach ($sites as $site) {
             if (isset($serviceMap[$site->name])) {
                 $serviceClass = $serviceMap[$site->name];
-                $scraper = new $serviceClass();
+                
+                if ($site->name === '도매매') {
+                    $scraper = new $serviceClass($site->api_key);
+                } else {
+                    $scraper = new $serviceClass();
+                }
+                
                 $categories = $scraper->fetchCategories();
                 
                 $list = [];
@@ -107,6 +114,8 @@ class AffiliateSettingController extends Controller
                         }
                         $list[] = $categories[$i];
                     }
+                } else if ($site->name === '도매매') {
+                    $list = $categories;
                 }
                 
                 $affiliateCategoriesList[$site->id] = $list;
