@@ -159,11 +159,17 @@ class AffiliateSettingController extends Controller
             
         $leaves = $leavesQuery->get();
 
-        // 선택된 사이트 필터링 로직 추가
+        // 선택된 사이트 필터링 로직 추가 (세션 저장으로 새로고침 유지)
         $selectedSites = $request->input('sites');
+        if ($selectedSites === null) {
+            $selectedSites = session('category_visible_sites');
+        }
+        
         if (empty($selectedSites)) {
             $selectedSites = $sites->pluck('id')->toArray();
         }
+        session(['category_visible_sites' => $selectedSites]);
+        
         // $sites 객체에 visible 속성 추가
         $sites->map(function($site) use ($selectedSites) {
             $site->visible = in_array($site->id, $selectedSites);
@@ -204,7 +210,14 @@ class AffiliateSettingController extends Controller
             
             if ($curr->level > 2 || !$isValidChain) continue;
 
-            $isMapped = in_array($cat->category_code, $mappedCodesAllSites);
+            $isMapped = true;
+            foreach ($selectedSites as $siteId) {
+                if (!isset($mappingsByDomCode[$cat->category_code][$siteId])) {
+                    $isMapped = false;
+                    break;
+                }
+            }
+            
             if ($isMapped) {
                 $mappedCount++;
             } else {

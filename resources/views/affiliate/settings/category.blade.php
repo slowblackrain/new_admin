@@ -10,7 +10,7 @@
         Alpine.data('mappingGrid', () => ({
             sites: {!! $sites->toJson() !!},
             
-            toggleSite(siteId) {
+            async toggleSite(siteId) {
                 const site = this.sites.find(s => s.id === siteId);
                 if (site) {
                     site.visible = !site.visible;
@@ -22,7 +22,20 @@
                         }
                     });
                     url.searchParams.set('page', '1');
-                    window.location.href = url.toString();
+                    
+                    window.history.pushState({}, '', url.toString());
+                    
+                    try {
+                        const res = await fetch(url.toString());
+                        const html = await res.text();
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        
+                        document.getElementById('filter-counts-container').innerHTML = doc.getElementById('filter-counts-container').innerHTML;
+                        document.getElementById('category-table-container').innerHTML = doc.getElementById('category-table-container').innerHTML;
+                    } catch (e) {
+                        window.location.href = url.toString();
+                    }
                 }
             },
             
@@ -216,7 +229,7 @@
         </div>
     </div>
 
-    <div class="mb-6 flex space-x-2 border-b border-gray-200 pb-4 justify-between items-center">
+    <div class="mb-6 flex space-x-2 border-b border-gray-200 pb-4 justify-between items-center" id="filter-counts-container">
         <div class="flex space-x-2">
             <a href="{{ request()->fullUrlWithQuery(['filter' => 'all', 'page' => 1]) }}" 
                class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium transition-colors border {{ request('filter', 'all') === 'all' ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50' }}">
@@ -276,7 +289,7 @@
         </div>
     @endif
 
-    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden" id="category-table-container">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-slate-200">
                 <thead class="bg-slate-50">
