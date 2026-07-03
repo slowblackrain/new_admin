@@ -9,5 +9,5 @@ class AffiliateSite extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name'];
+    protected $fillable = ['name', 'domain', 'sync_type', 'api_key', 'login_id', 'login_password', 'is_active'];
 }
