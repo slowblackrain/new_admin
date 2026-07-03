@@ -29,11 +29,8 @@ class LoginController extends Controller
             return redirect()->intended(route('admin.dashboard'));
         }
 
-        // 2. Legacy Check (md5 or sha256(md5)) and upgrade to Bcrypt
+        // 2. Legacy Check (md5 or sha256(md5))
         if ($admin && (md5($credentials['mpasswd']) === $admin->mpasswd || hash('sha256', md5($credentials['mpasswd'])) === $admin->mpasswd)) {
-            $admin->mpasswd = \Illuminate\Support\Facades\Hash::make($credentials['mpasswd']);
-            $admin->save();
-            
             Auth::guard('admin')->login($admin);
             return redirect()->intended(route('admin.dashboard'));
         }
