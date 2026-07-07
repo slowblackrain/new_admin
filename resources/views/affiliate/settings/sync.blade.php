@@ -304,8 +304,9 @@
                         
                         this.addLog('<b>선택 상품 동기화가 완료되었습니다. 페이지를 새로고침합니다.</b>', 'info');
                         setTimeout(() => {
+                            alert('동기화가 완료되었습니다. 확인을 누르면 페이지를 새로고침합니다.');
                             window.location.reload();
-                        }, 1500);
+                        }, 500);
                     } else {
                         let errorMsg = data.message ? data.message : '서버 응답 오류가 발생했습니다.';
                         this.addLog(errorMsg, 'error');
@@ -410,6 +411,7 @@
                         // 테스트 모드: 재귀 호출을 막고 1회 실행 후 멈춤
                         this.isSyncing = false;
                         this.addLog('<b>[테스트 모드] 1개 상품 전송 완료. 결과를 확인해 주세요.</b>', 'info');
+                        alert('전송이 완료되었습니다. 하단의 실시간 전송 로그를 확인해주세요.');
                         
                         /* 기존 연속 전송 로직 (주석 처리)
                         if (this.pendingCount > 0) {
