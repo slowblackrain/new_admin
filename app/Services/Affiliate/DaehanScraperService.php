@@ -123,7 +123,7 @@ class DaehanScraperService
             
             ['name' => 'cate', 'contents' => $affiliateCategory],
             ['name' => 'it_basic', 'contents' => strip_tags($goods->summary_info ?? '')], // 짧은설명 (HTML 태그 제거)
-            ['name' => 'it_name', 'contents' => $goods->goods_name ?? '테스트 상품'],
+            ['name' => 'gname', 'contents' => $goods->goods_name ?? '테스트 상품'], // 상품명
             
             ['name' => 'isopen', 'contents' => '1'], // 판매여부 1:진열
             ['name' => 'notax', 'contents' => '1'], // 과세여부 1:과세 0:면세
