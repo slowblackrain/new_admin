@@ -724,9 +724,21 @@ class AffiliateSettingController extends Controller
             })->filter();
             
             $paginatedGoods->setCollection($sortedItems);
+            
+            // 매핑 정보 가져오기 (현재 페이지 상품 대상)
+            $mappings = \Illuminate\Support\Facades\DB::table('fm_category_link as cl')
+                ->join('affiliate_category_mappings as acm', 'cl.category_code', '=', 'acm.dometopia_category_code')
+                ->where('acm.affiliate_site_id', $site->id)
+                ->whereNotNull('acm.affiliate_category_code')
+                ->whereIn('cl.goods_seq', $seqs)
+                ->select('cl.goods_seq', 'acm.affiliate_category_name', 'acm.affiliate_category_code')
+                ->get()
+                ->groupBy('goods_seq');
+        } else {
+            $mappings = collect();
         }
 
-        return view('affiliate.settings.sync', compact('sites', 'site', 'totalTargetCount', 'successCount', 'failedCount', 'pendingCount', 'syncCategories', 'selectedCategory', 'paginatedGoods', 'tab'));
+        return view('affiliate.settings.sync', compact('sites', 'site', 'totalTargetCount', 'successCount', 'failedCount', 'pendingCount', 'syncCategories', 'selectedCategory', 'paginatedGoods', 'tab', 'mappings'));
     }
 
     /**

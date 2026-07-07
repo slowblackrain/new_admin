@@ -130,6 +130,14 @@
                         <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
                             <div class="font-semibold text-slate-900">{{ $item->goods_name }}</div>
                             <div class="text-slate-500 text-xs mt-0.5">도매: {{ $item->goods_seq }} @if($item->goods_scode)<span class="mx-1">|</span>SCode: {{ $item->goods_scode }}@endif</div>
+                            <div class="mt-1.5">
+                                @if(isset($mappings) && $mappings->has($item->goods_seq))
+                                    @php $mapping = $mappings->get($item->goods_seq)->first(); @endphp
+                                    <span class="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">매핑됨: {{ $mapping->affiliate_category_name }}</span>
+                                @else
+                                    <span class="inline-flex items-center rounded-md bg-rose-50 px-2 py-1 text-xs font-medium text-rose-700 ring-1 ring-inset ring-rose-600/10">매핑 안됨</span>
+                                @endif
+                            </div>
                         </td>
                         <td class="whitespace-nowrap px-3 py-4 text-sm font-medium text-slate-700">
                             {{ number_format($item->price) }}원
