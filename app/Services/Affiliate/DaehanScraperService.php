@@ -135,24 +135,28 @@ class DaehanScraperService
             ['name' => 'it_qty_set', 'contents' => '1'], // 수량 세트? 보통 1
             ['name' => 'is_free', 'contents' => '0'], // 0: 조건부, 1: 무료
             ['name' => 'sc_price', 'contents' => $shippingFee],
+            ['name' => 'gd_baesong_price', 'contents' => $shippingFee], // 실제 폼 배송비 필드
             ['name' => 'opt_use', 'contents' => '0'],
             ['name' => 'image_use_yn', 'contents' => 'n'], // 이미지사용 금지
             ['name' => 'agree', 'contents' => 'on'], // 약관 동의
             ['name' => 'naver_shop_use', 'contents' => 'N'],
             ['name' => 'daum_shop_use', 'contents' => 'N'],
             
-            // 상세 옵션 (규격, 원산지 등)
+            // 상세 옵션 (규격, 색상, 재질, 원산지 등)
             ['name' => 'it_opt1_txt', 'contents' => $size ?: '기본옵션'], // 규격
-            ['name' => 'it_opt2_txt', 'contents' => $origin], // 원산지
-            ['name' => 'it_opt3_txt[]', 'contents' => $material], // 재질
-            ['name' => 'it_opt4_txt', 'contents' => $color], // 색상
+            ['name' => 'it_opt2_txt', 'contents' => $color], // 색상
+            ['name' => 'it_opt4_txt', 'contents' => $material], // 재질
             ['name' => 'it_opt5_txt', 'contents' => 'OPP비닐포장'], // 케이스
             ['name' => 'it_opt6_txt', 'contents' => '별도표기'], // 제작기간
-            ['name' => 'it_opt7_txt', 'contents' => '실크인쇄'], // 인쇄방법
-            ['name' => 'it_opt10_txt', 'contents' => $boxQty], // 1박스당 입수량
+            ['name' => 'it_opt7_txt', 'contents' => $origin], // 원산지
             
-            ['name' => 'it_seonmul', 'contents' => '300'], // 선물포장 비용 (가능)
+            ['name' => 'it_opt10_txt', 'contents' => '가능'], // 선물포장 가능여부 (라디오)
+            ['name' => 'it_seonmul', 'contents' => '300'], // 선물포장 비용
+            
+            ['name' => 'gd_baesong_ea', 'contents' => $basicQty], // 1박스당 입수량
+            
             ['name' => 'it_inswae', 'contents' => '가능'], // 인쇄가능여부
+            ['name' => 'it_opt3_txt[]', 'contents' => '실크인쇄'], // 인쇄방법 (체크박스)
             ['name' => 'print1_min_qty', 'contents' => $basicQty], // 인쇄 최소 주문수량
             ['name' => 'print2_min_qty', 'contents' => $basicQty], // 인쇄 없는 경우 최소 주문수량
             ['name' => 'it_fee_qty', 'contents' => $basicQty], // 무료인쇄 기본수량
