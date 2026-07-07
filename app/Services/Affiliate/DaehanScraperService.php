@@ -181,9 +181,7 @@ class DaehanScraperService
         $firstImage = $goods->images->where('image_type', 'main')->first() ?? $goods->images->first();
         $secondImage = $goods->images->where('image_type', 'main')->skip(1)->first();
         
-        $tempFiles = [];
-        
-        $processImage = function($imgObj, $fieldName) use (&$multipartData, &$tempFiles) {
+        $processImage = function($imgObj, $fieldName) use (&$multipartData) {
             if ($imgObj && $imgObj->image) {
                 $imageUrl = $imgObj->image;
                 if (!str_starts_with($imageUrl, 'http')) {
@@ -192,15 +190,9 @@ class DaehanScraperService
                 try {
                     $imageContent = @file_get_contents($imageUrl);
                     if ($imageContent) {
-                        $tempFile = tmpfile();
-                        fwrite($tempFile, $imageContent);
-                        fseek($tempFile, 0);
-                        $dummyPath = stream_get_meta_data($tempFile)['uri'];
-                        $tempFiles[] = $tempFile; // 가비지 컬렉션 방지
-                        
                         $multipartData[] = [
                             'name' => $fieldName,
-                            'contents' => fopen($dummyPath, 'r'),
+                            'contents' => $imageContent,
                             'filename' => basename($imageUrl)
                         ];
                     }
