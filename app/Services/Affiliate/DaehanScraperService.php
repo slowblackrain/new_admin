@@ -122,7 +122,7 @@ class DaehanScraperService
             ['name' => 'sel_ca5', 'contents' => $sel_ca5],
             
             ['name' => 'cate', 'contents' => $affiliateCategory],
-            ['name' => 'it_basic', 'contents' => strip_tags($goods->summary_info ?? '')], // 짧은설명 (HTML 태그 제거)
+            ['name' => 'it_basic', 'contents' => strip_tags(html_entity_decode($goods->summary_info ?? ''))], // 짧은설명 (HTML 태그 제거 강화)
             ['name' => 'gname', 'contents' => $goods->goods_name ?? '테스트 상품'], // 상품명
             
             ['name' => 'isopen', 'contents' => '1'], // 판매여부 1:진열
@@ -130,7 +130,7 @@ class DaehanScraperService
             
             ['name' => 'keywords', 'contents' => $goods->keyword ?? ''], // 검색키워드
             ['name' => 'gcode', 'contents' => $goods->goods_seq ?? time()],
-            ['name' => 'explan', 'contents' => $explan],
+            ['name' => 'memo', 'contents' => $explan], // 상세설명
             
             ['name' => 'it_qty_set', 'contents' => $basicQty], // 기본수량 (7단계 자동계산용)
             ['name' => 'daccount', 'contents' => $supplyPrice], // 상단 공급가격 (7단계 자동계산용)
@@ -177,35 +177,20 @@ class DaehanScraperService
             ['name' => 'img_mod', 'contents' => '0']
         ];
         
-        // 4-1. 대표 이미지 처리 (URL 다운로드 후 임시파일로 첨부)
+        // 4-1. 대표 이미지 처리 (URL 주소 텍스트로 바로 전송)
         $firstImage = $goods->images->where('image_type', 'main')->first() ?? $goods->images->first();
         $secondImage = $goods->images->where('image_type', 'main')->skip(1)->first();
         
-        $tempFiles = [];
-        
-        $processImage = function($imgObj, $fieldName) use (&$multipartData, &$tempFiles) {
+        $processImage = function($imgObj, $fieldName) use (&$multipartData) {
             if ($imgObj && $imgObj->image) {
                 $imageUrl = $imgObj->image;
                 if (!str_starts_with($imageUrl, 'http')) {
                     $imageUrl = 'https://dometopia.com' . (str_starts_with($imageUrl, '/') ? '' : '/') . $imageUrl;
                 }
-                try {
-                    $imageContent = file_get_contents($imageUrl);
-                    if ($imageContent) {
-                        $tempFile = tmpfile();
-                        fwrite($tempFile, $imageContent);
-                        fseek($tempFile, 0);
-                        $dummyPath = stream_get_meta_data($tempFile)['uri'];
-                        $tempFiles[] = $tempFile; // 파일 핸들 유지 (가비지 컬렉션 방지)
-                        
-                        $multipartData[] = [
-                            'name' => $fieldName,
-                            'contents' => fopen($dummyPath, 'r'),
-                            'filename' => basename($imageUrl)
-                        ];
-                    }
-                } catch (\Exception $e) {
-                }
+                $multipartData[] = [
+                    'name' => $fieldName,
+                    'contents' => $imageUrl
+                ];
             }
         };
         
