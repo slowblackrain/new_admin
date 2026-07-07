@@ -82,6 +82,21 @@ class DaehanScraperService
         $sel_ca4 = strlen($affiliateCategory) >= 12 ? substr($affiliateCategory, 0, 12) : '';
         $sel_ca5 = strlen($affiliateCategory) >= 15 ? substr($affiliateCategory, 0, 15) : '';
 
+        // 3-1. 도매토피아 특수 컬럼 파싱 (goods_contents2, sub_info_desc)
+        $contents2 = explode('|', $goods->goods_contents2 ?? '');
+        $material = $contents2[0] ?? '';
+        $size = $contents2[2] ?? '';
+        $boxQty = $contents2[4] ?? '';
+
+        $subInfoDesc = json_decode($goods->sub_info_desc ?? '{}', true);
+        $origin = $subInfoDesc['제조국 또는 원산지'] ?? '중국';
+        
+        $color = $goods->option()->where('option_title', 'like', '%색상%')->value('option1') ?? '';
+
+        // 기타사항(인쇄 필독 안내) 병합
+        $printNotice = "<br><br>★ 인쇄 필독 안내 ★<br>☆★ 50만원 이상 구매 시 기본 1도 인쇄비, 판비 전액 무료 진행 ★☆<br>★★ 2도 인쇄 이상 별도 문의 ★★<br>1. 중국 1도 인쇄: 개당 (낱개 기준) 80원 / 판비 2만원 별도가<br>2. 중국 2도 인쇄: 개당 (낱개 기준) 150원 / 판비 4만원 별도가<br>1. 모든 인쇄는 담당자가 시안, 문구, 위치, 비용 등을 고객님과 협의하여 진행합니다.<br>2. 모든 인쇄는 도매토피아 중국 물류 창고에서 직접 작업합니다.<br>3. 중국에서 인쇄 후 납기까지는 약 15일 내외 소요됩니다.";
+        $explan = ($goods->contents ?? '') . $printNotice;
+
         // 4. 전송 파라미터 매핑 (대한판촉 양식)
         $multipartData = [
             ['name' => 'token', 'contents' => $token],
@@ -94,23 +109,47 @@ class DaehanScraperService
             ['name' => 'sel_ca3', 'contents' => $sel_ca3],
             ['name' => 'sel_ca4', 'contents' => $sel_ca4],
             ['name' => 'sel_ca5', 'contents' => $sel_ca5],
-            ['name' => 'isopen', 'contents' => '2'],
-            ['name' => 'notax', 'contents' => '1'],
+            ['name' => 'isopen', 'contents' => ($goods->goods_view === 'look' ? '2' : '1')],
+            ['name' => 'notax', 'contents' => ($goods->tax === 'exempt' ? '1' : '0')], // 0: 과세, 1: 비과세
             ['name' => 'gname', 'contents' => $goods->goods_name ?? '테스트 상품'],
+            ['name' => 'keywords', 'contents' => $goods->keyword ?? ''], // 검색키워드
             ['name' => 'gcode', 'contents' => $goods->goods_seq ?? time()],
-            ['name' => 'explan', 'contents' => $goods->contents ?? '<p>상세설명</p>'],
+            ['name' => 'explan', 'contents' => $explan],
             ['name' => 'p_spl1', 'contents' => $supplyPrice],
+            
+            // 수량 및 단계별 가격 (임시로 1단계만 매핑, 다단계 시 루프 처리 필요)
+            ['name' => 'p_qty1', 'contents' => 1],
             ['name' => 'p_mny1', 'contents' => $sellingPrice],
-            ['name' => 'it_qty_set', 'contents' => '1'],
+            
+            ['name' => 'it_qty_set', 'contents' => '1'], // 수량 세트? 보통 1
             ['name' => 'is_free', 'contents' => '0'], // 0: 조건부, 1: 무료
             ['name' => 'sc_price', 'contents' => $shippingFee],
-            ['name' => 'notax', 'contents' => ($goods->tax_type ?? 'tax') === 'tax' ? '0' : '1'], // 0: 과세, 1: 비과세
             ['name' => 'opt_use', 'contents' => '0'],
-            ['name' => 'image_use_yn', 'contents' => 'y'],
+            ['name' => 'image_use_yn', 'contents' => 'n'], // 이미지사용 금지
             ['name' => 'agree', 'contents' => 'on'], // 약관 동의
             ['name' => 'naver_shop_use', 'contents' => 'N'],
             ['name' => 'daum_shop_use', 'contents' => 'N'],
-            ['name' => 'it_opt1_txt', 'contents' => '기본옵션'], // 규격
+            
+            // 상세 옵션 (규격, 원산지 등)
+            ['name' => 'it_opt1_txt', 'contents' => $size ?: '기본옵션'], // 규격
+            ['name' => 'it_opt2_txt', 'contents' => $origin], // 원산지
+            ['name' => 'it_opt3_txt[]', 'contents' => $material], // 재질
+            ['name' => 'it_opt4_txt', 'contents' => $color], // 색상
+            ['name' => 'it_opt5_txt', 'contents' => 'OPP비닐포장'], // 케이스
+            ['name' => 'it_opt6_txt', 'contents' => '별도표기'], // 제작기간
+            ['name' => 'it_opt7_txt', 'contents' => '실크인쇄'], // 인쇄방법
+            ['name' => 'it_opt10_txt', 'contents' => $boxQty], // 1박스당 입수량
+            
+            ['name' => 'it_inswae', 'contents' => '가능'], // 인쇄가능여부
+            ['name' => 'print1_min_qty', 'contents' => $boxQty ?: 100], // 인쇄 최소 주문수량
+            
+            // 인쇄 옵션 (80원 등 엑셀 가이드라인)
+            ['name' => 'opt_p_yn', 'contents' => 'y'],
+            ['name' => 'opt_p1_ck', 'contents' => '1'],
+            ['name' => 'opt_p1_sub1', 'contents' => '1도인쇄'],
+            ['name' => 'opt_p1_price', 'contents' => '80'],
+
+            ['name' => 'price_show', 'contents' => '1'], // 가격노출여부
             ['name' => 'buy_level', 'contents' => '10'],
             ['name' => 'stock_mod', 'contents' => '0'],
             ['name' => 'money_type', 'contents' => '0'],
@@ -120,32 +159,39 @@ class DaehanScraperService
         ];
         
         // 4-1. 대표 이미지 처리 (URL 다운로드 후 임시파일로 첨부)
-        $firstImage = $goods->images->first();
-        $dummyPath = '';
-        if ($firstImage && $firstImage->image) {
-            $imageUrl = $firstImage->image;
-            // 만약 상대경로라면 기본 도메인 추가 (안전장치)
-            if (!str_starts_with($imageUrl, 'http')) {
-                $imageUrl = 'https://dometopia.com' . (str_starts_with($imageUrl, '/') ? '' : '/') . $imageUrl;
-            }
-            try {
-                $imageContent = file_get_contents($imageUrl);
-                if ($imageContent) {
-                    $tempFile = tmpfile();
-                    fwrite($tempFile, $imageContent);
-                    fseek($tempFile, 0);
-                    $dummyPath = stream_get_meta_data($tempFile)['uri'];
-                    
-                    $multipartData[] = [
-                        'name' => 'simg1',
-                        'contents' => fopen($dummyPath, 'r'),
-                        'filename' => basename($imageUrl)
-                    ];
+        $firstImage = $goods->images->where('image_type', 'main')->first() ?? $goods->images->first();
+        $secondImage = $goods->images->where('image_type', 'main')->skip(1)->first();
+        
+        $tempFiles = [];
+        
+        $processImage = function($imgObj, $fieldName) use (&$multipartData, &$tempFiles) {
+            if ($imgObj && $imgObj->image) {
+                $imageUrl = $imgObj->image;
+                if (!str_starts_with($imageUrl, 'http')) {
+                    $imageUrl = 'https://dometopia.com' . (str_starts_with($imageUrl, '/') ? '' : '/') . $imageUrl;
                 }
-            } catch (\Exception $e) {
-                // 다운로드 실패 시 무시
+                try {
+                    $imageContent = file_get_contents($imageUrl);
+                    if ($imageContent) {
+                        $tempFile = tmpfile();
+                        fwrite($tempFile, $imageContent);
+                        fseek($tempFile, 0);
+                        $dummyPath = stream_get_meta_data($tempFile)['uri'];
+                        $tempFiles[] = $tempFile; // 파일 핸들 유지 (가비지 컬렉션 방지)
+                        
+                        $multipartData[] = [
+                            'name' => $fieldName,
+                            'contents' => fopen($dummyPath, 'r'),
+                            'filename' => basename($imageUrl)
+                        ];
+                    }
+                } catch (\Exception $e) {
+                }
             }
-        }
+        };
+        
+        $processImage($firstImage, 'simg1');
+        $processImage($secondImage, 'simg2');
 
         // 5. POST 전송
         try {
