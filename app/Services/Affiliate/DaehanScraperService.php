@@ -62,9 +62,20 @@ class DaehanScraperService
             
         $affiliateCategory = $mappedCategory ?: '001001'; // Default fallback
 
-        // 2. 소비자가 산출 (공급가 + 마진)
-        $supplyPrice = $goods->supply_price ?? ($goods->price ?? 1000);
+        // 2. 공급가 및 소비자가 산출 (도착가 * 1.15)
+        $cbmArr = explode('|', $goods->multi_discount_cbm ?? '');
+        $arrivalPrice = isset($cbmArr[6]) ? (float)$cbmArr[6] : 0;
+        
+        if ($arrivalPrice > 0) {
+            $supplyPrice = round($arrivalPrice * 1.15);
+        } else {
+            $supplyPrice = $goods->supply_price ?? ($goods->price ?? 1000);
+        }
         $sellingPrice = round($supplyPrice * (1 + ($marginRate / 100)));
+        
+        // 2-1. 기본수량 (1박스 입수량) 산출: 30만원 / 공급가
+        $basicQty = $supplyPrice > 0 ? floor(300000 / $supplyPrice) : 100;
+        if ($basicQty < 1) $basicQty = 1;
 
         // 3. 토큰 발급 (보안 우회)
         $tokenResponse = Http::withoutVerifying()->withOptions(['cookies' => $jar])
@@ -86,7 +97,7 @@ class DaehanScraperService
         $contents2 = explode('|', $goods->goods_contents2 ?? '');
         $material = $contents2[0] ?? '';
         $size = $contents2[2] ?? '';
-        $boxQty = $contents2[4] ?? '';
+        $boxQty = $basicQty; // 30만원 기준 자동계산 수량 적용
 
         $subInfoDesc = json_decode($goods->sub_info_desc ?? '{}', true);
         $origin = $subInfoDesc['제조국 또는 원산지'] ?? '중국';
@@ -117,8 +128,8 @@ class DaehanScraperService
             ['name' => 'explan', 'contents' => $explan],
             ['name' => 'p_spl1', 'contents' => $supplyPrice],
             
-            // 수량 및 단계별 가격 (임시로 1단계만 매핑, 다단계 시 루프 처리 필요)
-            ['name' => 'p_qty1', 'contents' => 1],
+            // 수량 및 단계별 가격 (기본수량으로 1단계만 전송 시, 대한판촉에서 7단계 자동 기입됨)
+            ['name' => 'p_qty1', 'contents' => $basicQty],
             ['name' => 'p_mny1', 'contents' => $sellingPrice],
             
             ['name' => 'it_qty_set', 'contents' => '1'], // 수량 세트? 보통 1
@@ -140,8 +151,11 @@ class DaehanScraperService
             ['name' => 'it_opt7_txt', 'contents' => '실크인쇄'], // 인쇄방법
             ['name' => 'it_opt10_txt', 'contents' => $boxQty], // 1박스당 입수량
             
+            ['name' => 'it_seonmul', 'contents' => '300'], // 선물포장 비용 (가능)
             ['name' => 'it_inswae', 'contents' => '가능'], // 인쇄가능여부
-            ['name' => 'print1_min_qty', 'contents' => $boxQty ?: 100], // 인쇄 최소 주문수량
+            ['name' => 'print1_min_qty', 'contents' => $basicQty], // 인쇄 최소 주문수량
+            ['name' => 'print2_min_qty', 'contents' => $basicQty], // 인쇄 없는 경우 최소 주문수량
+            ['name' => 'it_fee_qty', 'contents' => $basicQty], // 무료인쇄 기본수량
             
             // 인쇄 옵션 (80원 등 엑셀 가이드라인)
             ['name' => 'opt_p_yn', 'contents' => 'y'],
