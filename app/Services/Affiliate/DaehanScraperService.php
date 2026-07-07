@@ -120,9 +120,14 @@ class DaehanScraperService
             ['name' => 'sel_ca3', 'contents' => $sel_ca3],
             ['name' => 'sel_ca4', 'contents' => $sel_ca4],
             ['name' => 'sel_ca5', 'contents' => $sel_ca5],
-            ['name' => 'isopen', 'contents' => ($goods->goods_view === 'look' ? '2' : '1')],
-            ['name' => 'notax', 'contents' => ($goods->tax === 'exempt' ? '1' : '0')], // 0: 과세, 1: 비과세
-            ['name' => 'gname', 'contents' => $goods->goods_name ?? '테스트 상품'],
+            
+            ['name' => 'cate', 'contents' => $affiliateCategory],
+            ['name' => 'it_basic', 'contents' => strip_tags($goods->summary_info ?? '')], // 짧은설명 (HTML 태그 제거)
+            ['name' => 'it_name', 'contents' => $goods->goods_name ?? '테스트 상품'],
+            
+            ['name' => 'isopen', 'contents' => '1'], // 판매여부 1:진열
+            ['name' => 'notax', 'contents' => '1'], // 과세여부 1:과세 0:면세
+            
             ['name' => 'keywords', 'contents' => $goods->keyword ?? ''], // 검색키워드
             ['name' => 'gcode', 'contents' => $goods->goods_seq ?? time()],
             ['name' => 'explan', 'contents' => $explan],
@@ -135,7 +140,7 @@ class DaehanScraperService
             ['name' => 'opt_use', 'contents' => '0'],
             ['name' => 'image_use_yn', 'contents' => 'n'], // 이미지사용 금지
             ['name' => 'agree', 'contents' => 'on'], // 약관 동의
-            ['name' => 'naver_shop_use', 'contents' => 'N'],
+            ['name' => 'it_point_type', 'contents' => '0'], // 포인트 설정 안함
             ['name' => 'daum_shop_use', 'contents' => 'N'],
             
             // 상세 옵션 (규격, 색상, 재질, 원산지 등)
