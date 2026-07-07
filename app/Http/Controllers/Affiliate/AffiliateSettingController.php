@@ -819,8 +819,7 @@ class AffiliateSettingController extends Controller
             $scraper = new \App\Services\Affiliate\DaehanScraperService();
         }
         
-        $goodsList = \Illuminate\Support\Facades\DB::table('fm_goods')
-            ->whereIn('goods_seq', $goodsSeqsToSync)
+        $goodsList = \App\Models\Goods::whereIn('goods_seq', $goodsSeqsToSync)
             ->get();
             
         foreach ($goodsList as $goods) {
@@ -871,8 +870,7 @@ class AffiliateSettingController extends Controller
             $scraper = new \App\Services\Affiliate\DaehanScraperService();
         }
         
-        $goodsList = \Illuminate\Support\Facades\DB::table('fm_goods')
-            ->whereIn('goods_seq', $goodsSeqs)
+        $goodsList = \App\Models\Goods::whereIn('goods_seq', $goodsSeqs)
             ->get();
             
         foreach ($goodsList as $goods) {
