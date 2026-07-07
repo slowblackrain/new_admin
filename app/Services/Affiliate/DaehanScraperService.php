@@ -126,13 +126,9 @@ class DaehanScraperService
             ['name' => 'keywords', 'contents' => $goods->keyword ?? ''], // 검색키워드
             ['name' => 'gcode', 'contents' => $goods->goods_seq ?? time()],
             ['name' => 'explan', 'contents' => $explan],
-            ['name' => 'p_spl1', 'contents' => $supplyPrice],
             
-            // 수량 및 단계별 가격 (기본수량으로 1단계만 전송 시, 대한판촉에서 7단계 자동 기입됨)
-            ['name' => 'p_qty1', 'contents' => $basicQty],
-            ['name' => 'p_mny1', 'contents' => $sellingPrice],
-            
-            ['name' => 'it_qty_set', 'contents' => '1'], // 수량 세트? 보통 1
+            ['name' => 'it_qty_set', 'contents' => $basicQty], // 기본수량 (7단계 자동계산용)
+            ['name' => 'daccount', 'contents' => $supplyPrice], // 상단 공급가격 (7단계 자동계산용)
             ['name' => 'is_free', 'contents' => '0'], // 0: 조건부, 1: 무료
             ['name' => 'sc_price', 'contents' => $shippingFee],
             ['name' => 'gd_baesong_price', 'contents' => $shippingFee], // 실제 폼 배송비 필드
@@ -144,7 +140,7 @@ class DaehanScraperService
             
             // 상세 옵션 (규격, 색상, 재질, 원산지 등)
             ['name' => 'it_opt1_txt', 'contents' => $size ?: '기본옵션'], // 규격
-            ['name' => 'it_opt2_txt', 'contents' => $color], // 색상
+            ['name' => 'it_opt2_txt', 'contents' => $color ?: '하단참조'], // 색상
             ['name' => 'it_opt4_txt', 'contents' => $material], // 재질
             ['name' => 'it_opt5_txt', 'contents' => 'OPP비닐포장'], // 케이스
             ['name' => 'it_opt6_txt', 'contents' => '별도표기'], // 제작기간
