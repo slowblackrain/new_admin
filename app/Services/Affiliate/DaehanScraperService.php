@@ -146,6 +146,35 @@ class DaehanScraperService
             
             ['name' => 'it_qty_set', 'contents' => $basicQty], // 기본수량 (7단계 자동계산용)
             ['name' => 'daccount', 'contents' => $supplyPrice], // 상단 공급가격 (7단계 자동계산용)
+            
+            // 7단계 수량 및 가격 직접 설정
+            ['name' => 'p_qty1', 'contents' => $basicQty * 1],
+            ['name' => 'p_spl1', 'contents' => $supplyPrice],
+            ['name' => 'p_mny1', 'contents' => $consumerPrice],
+            
+            ['name' => 'p_qty2', 'contents' => $basicQty * 2],
+            ['name' => 'p_spl2', 'contents' => $supplyPrice],
+            ['name' => 'p_mny2', 'contents' => $consumerPrice],
+            
+            ['name' => 'p_qty3', 'contents' => $basicQty * 3],
+            ['name' => 'p_spl3', 'contents' => $supplyPrice],
+            ['name' => 'p_mny3', 'contents' => $consumerPrice],
+            
+            ['name' => 'p_qty4', 'contents' => $basicQty * 5],
+            ['name' => 'p_spl4', 'contents' => $supplyPrice],
+            ['name' => 'p_mny4', 'contents' => $consumerPrice],
+            
+            ['name' => 'p_qty5', 'contents' => $basicQty * 10],
+            ['name' => 'p_spl5', 'contents' => $supplyPrice],
+            ['name' => 'p_mny5', 'contents' => $consumerPrice],
+            
+            ['name' => 'p_qty6', 'contents' => $basicQty * 20],
+            ['name' => 'p_spl6', 'contents' => $supplyPrice],
+            ['name' => 'p_mny6', 'contents' => $consumerPrice],
+            
+            ['name' => 'p_qty7', 'contents' => $basicQty * 50],
+            ['name' => 'p_spl7', 'contents' => $supplyPrice],
+            ['name' => 'p_mny7', 'contents' => $consumerPrice],
             ['name' => 'is_free', 'contents' => '0'], // 0: 조건부, 1: 무료
             ['name' => 'sc_price', 'contents' => $shippingFee],
             ['name' => 'gd_baesong_price', 'contents' => $shippingFee], // 실제 폼 배송비 필드
