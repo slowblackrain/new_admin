@@ -193,11 +193,12 @@ class DaehanScraperService
                     $imageUrl = 'https://dometopia.com' . (str_starts_with($imageUrl, '/') ? '' : '/') . $imageUrl;
                 }
                 try {
-                    $imageContent = @file_get_contents($imageUrl);
-                    if ($imageContent) {
+                    // Use stream to prevent memory exhaustion, with check for valid resource
+                    $stream = @fopen($imageUrl, 'r');
+                    if (is_resource($stream)) {
                         $multipartData[] = [
                             'name' => $fieldName,
-                            'contents' => $imageContent,
+                            'contents' => $stream,
                             'filename' => basename($imageUrl)
                         ];
                     }
@@ -216,6 +217,10 @@ class DaehanScraperService
                 'Referer' => $this->baseUrl . '/mypage/page.php?code=seller_goods_form',
                 'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
             ])->post($this->baseUrl . '/mypage/seller_goods_form_update.php', $multipartData);
+            
+            // 메모리 확보를 위해 업로드 데이터 즉시 해제
+            unset($multipartData);
+            gc_collect_cycles();
             
             $body = $response->body();
             \Illuminate\Support\Facades\Log::info("Daehan87 Response Body: \n" . substr($body, 0, 1000));
