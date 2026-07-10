@@ -163,7 +163,9 @@
                         </td>
                         <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
                             <div class="font-semibold text-slate-900">{{ $item->goods_name }}</div>
-                            <div class="text-slate-500 text-xs mt-0.5">도매: {{ $item->goods_seq }} @if($item->goods_scode)<span class="mx-1">|</span>SCode: {{ $item->goods_scode }}@endif</div>
+                            <div class="text-slate-500 text-xs mt-0.5">
+                                @if($item->goods_code)공급사코드: {{ $item->goods_code }}<span class="mx-1">|</span>@endif 상품코드: {{ $item->goods_scode ?? $item->goods_seq }}
+                            </div>
                             <div class="mt-1.5">
                                 @if(isset($mappings) && $mappings->has($item->goods_seq))
                                     @php $mapping = $mappings->get($item->goods_seq)->first(); @endphp
