@@ -146,7 +146,7 @@ class DaehanScraperService
             ['name' => 'it_point_type', 'contents' => '0'], // 포인트 설정 안함
             ['name' => 'naver_shop_use', 'contents' => '1'], // 네이버지식쇼핑 (1: 사용)
             ['name' => 'daum_shop_use', 'contents' => '1'], // 다음쇼핑하우 (1: 사용)
-            ['name' => 'adm_gcode', 'contents' => $goods->goods_seq ?? ''], // 공급사 자체코드
+            ['name' => 'adm_gcode', 'contents' => $goods->goods_code ?? ''], // 공급사 자체코드
             
             // 상세 옵션 (규격, 색상, 재질, 원산지 등)
             ['name' => 'it_opt1_txt', 'contents' => $size ?: '기본옵션'], // 규격
@@ -186,21 +186,28 @@ class DaehanScraperService
         $firstImage = $goods->images->where('image_type', 'main')->first() ?? $goods->images->first();
         $secondImage = $goods->images->where('image_type', 'main')->skip(1)->first();
         
-        $processImage = function($imgObj, $fieldName) use (&$multipartData) {
+        $tempFiles = [];
+        $processImage = function($imgObj, $fieldName) use (&$multipartData, &$tempFiles) {
             if ($imgObj && $imgObj->image) {
                 $imageUrl = $imgObj->image;
                 if (!str_starts_with($imageUrl, 'http')) {
                     $imageUrl = 'https://dometopia.com' . (str_starts_with($imageUrl, '/') ? '' : '/') . $imageUrl;
                 }
                 try {
-                    // Use stream to prevent memory exhaustion, with check for valid resource
-                    $stream = @fopen($imageUrl, 'r');
-                    if (is_resource($stream)) {
-                        $multipartData[] = [
-                            'name' => $fieldName,
-                            'contents' => $stream,
-                            'filename' => basename($imageUrl)
-                        ];
+                    // Download to local temp file to avoid memory exhaustion and provide Content-Length to Guzzle
+                    $tempPath = storage_path('app/tmp_' . uniqid() . '_' . basename($imageUrl));
+                    if (@copy($imageUrl, $tempPath) && file_exists($tempPath) && filesize($tempPath) > 0) {
+                        $stream = @fopen($tempPath, 'r');
+                        if (is_resource($stream)) {
+                            $multipartData[] = [
+                                'name' => $fieldName,
+                                'contents' => $stream,
+                                'filename' => basename($imageUrl)
+                            ];
+                            $tempFiles[] = $tempPath;
+                        } else {
+                            @unlink($tempPath);
+                        }
                     }
                 } catch (\Exception $e) {
                 }
@@ -222,8 +229,14 @@ class DaehanScraperService
             unset($multipartData);
             gc_collect_cycles();
             
+            // Delete temp files
+            if (isset($tempFiles) && is_array($tempFiles)) {
+                foreach ($tempFiles as $tempPath) {
+                    @unlink($tempPath);
+                }
+            }
+            
             $body = $response->body();
-            \Illuminate\Support\Facades\Log::info("Daehan87 Response Body: \n" . substr($body, 0, 1000));
             
             $isSuccess = strpos($body, '등록되었습니다') !== false 
                          || $response->status() == 302 
