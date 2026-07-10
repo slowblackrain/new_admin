@@ -704,7 +704,7 @@ class AffiliateSettingController extends Controller
         if (!empty($seqs)) {
             $fullItems = \Illuminate\Support\Facades\DB::table('fm_goods as g')
                 ->select(
-                    'g.goods_seq', 'g.goods_name', 'g.goods_scode', 'go.price', 
+                    'g.goods_seq', 'g.goods_name', 'g.goods_scode', 'g.goods_code', 'go.price', 
                     's.sync_status', 's.error_message', 's.last_synced_at', 's.affiliate_goods_code'
                 )
                 ->leftJoin('fm_goods_option as go', function($join) {
