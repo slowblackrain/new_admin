@@ -114,7 +114,7 @@ class DaehanScraperService
         // 4. 전송 파라미터 매핑 (대한판촉 양식)
         // 하단 정보고시 영역 숨기기 (CSS 자르기 기법 적용)
         // 기본 자르기 픽셀. 필요 시 이 값을 수정하여 자르는 높이를 조절할 수 있습니다.
-        $cropBottomPx = 1500; 
+        $cropBottomPx = 700; 
         
         $memoHtml = '<div style="overflow: hidden; margin: 0 auto; text-align: center;">';
         $memoHtml .= '<div style="margin-bottom: -' . $cropBottomPx . 'px;">';
