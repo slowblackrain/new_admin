@@ -78,6 +78,40 @@
         </div>
     </div>
 
+    <!-- 실시간 로그 콘솔 -->
+    <div class="mb-8 bg-slate-900 rounded-lg shadow overflow-hidden">
+        <div class="px-4 py-3 border-b border-slate-800 flex justify-between items-center bg-slate-800">
+            <h3 class="text-sm font-semibold text-slate-200 flex items-center">
+                <svg class="w-4 h-4 mr-2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M4 17h16a2 2 0 002-2V5a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                실시간 전송 로그
+            </h3>
+            <button @click="logs = []" class="text-xs text-slate-400 hover:text-white transition-colors">로그 지우기</button>
+        </div>
+        <div class="p-4 h-64 overflow-y-auto font-mono text-sm space-y-2" id="logConsole">
+            <template x-for="(log, index) in logs" :key="index">
+                <div class="flex items-start rounded px-2 py-1.5 transition-all duration-300 ease-out" 
+                     :class="{
+                         'bg-emerald-900/30 text-emerald-300 border-l-2 border-emerald-500': log.type === 'success', 
+                         'bg-rose-900/30 text-rose-300 border-l-2 border-rose-500': log.type === 'error', 
+                         'text-slate-300 hover:bg-slate-800/50': log.type === 'info'
+                     }"
+                     x-data="{ show: false }" x-init="setTimeout(() => show = true, 50)" :style="show ? 'opacity: 1; transform: translateY(0)' : 'opacity: 0; transform: translateY(4px)'">
+                    <span class="text-slate-500 mr-3 text-xs mt-0.5 shrink-0" x-text="log.time"></span>
+                    
+                    <!-- 아이콘 분기 -->
+                    <span class="mr-2 shrink-0 mt-0.5">
+                        <svg x-show="log.type === 'success'" class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        <svg x-show="log.type === 'error'" class="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        <svg x-show="log.type === 'info'" class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </span>
+
+                    <span class="break-all" x-html="log.message"></span>
+                </div>
+            </template>
+            <div x-show="logs.length === 0" class="text-slate-500 italic flex items-center justify-center h-full">동기화를 시작하면 여기에 실시간 로그가 표시됩니다...</div>
+        </div>
+    </div>
+
     <!-- 상품 상세 리스트 뷰 -->
     <div class="bg-white rounded-lg shadow border border-slate-200 overflow-hidden">
         <div class="px-4 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between bg-slate-50">
@@ -192,40 +226,6 @@
         </div>
         @endif
     </div>
-
-    <!-- 실시간 로그 콘솔 -->
-    <div class="mt-8 bg-slate-900 rounded-lg shadow overflow-hidden">
-        <div class="px-4 py-3 border-b border-slate-800 flex justify-between items-center bg-slate-800">
-            <h3 class="text-sm font-semibold text-slate-200 flex items-center">
-                <svg class="w-4 h-4 mr-2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M4 17h16a2 2 0 002-2V5a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                실시간 전송 로그
-            </h3>
-            <button @click="logs = []" class="text-xs text-slate-400 hover:text-white transition-colors">로그 지우기</button>
-        </div>
-        <div class="p-4 h-96 overflow-y-auto font-mono text-sm space-y-2" id="logConsole">
-            <template x-for="(log, index) in logs" :key="index">
-                <div class="flex items-start rounded px-2 py-1.5 transition-all duration-300 ease-out" 
-                     :class="{
-                         'bg-emerald-900/30 text-emerald-300 border-l-2 border-emerald-500': log.type === 'success', 
-                         'bg-rose-900/30 text-rose-300 border-l-2 border-rose-500': log.type === 'error', 
-                         'text-slate-300 hover:bg-slate-800/50': log.type === 'info'
-                     }"
-                     x-data="{ show: false }" x-init="setTimeout(() => show = true, 50)" :style="show ? 'opacity: 1; transform: translateY(0)' : 'opacity: 0; transform: translateY(4px)'">
-                    <span class="text-slate-500 mr-3 text-xs mt-0.5 shrink-0" x-text="log.time"></span>
-                    
-                    <!-- 아이콘 분기 -->
-                    <span class="mr-2 shrink-0 mt-0.5">
-                        <svg x-show="log.type === 'success'" class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                        <svg x-show="log.type === 'error'" class="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                        <svg x-show="log.type === 'info'" class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    </span>
-
-                    <span class="break-all" x-html="log.message"></span>
-                </div>
-            </template>
-            <div x-show="logs.length === 0" class="text-slate-500 italic flex items-center justify-center h-full">동기화를 시작하면 여기에 실시간 로그가 표시됩니다...</div>
-        </div>
-    </div>
 </div>
 
 <script>
@@ -304,15 +304,19 @@
                         
                         this.addLog('<b>선택 상품 동기화가 완료되었습니다. 페이지를 새로고침합니다.</b>', 'info');
                         setTimeout(() => {
-                            alert('동기화가 완료되었습니다. 확인을 누르면 페이지를 새로고침합니다.');
+                            let successCount = data.results.filter(i => i.success).length;
+                            let failCount = data.results.length - successCount;
+                            alert(`동기화가 완료되었습니다.\n성공: ${successCount}건\n실패: ${failCount}건\n\n확인을 누르면 페이지를 새로고침합니다.`);
                             window.location.reload();
                         }, 500);
                     } else {
                         let errorMsg = data.message ? data.message : '서버 응답 오류가 발생했습니다.';
                         this.addLog(errorMsg, 'error');
+                        alert('전송 중 오류가 발생했습니다: ' + errorMsg);
                     }
                 } catch (e) {
                     this.addLog(`네트워크 또는 서버 오류: ${e.message}`, 'error');
+                    alert(`네트워크 또는 서버 오류: ${e.message}`);
                 } finally {
                     this.isSyncing = false;
                 }
@@ -387,6 +391,7 @@
                     if (data.status === 'done') {
                         this.isSyncing = false;
                         this.addLog(`<b>완료:</b> ${data.message}`, 'success');
+                        alert('모든 상품의 동기화가 완료되었습니다!');
                         return;
                     }
                     
@@ -408,12 +413,7 @@
                         this.failedCount += chunkFail;
                         this.pendingCount = Math.max(0, this.totalCount - this.successCount - this.failedCount);
                         
-                        // 테스트 모드: 재귀 호출을 막고 1회 실행 후 멈춤
-                        this.isSyncing = false;
-                        this.addLog('<b>[테스트 모드] 1개 상품 전송 완료. 결과를 확인해 주세요.</b>', 'info');
-                        alert('전송이 완료되었습니다. 하단의 실시간 전송 로그를 확인해주세요.');
-                        
-                        /* 기존 연속 전송 로직 (주석 처리)
+                        // 테스트 모드 해제: 실제 동작을 위해 연속 호출 복원
                         if (this.pendingCount > 0) {
                             setTimeout(() => {
                                 this.processChunk();
@@ -421,16 +421,19 @@
                         } else {
                             this.isSyncing = false;
                             this.addLog('<b>모든 상품의 동기화가 완료되었습니다!</b>', 'success');
+                            alert(`모든 동기화가 완료되었습니다.\n성공: ${this.successCount}건\n실패: ${this.failedCount}건`);
                         }
-                        */
+                        
                     } else {
                         this.isSyncing = false;
                         let errorMsg = data.message ? data.message : '서버 응답 오류가 발생했습니다.';
                         this.addLog(errorMsg, 'error');
+                        alert('전송 중 오류가 발생했습니다: ' + errorMsg);
                     }
                 } catch (e) {
                     this.isSyncing = false;
                     this.addLog(`네트워크 또는 서버 오류: ${e.message}`, 'error');
+                    alert(`네트워크 또는 서버 오류: ${e.message}`);
                 }
             }
         }));
