@@ -108,6 +108,9 @@ class DaehanScraperService
         $printNotice = "<br><br>★ 인쇄 필독 안내 ★<br>☆★ 50만원 이상 구매 시 기본 1도 인쇄비, 판비 전액 무료 진행 ★☆<br>★★ 2도 인쇄 이상 별도 문의 ★★<br>1. 중국 1도 인쇄: 개당 (낱개 기준) 80원 / 판비 2만원 별도가<br>2. 중국 2도 인쇄: 개당 (낱개 기준) 150원 / 판비 4만원 별도가<br>1. 모든 인쇄는 담당자가 시안, 문구, 위치, 비용 등을 고객님과 협의하여 진행합니다.<br>2. 모든 인쇄는 도매토피아 중국 물류 창고에서 직접 작업합니다.<br>3. 중국에서 인쇄 후 납기까지는 약 15일 내외 소요됩니다.";
         $explan = ($goods->contents ?? '') . $printNotice;
 
+        // Increase memory limit for large images
+        ini_set('memory_limit', '512M');
+
         // 4. 전송 파라미터 매핑 (대한판촉 양식)
         $multipartData = [
             ['name' => 'token', 'contents' => $token],
@@ -215,7 +218,7 @@ class DaehanScraperService
             ])->post($this->baseUrl . '/mypage/seller_goods_form_update.php', $multipartData);
             
             $body = $response->body();
-            \Illuminate\Support\Facades\Log::info("Daehan87 Response Body: \n" . $body);
+            \Illuminate\Support\Facades\Log::info("Daehan87 Response Body: \n" . substr($body, 0, 1000));
             
             $isSuccess = strpos($body, '등록되었습니다') !== false 
                          || $response->status() == 302 
