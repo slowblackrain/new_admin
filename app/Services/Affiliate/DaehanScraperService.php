@@ -141,7 +141,9 @@ class DaehanScraperService
             ['name' => 'image_use_yn', 'contents' => 'n'], // 이미지사용 금지
             ['name' => 'agree', 'contents' => 'on'], // 약관 동의
             ['name' => 'it_point_type', 'contents' => '0'], // 포인트 설정 안함
-            ['name' => 'daum_shop_use', 'contents' => 'N'],
+            ['name' => 'naver_shop_use', 'contents' => '1'], // 네이버지식쇼핑 (1: 사용)
+            ['name' => 'daum_shop_use', 'contents' => '1'], // 다음쇼핑하우 (1: 사용)
+            ['name' => 'adm_gcode', 'contents' => $goods->goods_seq ?? ''], // 공급사 자체코드
             
             // 상세 옵션 (규격, 색상, 재질, 원산지 등)
             ['name' => 'it_opt1_txt', 'contents' => $size ?: '기본옵션'], // 규격
@@ -162,11 +164,11 @@ class DaehanScraperService
             ['name' => 'print2_min_qty', 'contents' => $basicQty], // 인쇄 없는 경우 최소 주문수량
             ['name' => 'it_fee_qty', 'contents' => $basicQty], // 무료인쇄 기본수량
             
-            // 인쇄 옵션 (80원 등 엑셀 가이드라인)
-            ['name' => 'opt_p_yn', 'contents' => 'y'],
-            ['name' => 'opt_p1_ck', 'contents' => '1'],
-            ['name' => 'opt_p1_sub1', 'contents' => '1도인쇄'],
-            ['name' => 'opt_p1_price', 'contents' => '80'],
+            // 인쇄 옵션 (실크인쇄 필수선택)
+            ['name' => 'opt_4_yn', 'contents' => '1'],
+            ['name' => 'opt_p4_sub1', 'contents' => '80'], // 1도
+            ['name' => 'opt_p4_sub2', 'contents' => '150'], // 2도
+            ['name' => 'opt_p4_sub3', 'contents' => '250'], // 3도
 
             ['name' => 'price_show', 'contents' => '1'], // 가격노출여부
             ['name' => 'buy_level', 'contents' => '10'],

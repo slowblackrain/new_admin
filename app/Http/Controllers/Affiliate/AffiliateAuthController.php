@@ -45,10 +45,8 @@ class AffiliateAuthController extends Controller
             return redirect()->intended(route('affiliate.dashboard'));
         }
 
-        // 2. Legacy Check (md5 or sha256(md5)) and upgrade to Bcrypt
+        // 2. Legacy Check (md5 or sha256(md5))
         if ($admin && (md5($credentials['password']) === $admin->mpasswd || hash('sha256', md5($credentials['password'])) === $admin->mpasswd)) {
-            $admin->mpasswd = \Illuminate\Support\Facades\Hash::make($credentials['password']);
-            $admin->save();
             
             Auth::guard('admin')->login($admin, $request->filled('remember'));
             $request->session()->regenerate();

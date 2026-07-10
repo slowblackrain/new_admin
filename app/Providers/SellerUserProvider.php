@@ -22,4 +22,12 @@ class SellerUserProvider extends EloquentUserProvider
         // fm_provider.provider_passwd is MD5(plain)
         return $user->getAuthPassword() === md5($plain);
     }
+
+    /**
+     * Disable automatic password rehashing for legacy system parity.
+     */
+    public function rehashPasswordIfRequired(UserContract $user, array $credentials, bool $force = false)
+    {
+        // Do nothing to preserve MD5
+    }
 }
