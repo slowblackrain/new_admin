@@ -112,6 +112,15 @@ class DaehanScraperService
         ini_set('memory_limit', '512M');
 
         // 4. 전송 파라미터 매핑 (대한판촉 양식)
+        // 하단 정보고시 영역 숨기기 (CSS 자르기 기법 적용)
+        // 기본 자르기 픽셀. 필요 시 이 값을 수정하여 자르는 높이를 조절할 수 있습니다.
+        $cropBottomPx = 1500; 
+        
+        $memoHtml = '<div style="overflow: hidden; margin: 0 auto; text-align: center;">';
+        $memoHtml .= '<div style="margin-bottom: -' . $cropBottomPx . 'px;">';
+        $memoHtml .= '<img src="' . ($goods->img_contents ?? '') . '" style="max-width: 100%; display: inline-block;" />';
+        $memoHtml .= '</div></div>';
+
         $multipartData = [
             ['name' => 'token', 'contents' => $token],
             ['name' => 'w', 'contents' => ''],
@@ -133,7 +142,7 @@ class DaehanScraperService
             
             ['name' => 'keywords', 'contents' => $goods->keyword ?? ''], // 검색키워드
             ['name' => 'gcode', 'contents' => $goods->goods_seq ?? time()],
-            ['name' => 'memo', 'contents' => '<img src="' . ($goods->img_contents ?? '') . '" />'], // 상세설명 (img 태그로 감싸기)
+            ['name' => 'memo', 'contents' => $memoHtml], // 상세설명 (img 태그를 감싸서 하단 자르기 적용)
             
             ['name' => 'it_qty_set', 'contents' => $basicQty], // 기본수량 (7단계 자동계산용)
             ['name' => 'daccount', 'contents' => $supplyPrice], // 상단 공급가격 (7단계 자동계산용)
