@@ -109,14 +109,12 @@ class OwnerclanService
         $s_price = $option ? $option->consumer_price : 0;
         
         $dds_price = 0;
-        if(strpos($goodsRecord->goods_scode, 'F') !== false) {
-            $dds_price = $d_price;
+        // GKM 포함: (도매가 * 0.97)에 부가세 10% 추가 (* 1.1)
+        if (strpos($goodsRecord->goods_scode, 'GKM') !== false) {
+            $dds_price = round(($d_price * 0.97) * 1.1, -1);
         } else {
-            if(strpos($goodsRecord->goods_scode, 'GKM') !== false) {
-                $dds_price = round($d_price * 0.97, -1);
-            } else {
-                $dds_price = round($d_price * 1.1, -1);
-            }
+            // 나머지 전체: 도매가에 부가세 10% 추가 (* 1.1)
+            $dds_price = round($d_price * 1.1, -1);
         }
 
         // 3. 연동명 특수문자 제거 로직
