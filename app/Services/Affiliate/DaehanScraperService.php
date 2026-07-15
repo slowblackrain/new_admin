@@ -222,7 +222,7 @@ class DaehanScraperService
         
         // 4-1. 대표 이미지 처리 (URL 다운로드 후 임시파일로 첨부)
         $firstImage = $goods->images->where('image_type', 'main')->first() ?? $goods->images->first();
-        $secondImage = $goods->images->where('image_type', 'main')->skip(1)->first();
+        $secondImage = $goods->images->where('image_type', 'main')->skip(1)->first() ?? $firstImage;
         
         $tempFiles = [];
         $processImage = function($imgObj, $fieldName) use (&$multipartData, &$tempFiles) {
