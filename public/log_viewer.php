@@ -10,11 +10,17 @@ usort($files, function($a, $b) {
 });
 $logPath = $files[0];
 
-$lines = file($logPath);
+// Read last 100000 bytes instead of loading whole file
+$fp = fopen($logPath, 'r');
+fseek($fp, -100000, SEEK_END);
+$content = fread($fp, 100000);
+fclose($fp);
+
+$lines = explode("\n", $content);
 $output = [];
 for ($i = count($lines) - 1; $i >= 0; $i--) {
-    if (stripos($lines[$i], 'error') !== false || stripos($lines[$i], 'exception') !== false) {
-        $output[] = $lines[$i];
+    if (stripos($lines[$i], 'error') !== false || stripos($lines[$i], 'exception') !== false || stripos($lines[$i], 'stack') !== false) {
+        $output[] = htmlspecialchars($lines[$i]);
     }
     if (count($output) > 20) break;
 }
