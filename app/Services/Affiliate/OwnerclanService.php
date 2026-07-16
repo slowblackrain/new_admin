@@ -380,7 +380,7 @@ class OwnerclanService
 
         $query = '
           query($after: String) {
-            allItems(first: 100, after: $after) {
+            allItems(first: 100, after: $after, vendor: "2010020409") {
               edges {
                 node {
                   id
