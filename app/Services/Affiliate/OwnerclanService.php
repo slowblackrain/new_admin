@@ -110,7 +110,7 @@ class OwnerclanService
         
         $dds_price = 0;
         // GKM 포함: (도매가 * 0.97)에 부가세 10% 추가 (* 1.1)
-        if (strpos($goodsRecord->goods_scode, 'GKM') !== false) {
+        if ($goodsRecord->goods_scode && strpos($goodsRecord->goods_scode, 'GKM') !== false) {
             $dds_price = round(($d_price * 0.97) * 1.1, -1);
         } else {
             // 나머지 전체: 도매가에 부가세 10% 추가 (* 1.1)
