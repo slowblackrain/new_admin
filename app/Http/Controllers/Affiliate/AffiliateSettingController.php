@@ -910,6 +910,8 @@ class AffiliateSettingController extends Controller
             return response()->json(['status' => 'error', 'message' => '현재 오너클랜만 기등록 매핑을 지원합니다.']);
         }
 
+        set_time_limit(0); // API 통신 및 매핑 작업이 오래 걸릴 수 있으므로 타임아웃 해제
+
         try {
             $service = new \App\Services\Affiliate\OwnerclanService();
             $items = $service->fetchAllRegisteredItems();
