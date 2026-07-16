@@ -231,7 +231,7 @@ class DaehanScraperService
         }
         
         $firstImage = $mainImages->first();
-        $secondImage = $mainImages->get(1) ?? $firstImage;
+        $secondImage = $firstImage;
         
         $tempFiles = [];
         $processImage = function($imgObj, $fieldName) use (&$multipartData, &$tempFiles) {
