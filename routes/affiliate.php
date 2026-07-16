@@ -34,6 +34,7 @@ Route::prefix('affiliate')->name('affiliate.')->group(function () {
         Route::get('/settings/sync', [AffiliateSettingController::class, 'syncIndex'])->name('settings.sync');
         Route::post('/settings/sync/chunk', [AffiliateSettingController::class, 'syncChunk'])->name('settings.sync.chunk');
         Route::post('/settings/sync/selected', [AffiliateSettingController::class, 'syncSelected'])->name('settings.sync.selected');
+        Route::post('/settings/sync/match_existing', [AffiliateSettingController::class, 'matchExistingSyncs'])->name('settings.sync.match_existing');
     });
 
 });

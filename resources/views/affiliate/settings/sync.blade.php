@@ -39,6 +39,13 @@
             <button @click="stopSync()" x-show="isSyncing" type="button" class="ml-3 inline-flex items-center rounded-md bg-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-rose-700 focus-visible:outline transition-all">
                 중지
             </button>
+
+            <!-- 기등록 상품 매핑 버튼 -->
+            @if($site->name === '오너클랜')
+            <button @click="matchExisting()" type="button" class="ml-3 inline-flex items-center rounded-md bg-teal-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-teal-700 focus-visible:outline transition-all">
+                전체 연동 상태 갱신 (기등록 매핑)
+            </button>
+            @endif
         </div>
     </div>
 
@@ -348,6 +355,50 @@
             stopSync() {
                 this.shouldStop = true;
                 this.addLog('동기화 중지 요청이 접수되었습니다. 현재 청크 완료 후 중지됩니다.', 'info');
+            },
+
+            async matchExisting() {
+                if (!confirm('실제 오너클랜에 등록된 상품 전체 목록을 가져와서 로컬 DB와 매핑합니다.\n시간이 오래 걸릴 수 있습니다. 진행하시겠습니까?')) return;
+                
+                this.isSyncing = true;
+                this.addLog('전체 연동 상태 갱신 (기등록 매핑) 작업을 시작합니다... (최대 수 분 소요)', 'info');
+
+                const token = document.querySelector('meta[name="csrf-token"]') ? 
+                              document.querySelector('meta[name="csrf-token"]').getAttribute('content') : 
+                              '{{ csrf_token() }}';
+
+                try {
+                    const response = await fetch('{{ route('affiliate.settings.sync.match_existing') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': token,
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            site_id: '{{ $site->id }}'
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.status === 'ok') {
+                        this.addLog(`기등록 매핑 완료! 새로 매핑된 상품 수: ${data.matched_count}개`, 'success');
+                        setTimeout(() => {
+                            alert(`기등록 매핑이 완료되었습니다.\n새로 연동(Success) 처리된 상품: ${data.matched_count}건\n\n확인을 누르면 페이지를 새로고침합니다.`);
+                            window.location.reload();
+                        }, 500);
+                    } else {
+                        let errorMsg = data.message ? data.message : '서버 응답 오류가 발생했습니다.';
+                        this.addLog(errorMsg, 'error');
+                        alert('매핑 중 오류가 발생했습니다: ' + errorMsg);
+                    }
+                } catch (e) {
+                    this.addLog(`네트워크 또는 서버 오류: ${e.message}`, 'error');
+                    alert(`네트워크 또는 서버 오류: ${e.message}`);
+                } finally {
+                    this.isSyncing = false;
+                }
             },
             
             async startSync() {

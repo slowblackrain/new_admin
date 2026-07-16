@@ -372,4 +372,77 @@ class OwnerclanService
 
         return $categories;
     }
+
+    public function fetchAllRegisteredItems()
+    {
+        $token = $this->authenticate();
+        if (!$token) return [];
+
+        $query = '
+          query($after: String) {
+            allItems(first: 100, after: $after) {
+              edges {
+                node {
+                  id
+                  metadata
+                }
+              }
+              pageInfo {
+                hasNextPage
+                endCursor
+              }
+            }
+          }
+        ';
+
+        $items = [];
+        $hasNextPage = true;
+        $endCursor = null;
+        $pageCount = 0;
+
+        while ($hasNextPage && $pageCount < 500) { // Safety limit to prevent infinite loops (500 * 100 = 50000 items)
+            $variables = [];
+            if ($endCursor) {
+                $variables['after'] = $endCursor;
+            }
+
+            try {
+                $response = \Illuminate\Support\Facades\Http::timeout(10)->withHeaders([
+                    'Authorization' => 'Bearer ' . $token,
+                    'Content-Type' => 'application/json',
+                ])->withoutVerifying()->post($this->apiUrl . '/graphql', [
+                    'query' => $query,
+                    'variables' => $variables
+                ]);
+
+                if ($response->successful()) {
+                    $result = $response->json();
+                    if (isset($result['data']['allItems'])) {
+                        $all = $result['data']['allItems'];
+                        foreach ($all['edges'] as $edge) {
+                            $node = $edge['node'];
+                            $vcode = $node['metadata']['vcode'] ?? null;
+                            if ($vcode) {
+                                $items[$vcode] = $node['id'];
+                            }
+                        }
+                        
+                        $hasNextPage = $all['pageInfo']['hasNextPage'] ?? false;
+                        $endCursor = $all['pageInfo']['endCursor'] ?? null;
+                        $pageCount++;
+                    } else {
+                        break;
+                    }
+                } else {
+                    \Log::error('Ownerclan fetchAllRegisteredItems Error: HTTP ' . $response->status());
+                    break;
+                }
+            } catch (\Exception $e) {
+                \Log::error('Ownerclan fetchAllRegisteredItems Exception: ' . $e->getMessage());
+                break; // Stop on timeout or error so we don't infinitely retry
+            }
+        }
+
+        return $items;
+    }
 }

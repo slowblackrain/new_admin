@@ -893,4 +893,74 @@ class AffiliateSettingController extends Controller
         
         return response()->json(['status' => 'ok', 'results' => $results]);
     }
+
+    /**
+     * 기등록 상품 매핑 (전체 연동 상태 갱신)
+     */
+    public function matchExistingSyncs(Request $request)
+    {
+        $siteId = $request->input('site_id');
+        $site = AffiliateSite::find($siteId);
+
+        if (!$site) {
+            return response()->json(['status' => 'error', 'message' => '제휴사를 찾을 수 없습니다.']);
+        }
+
+        if ($site->name !== '오너클랜') {
+            return response()->json(['status' => 'error', 'message' => '현재 오너클랜만 기등록 매핑을 지원합니다.']);
+        }
+
+        try {
+            $service = new \App\Services\Affiliate\OwnerclanService();
+            $items = $service->fetchAllRegisteredItems();
+
+            if (empty($items)) {
+                return response()->json(['status' => 'error', 'message' => '오너클랜 서버에서 상품을 가져오지 못했거나 등록된 상품이 없습니다.']);
+            }
+
+            $matchedCount = 0;
+
+            // $items 배열: [vcode => ownerclan_id]
+            // vcode는 도매토피아의 goods_code 이거나 goods_scode 일 수 있음.
+            $vcodes = array_keys($items);
+
+            // 청크로 처리하여 메모리 초과 방지
+            foreach (array_chunk($vcodes, 500) as $chunk) {
+                // vcode가 goods_code(string) 인 경우와 goods_scode(string) 인 경우를 모두 매칭
+                $goodsList = \App\Models\Goods::whereIn('goods_code', $chunk)
+                    ->orWhereIn('goods_scode', $chunk)
+                    ->get(['goods_seq', 'goods_code', 'goods_scode']);
+
+                foreach ($goodsList as $goods) {
+                    $vcodeMatched = null;
+                    if (isset($items[$goods->goods_code])) {
+                        $vcodeMatched = $goods->goods_code;
+                    } elseif (isset($items[$goods->goods_scode])) {
+                        $vcodeMatched = $goods->goods_scode;
+                    }
+
+                    if ($vcodeMatched) {
+                        $ownerclanId = $items[$vcodeMatched];
+
+                        \App\Models\AffiliateGoodsSync::updateOrCreate(
+                            ['affiliate_site_id' => $site->id, 'goods_seq' => $goods->goods_seq],
+                            [
+                                'sync_status' => 'success',
+                                'error_message' => '기등록 상품 자동 매핑 완료',
+                                'last_synced_at' => now(),
+                                'affiliate_goods_code' => $ownerclanId
+                            ]
+                        );
+                        $matchedCount++;
+                    }
+                }
+            }
+
+            return response()->json(['status' => 'ok', 'matched_count' => $matchedCount]);
+
+        } catch (\Throwable $e) {
+            \Log::error('matchExistingSyncs Error: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
+            return response()->json(['status' => 'error', 'message' => '서버 오류 발생: ' . $e->getMessage()]);
+        }
+    }
 }
