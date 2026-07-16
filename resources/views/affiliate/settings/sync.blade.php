@@ -42,7 +42,7 @@
 
             <!-- 기등록 상품 매핑 버튼 -->
             @if($site->name === '오너클랜')
-            <button @click="matchExisting()" type="button" class="ml-3 inline-flex items-center rounded-md bg-teal-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-teal-700 focus-visible:outline transition-all">
+            <button @click="matchExisting()" type="button" style="background-color: #1e293b; color: white;" class="ml-3 inline-flex items-center rounded-md px-4 py-2 text-sm font-semibold shadow-sm focus-visible:outline transition-all">
                 전체 연동 상태 갱신 (기등록 매핑)
             </button>
             @endif
