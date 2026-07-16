@@ -216,12 +216,19 @@ class DaehanScraperService
             ['name' => 'stock_mod', 'contents' => '0'],
             ['name' => 'money_type', 'contents' => '0'],
             ['name' => 'money_yo', 'contents' => '%'],
-            ['name' => 'money_dan', 'contents' => '0'],
             ['name' => 'img_mod', 'contents' => '0']
         ];
         // 4-1. 대표 이미지 처리 (URL 다운로드 후 임시파일로 첨부)
-        $mainImages = $goods->images->where('image_type', 'main')->values();
-        $firstImage = $mainImages->first() ?? $goods->images->first();
+        $imagesList = \Illuminate\Support\Facades\DB::table('fm_goods_image')
+            ->where('goods_seq', $goods->goods_seq)
+            ->get();
+            
+        $mainImages = $imagesList->where('image_type', 'main')->values();
+        if ($mainImages->isEmpty()) {
+            $mainImages = $imagesList->values();
+        }
+        
+        $firstImage = $mainImages->first();
         $secondImage = $mainImages->get(1) ?? $firstImage;
         
         $tempFiles = [];
