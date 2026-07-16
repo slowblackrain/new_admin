@@ -128,7 +128,7 @@ class OwnerclanService
         
         // 오너클랜 상품명 중복 에러 방지를 위해 상품코드(goods_scode)를 상품명 뒤에 병합
         $scode = $goodsRecord->goods_scode ?? $goodsRecord->goods_seq;
-        $g_name = $g_name . $scode;
+        $g_name = $g_name . ' ' . $scode;
 
         // 4. 검색 키워드 추출
         $keyword = [];
