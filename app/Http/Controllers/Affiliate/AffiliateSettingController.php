@@ -910,14 +910,24 @@ class AffiliateSettingController extends Controller
             return response()->json(['status' => 'error', 'message' => '현재 오너클랜만 기등록 매핑을 지원합니다.']);
         }
 
-        set_time_limit(0); // API 통신 및 매핑 작업이 오래 걸릴 수 있으므로 타임아웃 해제
-
+        set_time_limit(0); // 매핑 작업 시간 연장
+        
         try {
-            $service = new \App\Services\Affiliate\OwnerclanService();
-            $items = $service->fetchAllRegisteredItems();
+            // 오너클랜 API의 전체 상품 조회 시 응답 지연/타임아웃 문제가 심각하므로,
+            // 기존 레거시 시스템에서 저장해둔 fm_outcomp 테이블의 매핑 데이터를 활용합니다.
+            $legacySyncs = \Illuminate\Support\Facades\DB::table('fm_outcomp')
+                ->where('company', 'ownerclan')
+                ->whereNotNull('out_code')
+                ->whereNotNull('goods_code')
+                ->get();
+
+            $items = [];
+            foreach ($legacySyncs as $sync) {
+                $items[$sync->goods_code] = $sync->out_code;
+            }
 
             if (empty($items)) {
-                return response()->json(['status' => 'error', 'message' => '오너클랜 서버에서 상품을 가져오지 못했거나 등록된 상품이 없습니다.']);
+                return response()->json(['status' => 'error', 'message' => '기존(fm_outcomp)에 등록된 오너클랜 상품 내역이 없습니다.']);
             }
 
             $matchedCount = 0;
@@ -961,8 +971,12 @@ class AffiliateSettingController extends Controller
             return response()->json(['status' => 'ok', 'matched_count' => $matchedCount]);
 
         } catch (\Throwable $e) {
-            \Log::error('matchExistingSyncs Error: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
-            return response()->json(['status' => 'error', 'message' => '서버 오류 발생: ' . $e->getMessage()]);
+            try {
+                \Log::error('matchExistingSyncs Error: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
+            } catch (\Throwable $logException) {
+                // Ignore log errors
+            }
+            return response()->json(['status' => 'error', 'message' => '오너클랜 서버 통신 중 오류가 발생했습니다: ' . $e->getMessage()]);
         }
     }
 }
