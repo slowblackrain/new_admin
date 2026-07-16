@@ -107,7 +107,7 @@ class OwnerclanService
         $price = (float)($option ? $option->price : 0);
         $mtype_discount = (float)($goodsRecord->mtype_discount ?? 0);
         $d_price = $price - $mtype_discount; // 도매가
-        $s_price = (float)($option ? $option->consumer_price : 0);
+        $s_price = round((float)($option ? $option->consumer_price : 0), -1);
         
         $dds_price = 0;
         // GKM 포함: (도매가 * 0.97)에 부가세 10% 추가 (* 1.1)
