@@ -104,9 +104,10 @@ class OwnerclanService
             ->where('default_option', 'y')
             ->first();
             
-        $price = $option ? $option->price : 0;
-        $d_price = $price - $goodsRecord->mtype_discount; // 도매가
-        $s_price = $option ? $option->consumer_price : 0;
+        $price = (float)($option ? $option->price : 0);
+        $mtype_discount = (float)($goodsRecord->mtype_discount ?? 0);
+        $d_price = $price - $mtype_discount; // 도매가
+        $s_price = (float)($option ? $option->consumer_price : 0);
         
         $dds_price = 0;
         // GKM 포함: (도매가 * 0.97)에 부가세 10% 추가 (* 1.1)

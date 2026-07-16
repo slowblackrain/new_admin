@@ -69,7 +69,7 @@ class DaehanScraperService
         if ($arrivalPrice > 0) {
             $supplyPrice = round($arrivalPrice * 1.15);
         } else {
-            $supplyPrice = $goods->supply_price ?? ($goods->price ?? 1000);
+            $supplyPrice = (float)($goods->supply_price ?: ($goods->price ?: 1000));
         }
         $sellingPrice = round($supplyPrice * (1 + ($marginRate / 100)));
         
