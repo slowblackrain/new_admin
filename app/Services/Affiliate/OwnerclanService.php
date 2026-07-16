@@ -118,17 +118,16 @@ class OwnerclanService
             $dds_price = round($d_price * 1.1, -1);
         }
 
-        // 3. 연동명 특수문자 제거 로직
-        $g_name = preg_replace("/[ #\&\+\-%@=\/\\\:;,\.'\"\^`~\_|\!\?\*$#<>\[\]\{\}]/i", "", $goodsRecord->goods_name_linkage);
+        // 3. 연동명 특수문자 제거 로직 (띄어쓰기는 유지하도록 수정)
+        $g_name = preg_replace("/[#\&\+\-%@=\/\\\:;,\.'\"\^`~\_|\!\?\*$<>\[\]\{\}]/i", "", $goodsRecord->goods_name_linkage);
         $g_name = str_replace("＆", "앤", $g_name);
-        $g_name = str_replace(" ", "", $g_name);
-        if (empty($g_name)) {
-            $g_name = preg_replace("/[ #\&\+\-%@=\/\\\:;,\.'\"\^`~\_|\!\?\*$#<>\[\]\{\}]/i", "", $goodsRecord->goods_name); // fallback
+        if (empty(trim($g_name))) {
+            $g_name = preg_replace("/[#\&\+\-%@=\/\\\:;,\.'\"\^`~\_|\!\?\*$<>\[\]\{\}]/i", "", $goodsRecord->goods_name); // fallback
         }
         
         // 오너클랜 상품명 중복 에러 방지를 위해 상품코드(goods_scode)를 상품명 뒤에 병합
         $scode = $goodsRecord->goods_scode ?? $goodsRecord->goods_seq;
-        $g_name = $g_name . ' ' . $scode;
+        $g_name = trim($g_name) . ' ' . $scode;
 
         // 4. 검색 키워드 추출
         $keyword = [];
