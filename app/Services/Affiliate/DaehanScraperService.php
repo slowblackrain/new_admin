@@ -72,6 +72,8 @@ class DaehanScraperService
             $supplyPrice = (float)($goods->supply_price ?: ($goods->price ?: 1000));
         }
         $sellingPrice = round($supplyPrice * (1 + ($marginRate / 100)));
+        $consumerPrice = (float)($goods->consumer_price ?: $sellingPrice);
+        $shippingFee = (float)($goods->shipping_price ?: 3000);
         
         // 2-1. 기본수량 (1박스 입수량) 산출: 30만원 / 공급가
         $basicQty = $supplyPrice > 0 ? floor(300000 / $supplyPrice) : 100;
