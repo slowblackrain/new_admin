@@ -911,74 +911,44 @@ class AffiliateSettingController extends Controller
         }
 
         set_time_limit(0); // 매핑 작업 시간 연장
-        
+
         try {
-            // 오너클랜 API의 전체 상품 조회 시 응답 지연/타임아웃 문제가 심각하므로,
             // 기존 레거시 시스템에서 저장해둔 fm_outcomp 테이블의 매핑 데이터를 활용합니다.
             $legacySyncs = \Illuminate\Support\Facades\DB::table('fm_outcomp')
                 ->where('company', 'ownerclan')
                 ->whereNotNull('out_code')
-                ->whereNotNull('goods_code')
+                ->whereNotNull('goods_seq')
                 ->get();
 
-            $items = [];
-            foreach ($legacySyncs as $sync) {
-                $items[$sync->goods_code] = $sync->out_code;
-            }
-
-            if (empty($items)) {
+            if ($legacySyncs->isEmpty()) {
                 return response()->json(['status' => 'error', 'message' => '기존(fm_outcomp)에 등록된 오너클랜 상품 내역이 없습니다.']);
             }
 
+            $now = now();
+            $upsertData = [];
             $matchedCount = 0;
 
-            // $items 배열: [vcode => ownerclan_id]
-            // vcode는 도매토피아의 goods_code 이거나 goods_scode 일 수 있음.
-            $vcodes = array_keys($items);
-
-            // 청크로 처리하여 메모리 초과 방지
-            foreach (array_chunk($vcodes, 1000) as $chunk) {
-                // vcode가 goods_code(string) 인 경우와 goods_scode(string) 인 경우를 모두 매칭
-                $goodsList = \App\Models\Goods::whereIn('goods_code', $chunk)
-                    ->orWhereIn('goods_scode', $chunk)
-                    ->get(['goods_seq', 'goods_code', 'goods_scode']);
-
-                $upsertData = [];
-
-                foreach ($goodsList as $goods) {
-                    $vcodeMatched = null;
-                    if (isset($items[$goods->goods_code])) {
-                        $vcodeMatched = $goods->goods_code;
-                    } elseif (isset($items[$goods->goods_scode])) {
-                        $vcodeMatched = $goods->goods_scode;
-                    }
-
-                    if ($vcodeMatched) {
-                        $ownerclanId = $items[$vcodeMatched];
-                        $now = now();
-                        
-                        $upsertData[] = [
-                            'affiliate_site_id' => $site->id,
-                            'goods_seq' => $goods->goods_seq,
-                            'sync_status' => 'success',
-                            'error_message' => '기등록 상품 자동 매핑 완료',
-                            'last_synced_at' => $now,
-                            'affiliate_goods_code' => $ownerclanId,
-                            'created_at' => $now,
-                            'updated_at' => $now
-                        ];
-                        
-                        $matchedCount++;
-                    }
-                }
-                
-                if (!empty($upsertData)) {
-                    \App\Models\AffiliateGoodsSync::upsert(
-                        $upsertData,
-                        ['affiliate_site_id', 'goods_seq'],
-                        ['sync_status', 'error_message', 'last_synced_at', 'affiliate_goods_code', 'updated_at']
-                    );
-                }
+            foreach ($legacySyncs as $sync) {
+                $upsertData[] = [
+                    'affiliate_site_id' => $site->id,
+                    'goods_seq' => $sync->goods_seq,
+                    'sync_status' => 'success',
+                    'error_message' => '기등록 상품 자동 매핑 완료',
+                    'last_synced_at' => $now,
+                    'affiliate_goods_code' => $sync->out_code,
+                    'created_at' => $now,
+                    'updated_at' => $now
+                ];
+                $matchedCount++;
+            }
+            
+            // 청크로 처리하여 쿼리 크기 초과 방지
+            foreach (array_chunk($upsertData, 1000) as $chunk) {
+                \App\Models\AffiliateGoodsSync::upsert(
+                    $chunk,
+                    ['affiliate_site_id', 'goods_seq'],
+                    ['sync_status', 'error_message', 'last_synced_at', 'affiliate_goods_code', 'updated_at']
+                );
             }
 
             return response()->json(['status' => 'ok', 'matched_count' => $matchedCount]);
