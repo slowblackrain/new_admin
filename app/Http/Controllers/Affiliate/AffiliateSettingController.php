@@ -575,12 +575,11 @@ class AffiliateSettingController extends Controller
             ->where('fm_goods.goods_view', 'Look')
             ->where('fm_goods.goods_status', 'normal')
             ->where(function($q) {
-                $q->where('fm_goods.goods_scode', 'not like', 'AKS%')
-                  ->where('fm_goods.goods_scode', 'not like', 'ATS%')
-                  ->where('fm_goods.goods_scode', 'not like', 'GKM%')
-                  ->where('fm_goods.goods_scode', 'not like', 'GUS%')
-                  ->where('fm_goods.goods_scode', 'not like', 'TRO%')
-                  ->orWhereNull('fm_goods.goods_scode'); // null인 경우도 포함 (조건에 따라)
+                $prefixes = ['AKS', 'ATS', 'GKM', 'GUS', 'TRO', 'GDF', 'MOD', 'MTS', 'GDH', 'GDR', 'MKS', 'MKD', 'BTB'];
+                foreach ($prefixes as $prefix) {
+                    $q->where('fm_goods.goods_scode', 'not like', $prefix . '%');
+                }
+                $q->orWhereNull('fm_goods.goods_scode'); // null인 경우도 포함 (조건에 따라)
             });
             
         if ($selectedCategory) {
@@ -648,12 +647,11 @@ class AffiliateSettingController extends Controller
                        ->where('g.goods_view', 'Look')
                        ->where('g.goods_status', 'normal')
                        ->where(function($q) {
-                           $q->where('g.goods_scode', 'not like', 'AKS%')
-                             ->where('g.goods_scode', 'not like', 'ATS%')
-                             ->where('g.goods_scode', 'not like', 'GKM%')
-                             ->where('g.goods_scode', 'not like', 'GUS%')
-                             ->where('g.goods_scode', 'not like', 'TRO%')
-                             ->orWhereNull('g.goods_scode');
+                           $prefixes = ['AKS', 'ATS', 'GKM', 'GUS', 'TRO', 'GDF', 'MOD', 'MTS', 'GDH', 'GDR', 'MKS', 'MKD', 'BTB'];
+                           foreach ($prefixes as $prefix) {
+                               $q->where('g.goods_scode', 'not like', $prefix . '%');
+                           }
+                           $q->orWhereNull('g.goods_scode');
                        });
 
         // 타겟 상품 고유 시퀀스 추출
@@ -777,12 +775,11 @@ class AffiliateSettingController extends Controller
             ->where('fm_goods.goods_view', 'Look')
             ->where('fm_goods.goods_status', 'normal')
             ->where(function($q) {
-                $q->where('fm_goods.goods_scode', 'not like', 'AKS%')
-                  ->where('fm_goods.goods_scode', 'not like', 'ATS%')
-                  ->where('fm_goods.goods_scode', 'not like', 'GKM%')
-                  ->where('fm_goods.goods_scode', 'not like', 'GUS%')
-                  ->where('fm_goods.goods_scode', 'not like', 'TRO%')
-                  ->orWhereNull('fm_goods.goods_scode');
+                $prefixes = ['AKS', 'ATS', 'GKM', 'GUS', 'TRO', 'GDF', 'MOD', 'MTS', 'GDH', 'GDR', 'MKS', 'MKD', 'BTB'];
+                foreach ($prefixes as $prefix) {
+                    $q->where('fm_goods.goods_scode', 'not like', $prefix . '%');
+                }
+                $q->orWhereNull('fm_goods.goods_scode');
             });
             
         if ($selectedCategory) {
