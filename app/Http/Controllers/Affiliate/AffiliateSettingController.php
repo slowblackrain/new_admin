@@ -937,11 +937,13 @@ class AffiliateSettingController extends Controller
             $vcodes = array_keys($items);
 
             // 청크로 처리하여 메모리 초과 방지
-            foreach (array_chunk($vcodes, 500) as $chunk) {
+            foreach (array_chunk($vcodes, 1000) as $chunk) {
                 // vcode가 goods_code(string) 인 경우와 goods_scode(string) 인 경우를 모두 매칭
                 $goodsList = \App\Models\Goods::whereIn('goods_code', $chunk)
                     ->orWhereIn('goods_scode', $chunk)
                     ->get(['goods_seq', 'goods_code', 'goods_scode']);
+
+                $upsertData = [];
 
                 foreach ($goodsList as $goods) {
                     $vcodeMatched = null;
@@ -953,18 +955,29 @@ class AffiliateSettingController extends Controller
 
                     if ($vcodeMatched) {
                         $ownerclanId = $items[$vcodeMatched];
-
-                        \App\Models\AffiliateGoodsSync::updateOrCreate(
-                            ['affiliate_site_id' => $site->id, 'goods_seq' => $goods->goods_seq],
-                            [
-                                'sync_status' => 'success',
-                                'error_message' => '기등록 상품 자동 매핑 완료',
-                                'last_synced_at' => now(),
-                                'affiliate_goods_code' => $ownerclanId
-                            ]
-                        );
+                        $now = now();
+                        
+                        $upsertData[] = [
+                            'affiliate_site_id' => $site->id,
+                            'goods_seq' => $goods->goods_seq,
+                            'sync_status' => 'success',
+                            'error_message' => '기등록 상품 자동 매핑 완료',
+                            'last_synced_at' => $now,
+                            'affiliate_goods_code' => $ownerclanId,
+                            'created_at' => $now,
+                            'updated_at' => $now
+                        ];
+                        
                         $matchedCount++;
                     }
+                }
+                
+                if (!empty($upsertData)) {
+                    \App\Models\AffiliateGoodsSync::upsert(
+                        $upsertData,
+                        ['affiliate_site_id', 'goods_seq'],
+                        ['sync_status', 'error_message', 'last_synced_at', 'affiliate_goods_code', 'updated_at']
+                    );
                 }
             }
 
