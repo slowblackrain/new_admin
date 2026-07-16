@@ -495,3 +495,21 @@ Route::any('/main/category_search_initial', function (\Illuminate\Http\Request $
     return view('front.main.category_list', ['categories' => $categories]);
 })->name('main.category_initial');
 
+Route::get('/test-sync', function() {
+    try {
+        $controller = app('App\Http\Controllers\Affiliate\AffiliateSettingController');
+        $req = request();
+        $siteId = $req->input('site_id', 1);
+        $goodsSeqs = $req->input('goods_seqs', [212612]);
+        if (!is_array($goodsSeqs)) $goodsSeqs = [$goodsSeqs];
+        $req->merge(['site_id' => $siteId, 'goods_seqs' => $goodsSeqs]);
+        return $controller->syncSelected($req);
+    } catch (\Throwable $e) {
+        return response()->json([
+            'error' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+            'trace' => $e->getTraceAsString()
+        ]);
+    }
+});
