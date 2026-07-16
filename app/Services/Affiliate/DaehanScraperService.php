@@ -69,7 +69,10 @@ class DaehanScraperService
         if ($arrivalPrice > 0) {
             $supplyPrice = round($arrivalPrice * 1.15);
         } else {
-            $supplyPrice = (float)($goods->supply_price ?: ($goods->price ?: 1000));
+            $price = (float)($goods->price ?? 0);
+            $mtype_discount = (float)($goods->mtype_discount ?? 0);
+            $wholesalePrice = $price - $mtype_discount;
+            $supplyPrice = $wholesalePrice > 0 ? $wholesalePrice : 1000;
         }
         $sellingPrice = round($supplyPrice * (1 + ($marginRate / 100)));
         $consumerPrice = (float)($goods->consumer_price ?: $sellingPrice);
@@ -118,7 +121,14 @@ class DaehanScraperService
         // 기본 자르기 픽셀. 필요 시 이 값을 수정하여 자르는 높이를 조절할 수 있습니다.
         $cropBottomPx = 700; 
         
-        $memoHtml = '<div style="overflow: hidden; margin: 0 auto; text-align: center;">';
+        // 공통 인트로 이미지
+        $introImageUrl = "https://dotob2b.cache.iwinv.net/Image/topp.jpg";
+
+        $memoHtml = '<div style="text-align: center; margin-bottom: 20px;">';
+        $memoHtml .= '<img src="' . $introImageUrl . '" style="max-width: 100%; display: inline-block;" />';
+        $memoHtml .= '</div>';
+        
+        $memoHtml .= '<div style="overflow: hidden; margin: 0 auto; text-align: center;">';
         $memoHtml .= '<div style="margin-bottom: -' . $cropBottomPx . 'px;">';
         $memoHtml .= '<img src="' . ($goods->img_contents ?? '') . '" style="max-width: 100%; display: inline-block;" />';
         $memoHtml .= '</div></div>';
