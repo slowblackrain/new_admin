@@ -67,16 +67,16 @@ class DaehanScraperService
         $arrivalPrice = isset($cbmArr[6]) ? (float)$cbmArr[6] : 0;
         
         if ($arrivalPrice > 0) {
-            $supplyPrice = round($arrivalPrice * 1.15);
+            $supplyPrice = round($arrivalPrice * 1.15, -1);
         } else {
             $price = (float)($goods->price ?? 0);
             $mtype_discount = (float)($goods->mtype_discount ?? 0);
             $wholesalePrice = $price - $mtype_discount;
-            $supplyPrice = $wholesalePrice > 0 ? $wholesalePrice : 1000;
+            $supplyPrice = round($wholesalePrice > 0 ? $wholesalePrice : 1000, -1);
         }
-        $sellingPrice = round($supplyPrice * (1 + ($marginRate / 100)));
-        $consumerPrice = (float)($goods->consumer_price ?: $sellingPrice);
-        $shippingFee = (float)($goods->shipping_price ?: 3000);
+        $sellingPrice = round($supplyPrice * (1 + ($marginRate / 100)), -1);
+        $consumerPrice = round((float)($goods->consumer_price ?: $sellingPrice), -1);
+        $shippingFee = round((float)($goods->shipping_price ?: 3000), -1);
         
         // 2-1. 기본수량 (1박스 입수량) 산출: 30만원 / 공급가
         $basicQty = $supplyPrice > 0 ? floor(300000 / $supplyPrice) : 100;
