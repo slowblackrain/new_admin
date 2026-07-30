@@ -196,28 +196,36 @@ class DaehanScraperService
             
             ['name' => 'it_qty_set', 'contents' => $basicQty],
             ['name' => 'daccount', 'contents' => $supplyPrice],
+            ['name' => 'it_prcratio', 'contents' => '35|32|28|26|23|20|15'],
             
-            // 7단계 수량 및 공급가 설정 (소비자가격 p_mny1~p_mny7 파라미터 완전 제외)
+            // 7단계 수량, 공급가 및 소비자가격(p_mny) 설정 (대한판촉 서버에서 파라미터 누락 시 0원으로 저장하는 방정식 처리)
             ['name' => 'p_qty1', 'contents' => $basicQty * 1],
             ['name' => 'p_spl1', 'contents' => $supplyPrice],
+            ['name' => 'p_mny1', 'contents' => round($supplyPrice * ($marginRate > 0 ? (1 + ($marginRate / 100)) : 1.35), -1)],
             
             ['name' => 'p_qty2', 'contents' => $basicQty * 2],
             ['name' => 'p_spl2', 'contents' => $supplyPrice],
+            ['name' => 'p_mny2', 'contents' => round($supplyPrice * ($marginRate > 0 ? (1 + ($marginRate / 100)) : 1.32), -1)],
             
             ['name' => 'p_qty3', 'contents' => $basicQty * 3],
             ['name' => 'p_spl3', 'contents' => $supplyPrice],
+            ['name' => 'p_mny3', 'contents' => round($supplyPrice * ($marginRate > 0 ? (1 + ($marginRate / 100)) : 1.28), -1)],
             
             ['name' => 'p_qty4', 'contents' => $basicQty * 5],
             ['name' => 'p_spl4', 'contents' => $supplyPrice],
+            ['name' => 'p_mny4', 'contents' => round($supplyPrice * ($marginRate > 0 ? (1 + ($marginRate / 100)) : 1.26), -1)],
             
             ['name' => 'p_qty5', 'contents' => $basicQty * 10],
             ['name' => 'p_spl5', 'contents' => $supplyPrice],
+            ['name' => 'p_mny5', 'contents' => round($supplyPrice * ($marginRate > 0 ? (1 + ($marginRate / 100)) : 1.23), -1)],
             
             ['name' => 'p_qty6', 'contents' => $basicQty * 20],
             ['name' => 'p_spl6', 'contents' => $supplyPrice],
+            ['name' => 'p_mny6', 'contents' => round($supplyPrice * ($marginRate > 0 ? (1 + ($marginRate / 100)) : 1.20), -1)],
             
             ['name' => 'p_qty7', 'contents' => $basicQty * 50],
             ['name' => 'p_spl7', 'contents' => $supplyPrice],
+            ['name' => 'p_mny7', 'contents' => round($supplyPrice * ($marginRate > 0 ? (1 + ($marginRate / 100)) : 1.15), -1)],
             ['name' => 'is_free', 'contents' => '0'],
             ['name' => 'sc_price', 'contents' => $shippingFee],
             ['name' => 'gd_baesong_price', 'contents' => $shippingFee],
