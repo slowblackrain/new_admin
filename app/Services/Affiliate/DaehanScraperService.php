@@ -93,9 +93,13 @@ class DaehanScraperService
 
         if ($existingSync && !empty($existingSync->affiliate_goods_code)) {
             $savedCode = trim($existingSync->affiliate_goods_code);
-            // 오직 K-코드로 정상 발급되어 등록된 이력이 있는 경우만 수정(u) 모드 진행
-            // (기존 구버전 오류로 숫자 코드가 저장되어 있던 경우 신규 전송으로 K-코드 정상 발급)
-            if (str_starts_with($savedCode, 'K')) {
+            if (is_numeric($savedCode)) {
+                // 저장된 코드가 대한판촉 숫자 gs_id (예: 968982)인 경우 -> 기존 상품 수정(u) 모드 적용
+                $gsId = $savedCode;
+                $w = 'u';
+                $formUrl .= '&w=u&gs_id=' . $gsId;
+            } elseif (str_starts_with($savedCode, 'K')) {
+                // 저장된 코드가 K-코드 (예: K413753)인 경우 -> 대한판촉 gs_id 조회 후 수정(u) 모드 적용
                 $foundGsId = $this->findGsIdByGcode($jar, $savedCode);
                 if ($foundGsId) {
                     $gsId = $foundGsId;
