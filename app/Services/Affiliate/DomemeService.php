@@ -79,18 +79,41 @@ class DomemeService
                 return ['success' => false, 'message' => '매핑된 카테고리가 없습니다.'];
             }
             
-            // 검색어
-            $keyword = str_replace(" ", "", $goods->keyword);
-            $keywordArr = explode(",", $keyword);
-            if (count($keywordArr) > 10) {
-                $keywordArr = array_slice($keywordArr, 0, 10);
+            // 검색어 (각 키워드 최대 10글자, 최대 10개 키워드)
+            $rawKeywords = explode(",", str_replace(" ", "", $goods->keyword ?? ''));
+            $validKeywords = [];
+            foreach ($rawKeywords as $k) {
+                $k = trim($k);
+                if (!empty($k)) {
+                    $validKeywords[] = mb_substr($k, 0, 10);
+                }
             }
-            $keyword = implode(",", $keywordArr);
+            if (empty($validKeywords)) {
+                // 키워드가 없으면 상품명 기반 추출
+                $nameWords = explode(" ", $goodsName);
+                foreach ($nameWords as $w) {
+                    $w = trim(preg_replace("/[^\x{AC00}-\x{D7A3}a-zA-Z0-9]/u", "", $w));
+                    if (mb_strlen($w) >= 2) {
+                        $validKeywords[] = mb_substr($w, 0, 10);
+                    }
+                }
+            }
+            if (count($validKeywords) > 10) {
+                $validKeywords = array_slice($validKeywords, 0, 10);
+            }
+            $keyword = implode(",", array_unique($validKeywords));
             
-            // 사이즈, 무게
-            $tmp_size = explode('|', $goods->goods_contents2);
+            // 사이즈, 무게 (기본값 필수 보장)
+            $tmp_size = explode('|', $goods->goods_contents2 ?? '');
             $itemSize = preg_replace("/[^A-Za-z0-9-]/", "", $tmp_size[2] ?? '');
             $itemWeight = preg_replace("/[^A-Za-z0-9-]/", "", $tmp_size[9] ?? '');
+            
+            if (empty($itemSize)) {
+                $itemSize = '10-10-10';
+            }
+            if (empty($itemWeight)) {
+                $itemWeight = '100g';
+            }
             
             // 대표이미지
             $img = DB::table('fm_goods_image')
