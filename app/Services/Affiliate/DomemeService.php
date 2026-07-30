@@ -103,13 +103,18 @@ class DomemeService
             }
             $keyword = implode(",", array_unique($validKeywords));
             
-            // 사이즈, 무게 (기본값 필수 보장)
+            // 사이즈, 무게 (기본값 필수 보장 - itemSize는 영문, 숫자, 쉼표, 공백만 허용)
             $tmp_size = explode('|', $goods->goods_contents2 ?? '');
-            $itemSize = preg_replace("/[^A-Za-z0-9-]/", "", $tmp_size[2] ?? '');
-            $itemWeight = preg_replace("/[^A-Za-z0-9-]/", "", $tmp_size[9] ?? '');
+            $rawSize = $tmp_size[2] ?? '';
+            $rawSize = str_replace(['-', '/', '*', 'x', 'X', 'cm', 'mm'], [' ', ' ', ' ', ' ', ' ', '', ''], $rawSize);
+            $itemSize = preg_replace("/[^A-Za-z0-9, ]/", "", $rawSize);
+            $itemSize = trim(preg_replace('/\s+/', ' ', $itemSize));
+            
+            $rawWeight = $tmp_size[9] ?? '';
+            $itemWeight = preg_replace("/[^A-Za-z0-9gG]/", "", $rawWeight);
             
             if (empty($itemSize)) {
-                $itemSize = '10-10-10';
+                $itemSize = 'FREE';
             }
             if (empty($itemWeight)) {
                 $itemWeight = '100g';
