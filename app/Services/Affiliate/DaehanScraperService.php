@@ -39,7 +39,7 @@ class DaehanScraperService
     }
 
     /**
-     * 상품 스크래핑 등록
+     * 상품 스크래핑 등록 / 수정
      */
     public function registerProduct($goods)
     {
@@ -75,17 +75,63 @@ class DaehanScraperService
             $supplyPrice = round($wholesalePrice > 0 ? $wholesalePrice : 1000, -1);
         }
         $sellingPrice = round($supplyPrice * (1 + ($marginRate / 100)), -1);
-        $consumerPrice = round((float)($goods->consumer_price ?: $sellingPrice), -1);
         $shippingFee = round((float)($goods->shipping_price ?: 3000), -1);
         
         // 2-1. 기본수량 (1박스 입수량) 산출: 30만원 / 공급가
         $basicQty = $supplyPrice > 0 ? floor(300000 / $supplyPrice) : 100;
         if ($basicQty < 1) $basicQty = 1;
 
-        // 3. 토큰 발급 (보안 우회)
+        // 기존 동기화 이력 확인 (수정 전송 vs 최초 신규 전송 구분)
+        $existingSync = \App\Models\AffiliateGoodsSync::where('affiliate_site_id', $site->id)
+            ->where('goods_seq', $goods->goods_seq)
+            ->where('sync_status', 'success')
+            ->first();
+
+        $w = '';
+        $gsId = '';
+        $formUrl = $this->baseUrl . '/mypage/page.php?code=seller_goods_form';
+
+        if ($existingSync && !empty($existingSync->affiliate_goods_code)) {
+            $savedCode = trim($existingSync->affiliate_goods_code);
+            // 오직 K-코드로 정상 발급되어 등록된 이력이 있는 경우만 수정(u) 모드 진행
+            // (기존 구버전 오류로 숫자 코드가 저장되어 있던 경우 신규 전송으로 K-코드 정상 발급)
+            if (str_starts_with($savedCode, 'K')) {
+                $foundGsId = $this->findGsIdByGcode($jar, $savedCode);
+                if ($foundGsId) {
+                    $gsId = $foundGsId;
+                    $w = 'u';
+                    $formUrl .= '&w=u&gs_id=' . $gsId;
+                }
+            }
+        }
+
+        // 3. 대한판촉 등록/수정 폼 페이지 요청 및 대한판촉 부여 K-코드 추출
+        $formResponse = Http::withoutVerifying()->withOptions(['cookies' => $jar])
+            ->get($formUrl);
+        $formHtml = $formResponse->body();
+        
+        $autoGcode = '';
+        if (preg_match('/<input[^>]*name=["\']gcode["\'][^>]*value=["\']?(K[0-9]{5,8})["\']?/i', $formHtml, $kMatches)) {
+            $autoGcode = trim($kMatches[1]);
+        } elseif (preg_match('/name=["\']gcode["\'][^>]*value=["\']?(K[0-9]{5,8})["\']?/i', $formHtml, $kMatches)) {
+            $autoGcode = trim($kMatches[1]);
+        } elseif (preg_match('/<input[^>]*name=["\']gcode["\'][^>]*>/i', $formHtml, $inputMatches)) {
+            if (preg_match('/value=["\']([^"\'\s>]+)["\']/i', $inputMatches[0], $valMatches)) {
+                $autoGcode = trim($valMatches[1]);
+            }
+        }
+        
+        // 최초 등록(w='') 시 대한판촉 K-코드가 파싱되지 않은 경우 에러 처리
+        if (empty($w) && (empty($autoGcode) || !str_starts_with($autoGcode, 'K'))) {
+            return [
+                'success' => false,
+                'message' => '대한판촉 공식 상품코드(K-코드) 발급 실패. (대한판촉 폼 응답 확인 필요)'
+            ];
+        }
+
         $tokenResponse = Http::withoutVerifying()->withOptions(['cookies' => $jar])
             ->withHeaders([
-                'Referer' => $this->baseUrl . '/mypage/page.php?code=seller_goods_form',
+                'Referer' => $formUrl,
                 'X-Requested-With' => 'XMLHttpRequest'
             ])
             ->post($this->baseUrl . '/admin/ajax.token.php');
@@ -98,36 +144,24 @@ class DaehanScraperService
         $sel_ca4 = strlen($affiliateCategory) >= 12 ? substr($affiliateCategory, 0, 12) : '';
         $sel_ca5 = strlen($affiliateCategory) >= 15 ? substr($affiliateCategory, 0, 15) : '';
 
-        // 3-1. 도매토피아 특수 컬럼 파싱 (goods_contents2, sub_info_desc)
+        // 특수 컬럼 파싱
         $contents2 = explode('|', $goods->goods_contents2 ?? '');
         $material = $contents2[0] ?? '';
         $size = $contents2[2] ?? '';
-        $boxQty = $basicQty; // 30만원 기준 자동계산 수량 적용
-
         $subInfoDesc = json_decode($goods->sub_info_desc ?? '{}', true);
         $origin = $subInfoDesc['제조국 또는 원산지'] ?? '중국';
-        
         $color = $goods->option()->where('option_title', 'like', '%색상%')->value('option1') ?? '';
 
-        // 기타사항(인쇄 필독 안내) 병합
         $printNotice = "<br><br>★ 인쇄 필독 안내 ★<br>☆★ 50만원 이상 구매 시 기본 1도 인쇄비, 판비 전액 무료 진행 ★☆<br>★★ 2도 인쇄 이상 별도 문의 ★★<br>1. 중국 1도 인쇄: 개당 (낱개 기준) 80원 / 판비 2만원 별도가<br>2. 중국 2도 인쇄: 개당 (낱개 기준) 150원 / 판비 4만원 별도가<br>1. 모든 인쇄는 담당자가 시안, 문구, 위치, 비용 등을 고객님과 협의하여 진행합니다.<br>2. 모든 인쇄는 도매토피아 중국 물류 창고에서 직접 작업합니다.<br>3. 중국에서 인쇄 후 납기까지는 약 15일 내외 소요됩니다.";
-        $explan = ($goods->contents ?? '') . $printNotice;
 
-        // Increase memory limit for large images
         ini_set('memory_limit', '512M');
 
-        // 4. 전송 파라미터 매핑 (대한판촉 양식)
-        // 하단 정보고시 영역 숨기기 (CSS 자르기 기법 적용)
-        // 기본 자르기 픽셀. 필요 시 이 값을 수정하여 자르는 높이를 조절할 수 있습니다.
         $cropBottomPx = 700; 
-        
-        // 공통 인트로 이미지
         $introImageUrl = "https://dotob2b.cache.iwinv.net/Image/topp.jpg";
 
         $memoHtml = '<div style="text-align: center; margin-bottom: 20px;">';
         $memoHtml .= '<img src="' . $introImageUrl . '" style="max-width: 100%; display: inline-block;" />';
         $memoHtml .= '</div>';
-        
         $memoHtml .= '<div style="overflow: hidden; margin: 0 auto; text-align: center;">';
         $memoHtml .= '<div style="margin-bottom: -' . $cropBottomPx . 'px;">';
         $memoHtml .= '<img src="' . ($goods->img_contents ?? '') . '" style="max-width: 100%; display: inline-block;" />';
@@ -135,9 +169,9 @@ class DaehanScraperService
 
         $multipartData = [
             ['name' => 'token', 'contents' => $token],
-            ['name' => 'w', 'contents' => ''],
-            ['name' => 'gs_id', 'contents' => ''],
-            ['name' => 'mb_id', 'contents' => 'AP-10691'], // Use correct internal ID
+            ['name' => 'w', 'contents' => $w],
+            ['name' => 'gs_id', 'contents' => $gsId],
+            ['name' => 'mb_id', 'contents' => 'AP-10691'],
             ['name' => 'new_cate_str', 'contents' => $affiliateCategory],
             ['name' => 'sel_ca1', 'contents' => $sel_ca1],
             ['name' => 'sel_ca2', 'contents' => $sel_ca2],
@@ -146,91 +180,90 @@ class DaehanScraperService
             ['name' => 'sel_ca5', 'contents' => $sel_ca5],
             
             ['name' => 'cate', 'contents' => $affiliateCategory],
-            ['name' => 'it_basic', 'contents' => strip_tags(html_entity_decode($goods->summary_info ?? ''))], // 짧은설명 (HTML 태그 제거 강화)
-            ['name' => 'gname', 'contents' => $goods->goods_name ?? '테스트 상품'], // 상품명
+            ['name' => 'it_basic', 'contents' => strip_tags(html_entity_decode($goods->summary_info ?? ''))],
+            ['name' => 'gname', 'contents' => $goods->goods_name ?? '테스트 상품'],
             
-            ['name' => 'isopen', 'contents' => '1'], // 판매여부 1:진열
-            ['name' => 'notax', 'contents' => '1'], // 과세여부 1:과세 0:면세
+            ['name' => 'isopen', 'contents' => '1'],
+            ['name' => 'notax', 'contents' => '1'],
             
-            ['name' => 'keywords', 'contents' => $goods->keyword ?? ''], // 검색키워드
-            ['name' => 'gcode', 'contents' => $goods->goods_seq ?? time()],
-            ['name' => 'memo', 'contents' => $memoHtml], // 상세설명 (img 태그를 감싸서 하단 자르기 적용)
+            ['name' => 'keywords', 'contents' => $goods->keyword ?? ''],
+            ['name' => 'gcode', 'contents' => $autoGcode],
+            ['name' => 'memo', 'contents' => $memoHtml],
             
-            ['name' => 'it_qty_set', 'contents' => $basicQty], // 기본수량 (7단계 자동계산용)
-            ['name' => 'daccount', 'contents' => $supplyPrice], // 상단 공급가격 (7단계 자동계산용)
+            ['name' => 'it_qty_set', 'contents' => $basicQty],
+            ['name' => 'daccount', 'contents' => $supplyPrice],
             
-            // 7단계 수량 및 가격 직접 설정
+            // 소비자가격은 빈 값 전송
             ['name' => 'p_qty1', 'contents' => $basicQty * 1],
             ['name' => 'p_spl1', 'contents' => $supplyPrice],
-            ['name' => 'p_mny1', 'contents' => $consumerPrice],
+            ['name' => 'p_mny1', 'contents' => ''],
             
             ['name' => 'p_qty2', 'contents' => $basicQty * 2],
             ['name' => 'p_spl2', 'contents' => $supplyPrice],
-            ['name' => 'p_mny2', 'contents' => $consumerPrice],
+            ['name' => 'p_mny2', 'contents' => ''],
             
             ['name' => 'p_qty3', 'contents' => $basicQty * 3],
             ['name' => 'p_spl3', 'contents' => $supplyPrice],
-            ['name' => 'p_mny3', 'contents' => $consumerPrice],
+            ['name' => 'p_mny3', 'contents' => ''],
             
             ['name' => 'p_qty4', 'contents' => $basicQty * 5],
             ['name' => 'p_spl4', 'contents' => $supplyPrice],
-            ['name' => 'p_mny4', 'contents' => $consumerPrice],
+            ['name' => 'p_mny4', 'contents' => ''],
             
             ['name' => 'p_qty5', 'contents' => $basicQty * 10],
             ['name' => 'p_spl5', 'contents' => $supplyPrice],
-            ['name' => 'p_mny5', 'contents' => $consumerPrice],
+            ['name' => 'p_mny5', 'contents' => ''],
             
             ['name' => 'p_qty6', 'contents' => $basicQty * 20],
             ['name' => 'p_spl6', 'contents' => $supplyPrice],
-            ['name' => 'p_mny6', 'contents' => $consumerPrice],
+            ['name' => 'p_mny6', 'contents' => ''],
             
             ['name' => 'p_qty7', 'contents' => $basicQty * 50],
             ['name' => 'p_spl7', 'contents' => $supplyPrice],
-            ['name' => 'p_mny7', 'contents' => $consumerPrice],
-            ['name' => 'is_free', 'contents' => '0'], // 0: 조건부, 1: 무료
+            ['name' => 'p_mny7', 'contents' => ''],
+            ['name' => 'is_free', 'contents' => '0'],
             ['name' => 'sc_price', 'contents' => $shippingFee],
-            ['name' => 'gd_baesong_price', 'contents' => $shippingFee], // 실제 폼 배송비 필드
+            ['name' => 'gd_baesong_price', 'contents' => $shippingFee],
             ['name' => 'opt_use', 'contents' => '0'],
-            ['name' => 'image_use_yn', 'contents' => 'n'], // 이미지사용 금지
-            ['name' => 'agree', 'contents' => 'on'], // 약관 동의
-            ['name' => 'it_point_type', 'contents' => '0'], // 포인트 설정 안함
-            ['name' => 'naver_shop_use', 'contents' => '1'], // 네이버지식쇼핑 (1: 사용)
-            ['name' => 'daum_shop_use', 'contents' => '1'], // 다음쇼핑하우 (1: 사용)
-            ['name' => 'adm_gcode', 'contents' => $goods->goods_code ?? ''], // 공급사 자체코드
+            ['name' => 'image_use_yn', 'contents' => 'n'],
+            ['name' => 'agree', 'contents' => 'on'],
+            ['name' => 'it_point_type', 'contents' => '0'],
+            ['name' => 'naver_shop_use', 'contents' => '1'],
+            ['name' => 'daum_shop_use', 'contents' => '1'],
+            ['name' => 'adm_gcode', 'contents' => $goods->goods_seq ?? $goods->goods_code ?? ''],
             
-            // 상세 옵션 (규격, 색상, 재질, 원산지 등)
-            ['name' => 'it_opt1_txt', 'contents' => $size ?: '기본옵션'], // 규격
-            ['name' => 'it_opt2_txt', 'contents' => $color ?: '하단참조'], // 색상
-            ['name' => 'it_opt4_txt', 'contents' => $material], // 재질
-            ['name' => 'it_opt5_txt', 'contents' => 'OPP비닐포장'], // 케이스
-            ['name' => 'it_opt6_txt', 'contents' => '별도표기'], // 제작기간
-            ['name' => 'it_opt7_txt', 'contents' => $origin], // 원산지
+            ['name' => 'it_opt1_txt', 'contents' => $size ?: '기본옵션'],
+            ['name' => 'it_opt2_txt', 'contents' => $color ?: '하단참조'],
+            ['name' => 'it_opt4_txt', 'contents' => $material],
+            ['name' => 'it_opt5_txt', 'contents' => 'OPP비닐포장'],
+            ['name' => 'it_opt6_txt', 'contents' => '별도표기'],
+            ['name' => 'it_opt7_txt', 'contents' => $origin],
             
-            ['name' => 'it_opt10_txt', 'contents' => '가능'], // 선물포장 가능여부 (라디오)
-            ['name' => 'it_seonmul', 'contents' => '300'], // 선물포장 비용
+            ['name' => 'it_opt10_txt', 'contents' => '가능'],
+            ['name' => 'it_seonmul', 'contents' => '300'],
             
-            ['name' => 'gd_baesong_ea', 'contents' => $basicQty], // 1박스당 입수량
+            ['name' => 'gd_baesong_ea', 'contents' => $basicQty],
             
-            ['name' => 'it_inswae', 'contents' => '가능'], // 인쇄가능여부
-            ['name' => 'it_opt3_txt[]', 'contents' => '실크인쇄'], // 인쇄방법 (체크박스)
-            ['name' => 'print1_min_qty', 'contents' => $basicQty], // 인쇄 최소 주문수량
-            ['name' => 'print2_min_qty', 'contents' => $basicQty], // 인쇄 없는 경우 최소 주문수량
-            ['name' => 'it_fee_qty', 'contents' => $basicQty], // 무료인쇄 기본수량
+            ['name' => 'it_inswae', 'contents' => '가능'],
+            ['name' => 'it_opt3_txt[]', 'contents' => '실크인쇄'],
+            ['name' => 'print1_min_qty', 'contents' => $basicQty],
+            ['name' => 'print2_min_qty', 'contents' => $basicQty],
+            ['name' => 'it_fee_qty', 'contents' => 0],
             
-            // 인쇄 옵션 (실크인쇄 필수선택)
             ['name' => 'opt_4_yn', 'contents' => '1'],
-            ['name' => 'opt_p4_sub1', 'contents' => '80'], // 1도
-            ['name' => 'opt_p4_sub2', 'contents' => '150'], // 2도
-            ['name' => 'opt_p4_sub3', 'contents' => '250'], // 3도
+            ['name' => 'opt_p4_sub1', 'contents' => '80'],
+            ['name' => 'opt_p4_sub2', 'contents' => '150'],
+            ['name' => 'opt_p4_sub3', 'contents' => '250'],
 
-            ['name' => 'price_show', 'contents' => '1'], // 가격노출여부
+            ['name' => 'price_show', 'contents' => '1'],
             ['name' => 'buy_level', 'contents' => '10'],
             ['name' => 'stock_mod', 'contents' => '0'],
             ['name' => 'money_type', 'contents' => '0'],
             ['name' => 'money_yo', 'contents' => '%'],
             ['name' => 'img_mod', 'contents' => '0']
         ];
-        // 4-1. 대표 이미지 처리 (URL 다운로드 후 임시파일로 첨부)
+
+        // 대표 이미지 처리
         $imagesList = \Illuminate\Support\Facades\DB::table('fm_goods_image')
             ->where('goods_seq', $goods->goods_seq)
             ->get();
@@ -251,7 +284,6 @@ class DaehanScraperService
                     $imageUrl = 'https://dometopia.com' . (str_starts_with($imageUrl, '/') ? '' : '/') . $imageUrl;
                 }
                 try {
-                    // Download to local temp file to avoid memory exhaustion and provide Content-Length to Guzzle
                     $tempPath = storage_path('app/tmp_' . uniqid() . '_' . basename($imageUrl));
                     if (@copy($imageUrl, $tempPath) && file_exists($tempPath) && filesize($tempPath) > 0) {
                         $stream = @fopen($tempPath, 'r');
@@ -274,19 +306,17 @@ class DaehanScraperService
         $processImage($firstImage, 'simg1');
         $processImage($secondImage, 'simg2');
 
-        // 5. POST 전송
+        // POST 전송
         try {
             $response = Http::withoutVerifying()->withOptions(['cookies' => $jar])
                 ->asMultipart()->withHeaders([
-                'Referer' => $this->baseUrl . '/mypage/page.php?code=seller_goods_form',
+                'Referer' => $formUrl,
                 'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
             ])->post($this->baseUrl . '/mypage/seller_goods_form_update.php', $multipartData);
             
-            // 메모리 확보를 위해 업로드 데이터 즉시 해제
             unset($multipartData);
             gc_collect_cycles();
             
-            // Delete temp files
             if (isset($tempFiles) && is_array($tempFiles)) {
                 foreach ($tempFiles as $tempPath) {
                     @unlink($tempPath);
@@ -298,7 +328,7 @@ class DaehanScraperService
             $isSuccess = strpos($body, '등록되었습니다') !== false 
                          || $response->status() == 302 
                          || strpos($body, 'location.replace') !== false;
-                         
+                          
             $errorMessage = null;
             if (!$isSuccess) {
                 if (strpos($body, '올바른 방법으로 이용해 주십시오') !== false) {
@@ -308,10 +338,16 @@ class DaehanScraperService
                 }
             }
 
+            // 동기화 결과 코드 결정 (gs_id 또는 autoGcode)
+            $savedCode = $gsId;
+            if ($isSuccess && empty($savedCode)) {
+                $savedCode = $this->findGsIdByGcode($jar, $autoGcode) ?: $autoGcode;
+            }
+
             return [
                 'success' => $isSuccess,
                 'message' => $errorMessage ?? '성공',
-                'affiliate_goods_code' => $goods->goods_seq ?? null,
+                'affiliate_goods_code' => $savedCode ?: $autoGcode ?: ($goods->goods_seq ?? null),
                 'selling_price' => $sellingPrice
             ];
         } catch (\Exception $e) {
@@ -320,6 +356,26 @@ class DaehanScraperService
                 'message' => $e->getMessage()
             ];
         }
+    }
+
+    /**
+     * gcode로 대한판촉 gs_id 조회
+     */
+    public function findGsIdByGcode($jar, $gcode)
+    {
+        try {
+            $res = Http::withoutVerifying()->withOptions(['cookies' => $jar])
+                ->get($this->baseUrl . '/mypage/page.php?code=seller_goods_list2&sfl=gcode&stx=' . urlencode($gcode));
+            $html = $res->body();
+            if (preg_match('/name=["\']gs_id\[\d+\]["\'][^>]*value=["\'](\d+)["\']/i', $html, $m)) {
+                return $m[1];
+            }
+            if (preg_match('/gs_id=(\d+)/i', $html, $m)) {
+                return $m[1];
+            }
+        } catch (\Exception $e) {
+        }
+        return null;
     }
 
     /**
@@ -344,14 +400,13 @@ class DaehanScraperService
                         ->get($this->baseUrl . '/mypage/page.php?code=seller_goods_form');
         $html = $response->body();
         
-        // 대한판촉은 HTML 태그가 아니라 Javascript 변수(multi_select)로 카테고리를 가지고 있음
         preg_match_all("/multi_select\['(.*?)'\] \+= '(.*?)';/", $html, $matches, PREG_SET_ORDER);
         
         $tree = [];
         $names = [];
         foreach ($matches as $match) {
             $parent = $match[1];
-            $itemsRaw = ltrim($match[2], ','); // 앞에 붙은 콤마 제거
+            $itemsRaw = ltrim($match[2], ',');
             $items = explode(',', $itemsRaw);
             foreach ($items as $item) {
                 if (strpos($item, '|') !== false) {
@@ -363,10 +418,8 @@ class DaehanScraperService
         }
 
         $categories = [];
-        // 재귀적으로 전체 경로(Full Path) 생성
         $buildPath = function($code, $path) use (&$buildPath, &$categories, $tree, $names) {
             $fullPath = $path ? $path . ' > ' . $names[$code] : $names[$code];
-            // 리프 노드뿐 아니라 모든 중간 노드도 매핑 대상이 될 수 있으므로 모두 저장
             $categories[$code] = $fullPath;
             
             if (isset($tree[$code])) {
@@ -407,12 +460,10 @@ class DaehanScraperService
         
         $orders = [];
         
-        // Find tables that contain "주문번호"
         $crawler->filter('table')->each(function (Crawler $node, $i) use (&$orders) {
             $text = $node->text();
             if (strpos($text, '주문번호') !== false && preg_match('/주문번호.*?(\d{14})/', $text, $matches)) {
                 $orderId = $matches[1];
-                // Try to extract more details if needed
                 preg_match('/(\d{2}-\d{2}-\d{2})/', $text, $dateMatches);
                 
                 $orders[] = [
