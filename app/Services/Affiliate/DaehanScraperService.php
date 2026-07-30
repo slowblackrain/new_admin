@@ -193,34 +193,27 @@ class DaehanScraperService
             ['name' => 'it_qty_set', 'contents' => $basicQty],
             ['name' => 'daccount', 'contents' => $supplyPrice],
             
-            // 소비자가격은 빈 값 전송
+            // 7단계 수량 및 공급가 설정 (소비자가격 p_mny1~p_mny7 파라미터는 완전히 제외)
             ['name' => 'p_qty1', 'contents' => $basicQty * 1],
             ['name' => 'p_spl1', 'contents' => $supplyPrice],
-            ['name' => 'p_mny1', 'contents' => ''],
             
             ['name' => 'p_qty2', 'contents' => $basicQty * 2],
             ['name' => 'p_spl2', 'contents' => $supplyPrice],
-            ['name' => 'p_mny2', 'contents' => ''],
             
             ['name' => 'p_qty3', 'contents' => $basicQty * 3],
             ['name' => 'p_spl3', 'contents' => $supplyPrice],
-            ['name' => 'p_mny3', 'contents' => ''],
             
             ['name' => 'p_qty4', 'contents' => $basicQty * 5],
             ['name' => 'p_spl4', 'contents' => $supplyPrice],
-            ['name' => 'p_mny4', 'contents' => ''],
             
             ['name' => 'p_qty5', 'contents' => $basicQty * 10],
             ['name' => 'p_spl5', 'contents' => $supplyPrice],
-            ['name' => 'p_mny5', 'contents' => ''],
             
             ['name' => 'p_qty6', 'contents' => $basicQty * 20],
             ['name' => 'p_spl6', 'contents' => $supplyPrice],
-            ['name' => 'p_mny6', 'contents' => ''],
             
             ['name' => 'p_qty7', 'contents' => $basicQty * 50],
             ['name' => 'p_spl7', 'contents' => $supplyPrice],
-            ['name' => 'p_mny7', 'contents' => ''],
             ['name' => 'is_free', 'contents' => '0'],
             ['name' => 'sc_price', 'contents' => $shippingFee],
             ['name' => 'gd_baesong_price', 'contents' => $shippingFee],
