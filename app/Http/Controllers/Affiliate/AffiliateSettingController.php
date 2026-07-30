@@ -812,8 +812,12 @@ class AffiliateSettingController extends Controller
         $results = [];
         if ($site->name === '오너클랜') {
             $scraper = new \App\Services\Affiliate\OwnerclanService();
-        } else {
+        } elseif ($site->name === '도매매') {
+            $scraper = new \App\Services\Affiliate\DomemeService();
+        } elseif ($site->name === '대한판촉') {
             $scraper = new \App\Services\Affiliate\DaehanScraperService();
+        } else {
+            return response()->json(['status' => 'error', 'message' => '지원하지 않는 제휴사입니다.']);
         }
         
         $goodsList = \App\Models\Goods::whereIn('goods_seq', $goodsSeqsToSync)
@@ -863,8 +867,12 @@ class AffiliateSettingController extends Controller
         $results = [];
         if ($site->name === '오너클랜') {
             $scraper = new \App\Services\Affiliate\OwnerclanService();
-        } else {
+        } elseif ($site->name === '도매매') {
+            $scraper = new \App\Services\Affiliate\DomemeService();
+        } elseif ($site->name === '대한판촉') {
             $scraper = new \App\Services\Affiliate\DaehanScraperService();
+        } else {
+            return response()->json(['status' => 'error', 'message' => '지원하지 않는 제휴사입니다.']);
         }
         
         $goodsList = \App\Models\Goods::whereIn('goods_seq', $goodsSeqs)
