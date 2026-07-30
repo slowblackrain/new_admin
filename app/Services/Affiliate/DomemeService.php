@@ -79,11 +79,11 @@ class DomemeService
                 return ['success' => false, 'message' => '매핑된 카테고리가 없습니다.'];
             }
             
-            // 검색어 (각 키워드 최대 10글자, 최대 10개 키워드)
+            // 검색어 (각 키워드 최대 10글자, 언더바 및 특수문자 제거, 최대 10개)
             $rawKeywords = explode(",", str_replace(" ", "", $goods->keyword ?? ''));
             $validKeywords = [];
             foreach ($rawKeywords as $k) {
-                $k = trim($k);
+                $k = trim(preg_replace("/[^\x{AC00}-\x{D7A3}a-zA-Z0-9]/u", "", $k));
                 if (!empty($k)) {
                     $validKeywords[] = mb_substr($k, 0, 10);
                 }
@@ -98,10 +98,11 @@ class DomemeService
                     }
                 }
             }
+            $validKeywords = array_values(array_unique($validKeywords));
             if (count($validKeywords) > 10) {
                 $validKeywords = array_slice($validKeywords, 0, 10);
             }
-            $keyword = implode(",", array_unique($validKeywords));
+            $keyword = implode(",", $validKeywords);
             
             // 사이즈, 무게 (기본값 필수 보장 - itemSize는 영문, 숫자, 쉼표, 공백만 허용)
             $tmp_size = explode('|', $goods->goods_contents2 ?? '');
